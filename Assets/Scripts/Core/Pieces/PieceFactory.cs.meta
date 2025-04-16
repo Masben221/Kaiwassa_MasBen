@@ -3,7 +3,11 @@ guid: b9cb56099867e8d448092321f88dfabb
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - dragonPrefab: {instanceID: 0}
+  - kingPrefab: {instanceID: 0}
+  - player1Material: {instanceID: 0}
+  - player2Material: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

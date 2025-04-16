@@ -1,6 +1,14 @@
 using UnityEngine;
 
 /// <summary>
+/// Интерфейс для системы интерфейса.
+/// </summary>
+public interface IUISystem
+{
+    void UpdateTurnDisplay(bool isPlayer1Turn); // Обновление отображения текущего хода
+}
+
+/// <summary>
 /// Реализация системы интерфейса. Пока просто логирует ходы.
 /// </summary>
 public class UISystem : IUISystem

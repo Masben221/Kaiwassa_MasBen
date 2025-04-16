@@ -3,31 +3,33 @@ using UnityEngine;
 using Zenject;
 
 /// <summary>
-/// Реализация фигуры "Король".
+/// Класс для фигуры "Король". Наследуется от базового класса Piece.
+/// Реализует поведение короля: движение и атака на 1 клетку в любом направлении.
 /// </summary>
 public class KingPiece : Piece
-{
-    // Инициализация короля
-    public void Awake()
-    {
-        Initialize(true); // По умолчанию для игрока 1, можно изменить при создании
-    }
-
+{   
+    /// <summary>
+    /// Настройка стратегий движения и атаки для короля.
+    /// </summary>
     protected override void SetupStrategies()
     {
-        // Устанавливаем стратегии для короля
         movementStrategy = new KingMoveStrategy();
         attackStrategy = new KingAttackStrategy();
         Debug.Log("KingPiece strategies set up.");
     }
 }
 
+/// <summary>
+/// Стратегия движения для короля.
+/// Позволяет двигаться на 1 клетку в любом направлении (прямые и диагонали).
+/// </summary>
 public class KingMoveStrategy : IMovable
 {
     public List<Vector3Int> CalculateMoves(IBoardManager board)
     {
         List<Vector3Int> moves = new List<Vector3Int>();
-        Vector3Int pos = board.GetPieceAt(new Vector3Int(0, 0, 0))?.Position ?? Vector3Int.zero;
+        IPiece piece = board.GetPieceAt(new Vector3Int(0, 0, 0));
+        Vector3Int pos = piece != null ? piece.Position : Vector3Int.zero;
 
         int[] directions = { -1, 0, 1 };
 
@@ -47,13 +49,17 @@ public class KingMoveStrategy : IMovable
     }
 }
 
+/// <summary>
+/// Стратегия атаки для короля.
+/// Атака на 1 клетку в любом направлении (только на фигуры противника).
+/// </summary>
 public class KingAttackStrategy : IAttackable
 {
     public List<Vector3Int> CalculateAttacks(IBoardManager board)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
         IPiece piece = board.GetPieceAt(new Vector3Int(0, 0, 0));
-        Vector3Int pos = piece?.Position ?? Vector3Int.zero;
+        Vector3Int pos = piece != null ? piece.Position : Vector3Int.zero;
 
         int[] directions = { -1, 0, 1 };
 

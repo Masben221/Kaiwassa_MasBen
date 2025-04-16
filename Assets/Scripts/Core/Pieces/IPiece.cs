@@ -25,7 +25,7 @@ public interface IPiece
     /// Задаёт принадлежность игроку (isPlayer1) и выполняет начальную настройку.
     /// </summary>
     /// <param name="isPlayer1">True, если фигура принадлежит первому игроку, иначе false.</param>
-    void Initialize(bool isPlayer1);
+    void Initialize(bool isPlayer1, Material material);
 
     /// <summary>
     /// Метод для установки позиции фигуры на доске.
