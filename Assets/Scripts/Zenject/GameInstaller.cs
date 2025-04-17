@@ -3,7 +3,6 @@ using Zenject;
 
 /// <summary>
 /// Установщик зависимостей для игры. Настраивает глобальные сервисы через Zenject.
-/// Все компоненты создаются из префабов для корректной работы с MonoBehaviour.
 /// </summary>
 public class GameInstaller : MonoInstaller
 {
@@ -11,6 +10,7 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private GameObject boardManagerPrefab;
     [SerializeField] private GameObject pieceFactoryPrefab;
     [SerializeField] private GameObject gameManagerPrefab;
+    [SerializeField] private GameObject inputHandlerPrefab;
 
     /// <summary>
     /// Метод, вызываемый Zenject для настройки зависимостей.
@@ -34,6 +34,12 @@ public class GameInstaller : MonoInstaller
         // Привязываем PieceFactory из префаба
         Container.Bind<PieceFactory>()
             .FromComponentInNewPrefab(pieceFactoryPrefab)
+            .AsSingle()
+            .NonLazy();
+
+        // Привязываем InputHandler из префаба
+        Container.Bind<InputHandler>()
+            .FromComponentInNewPrefab(inputHandlerPrefab)
             .AsSingle()
             .NonLazy();
 

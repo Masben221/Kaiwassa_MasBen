@@ -52,21 +52,17 @@ public interface IPiece
 }
 
 /// <summary>
-/// Интерфейс для стратегии движения фигур.
-/// Используется паттерн Strategy для разделения логики движения.
+/// Интерфейс для стратегий движения фигур.
 /// </summary>
 public interface IMovable
 {
-    // Рассчитывает доступные ходы для фигуры
-    List<Vector3Int> CalculateMoves(IBoardManager board);
+    List<Vector3Int> CalculateMoves(IBoardManager board, IPiece piece);
 }
 
 /// <summary>
-/// Интерфейс для стратегии атаки фигур.
-/// Также использует паттерн Strategy.
+/// Интерфейс для стратегий атаки фигур.
 /// </summary>
 public interface IAttackable
 {
-    // Рассчитывает доступные атаки для фигуры
-    List<Vector3Int> CalculateAttacks(IBoardManager board);
+    List<Vector3Int> CalculateAttacks(IBoardManager board, IPiece piece);
 }

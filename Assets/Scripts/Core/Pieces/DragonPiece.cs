@@ -2,13 +2,12 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// Класс для фигуры "Дракон". Наследуется от базового класса Piece.
-/// Реализует специфичное поведение дракона: движение и атака на расстоянии до 3 клеток.
+/// Класс для фигуры "Дракон". Реализует специфичное поведение дракона.
 /// </summary>
 public class DragonPiece : Piece
-{    
+{
     /// <summary>
-    /// Настройка стратегий движения и атаки для дракона.
+    /// Настройка стратегий для дракона.
     /// </summary>
     protected override void SetupStrategies()
     {
@@ -19,16 +18,14 @@ public class DragonPiece : Piece
 }
 
 /// <summary>
-/// Стратегия движения для дракона.
-/// Позволяет двигаться на расстояние до 3 клеток по прямой или диагонали, перепрыгивая препятствия.
+/// Стратегия движения для дракона: до 3 клеток по прямой или диагонали, перепрыгивая препятствия.
 /// </summary>
 public class DragonMoveStrategy : IMovable
 {
-    public List<Vector3Int> CalculateMoves(IBoardManager board)
+    public List<Vector3Int> CalculateMoves(IBoardManager board, IPiece piece)
     {
         List<Vector3Int> moves = new List<Vector3Int>();
-        IPiece piece = board.GetPieceAt(new Vector3Int(0, 0, 0));
-        Vector3Int pos = piece != null ? piece.Position : Vector3Int.zero;
+        Vector3Int pos = piece.Position; // Используем актуальную позицию
 
         int[] directions = { -1, 0, 1 };
 
@@ -56,16 +53,14 @@ public class DragonMoveStrategy : IMovable
 }
 
 /// <summary>
-/// Стратегия атаки для дракона.
-/// Атака совпадает с движением (до 3 клеток по прямой или диагонали).
+/// Стратегия атаки для дракона: до 3 клеток по прямой или диагонали (только противники).
 /// </summary>
 public class DragonAttackStrategy : IAttackable
 {
-    public List<Vector3Int> CalculateAttacks(IBoardManager board)
+    public List<Vector3Int> CalculateAttacks(IBoardManager board, IPiece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
-        IPiece piece = board.GetPieceAt(new Vector3Int(0, 0, 0));
-        Vector3Int pos = piece != null ? piece.Position : Vector3Int.zero;
+        Vector3Int pos = piece.Position; // Используем актуальную позицию
 
         int[] directions = { -1, 0, 1 };
 

@@ -1,15 +1,13 @@
-using System.Collections.Generic;
 using UnityEngine;
-using Zenject;
+using System.Collections.Generic;
 
 /// <summary>
-/// Класс для фигуры "Король". Наследуется от базового класса Piece.
-/// Реализует поведение короля: движение и атака на 1 клетку в любом направлении.
+/// Реализация фигуры "Король".
 /// </summary>
 public class KingPiece : Piece
-{   
+{
     /// <summary>
-    /// Настройка стратегий движения и атаки для короля.
+    /// Настройка стратегий для короля.
     /// </summary>
     protected override void SetupStrategies()
     {
@@ -20,16 +18,14 @@ public class KingPiece : Piece
 }
 
 /// <summary>
-/// Стратегия движения для короля.
-/// Позволяет двигаться на 1 клетку в любом направлении (прямые и диагонали).
+/// Стратегия движения для короля: на 1 клетку в любом направлении.
 /// </summary>
 public class KingMoveStrategy : IMovable
 {
-    public List<Vector3Int> CalculateMoves(IBoardManager board)
+    public List<Vector3Int> CalculateMoves(IBoardManager board, IPiece piece)
     {
         List<Vector3Int> moves = new List<Vector3Int>();
-        IPiece piece = board.GetPieceAt(new Vector3Int(0, 0, 0));
-        Vector3Int pos = piece != null ? piece.Position : Vector3Int.zero;
+        Vector3Int pos = piece.Position; // Используем актуальную позицию
 
         int[] directions = { -1, 0, 1 };
 
@@ -50,16 +46,14 @@ public class KingMoveStrategy : IMovable
 }
 
 /// <summary>
-/// Стратегия атаки для короля.
-/// Атака на 1 клетку в любом направлении (только на фигуры противника).
+/// Стратегия атаки для короля: на 1 клетку в любом направлении (только противники).
 /// </summary>
 public class KingAttackStrategy : IAttackable
 {
-    public List<Vector3Int> CalculateAttacks(IBoardManager board)
+    public List<Vector3Int> CalculateAttacks(IBoardManager board, IPiece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
-        IPiece piece = board.GetPieceAt(new Vector3Int(0, 0, 0));
-        Vector3Int pos = piece != null ? piece.Position : Vector3Int.zero;
+        Vector3Int pos = piece.Position; // Используем актуальную позицию
 
         int[] directions = { -1, 0, 1 };
 
