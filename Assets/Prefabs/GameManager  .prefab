@@ -44,3 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 705b9611c0930b847b3cd2481d05577b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mountainsPerSide: 4
+  kingsPerSide: 1
+  dragonsPerSide: 1
+  heavyCavalryPerSide: 2

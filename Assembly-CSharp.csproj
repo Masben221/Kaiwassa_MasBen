@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Zenject\GameInstaller.cs" />
+    <Compile Include="Assets\Scripts\Animation\PieceAnimator.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\KingPiece.cs" />
     <Compile Include="Assets\Scripts\Services\InputHandler.cs" />
     <Compile Include="Assets\Scripts\UI\UISystem.cs" />
@@ -69,6 +70,7 @@
     <Compile Include="Assets\Scripts\Core\Pieces\Piece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\DragonPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\PieceFactory.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\HeavyCavalryPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\IPiece.cs" />
   </ItemGroup>
   <ItemGroup>

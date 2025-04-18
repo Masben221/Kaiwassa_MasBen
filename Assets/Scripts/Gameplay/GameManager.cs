@@ -1,107 +1,192 @@
 using UnityEngine;
 using Zenject;
 using System;
+using System.Collections.Generic;
 
 /// <summary>
-/// Интерфейс для управления логикой игры.
+/// Интерфейс для управления игрой.
 /// </summary>
 public interface IGameManager
 {
-    void StartGame(); // Запуск игры
-    void MakeMove(IPiece piece, Vector3Int target); // Выполнение хода
-    bool IsPlayer1Turn { get; } // Чей сейчас ход
-
-    event System.Action<bool> OnTurnChanged; // Событие смены хода (паттерн Observer)
+    void StartGame(); // Инициализация игры
+    void MakeMove(Piece piece, Vector3Int target); // Выполнение хода или атаки
+    bool IsPlayer1Turn { get; } // Чей ход
+    event Action<bool> OnTurnChanged; // Событие смены хода
 }
 
 /// <summary>
-/// Управляет логикой игры: ходы, смена игроков, начальная расстановка.
+/// Управляет логикой игры: инициализация доски, размещение фигур, обработка ходов и атак, смена игроков.
 /// </summary>
 public class GameManager : MonoBehaviour, IGameManager
 {
-    // Зависимости, инжектируемые через Zenject
-    [Inject] private IBoardManager boardManager;
-    [Inject] private PieceFactory pieceFactory;
+    [Inject] private IBoardManager boardManager; // Интерфейс доски
+    [Inject] private IPieceFactory pieceFactory; // Фабрика фигур
 
-    // Текущий ход (true - игрок 1, false - игрок 2)
-    public bool IsPlayer1Turn { get; private set; } = true;
+    [SerializeField] private int mountainsPerSide = 4; // Количество гор на сторону
+    [SerializeField] private int kingsPerSide = 1; // Короли на сторону
+    [SerializeField] private int dragonsPerSide = 1; // Драконы на сторону
+    [SerializeField] private int heavyCavalryPerSide = 2; // Тяжёлая кавалерия на сторону
+    [SerializeField] private int elephantsPerSide = 0; // Слоны на сторону
+    [SerializeField] private int lightHorsesPerSide = 0; // Лёгкая кавалерия на сторону
+    [SerializeField] private int spearmenPerSide = 0; // Копейщики на сторону
+    [SerializeField] private int crossbowmenPerSide = 0; // Арбалетчики на сторону
+    [SerializeField] private int rabblePerSide = 0; // Толпа на сторону
+    [SerializeField] private int catapultsPerSide = 0; // Катапульты на сторону
+    [SerializeField] private int trebuchetsPerSide = 0; // Требушеты на сторону
 
-    // Событие для уведомления о смене хода
-    public event Action<bool> OnTurnChanged;
+    private bool isPlayer1Turn = true; // Текущий ход (true = Игрок 1)
+    public bool IsPlayer1Turn => isPlayer1Turn; // Геттер для текущего хода
+    public event Action<bool> OnTurnChanged; // Событие смены хода
 
-    /// <summary>
-    /// Метод инициализации, вызываемый Zenject после инъекции зависимостей.
-    /// </summary>
-    [Inject]
-    private void Initialize()
+    private void Start()
     {
+        Debug.Log("GameManager: Start called.");
         StartGame();
     }
 
     /// <summary>
-    /// Инициализирует игру: создаёт доску и расставляет начальные фигуры.
+    /// Инициализирует игру: создаёт доску 10x10, размещает горы и фигуры.
     /// </summary>
     public void StartGame()
     {
-        // Инициализируем доску размером 10x10
+        Debug.Log("GameManager: StartGame called.");
         boardManager.InitializeBoard(10);
 
-        // Расставляем начальные фигуры
-        SetupInitialPieces();
+        Debug.Log("GameManager: Placing mountains...");
+        boardManager.PlaceMountains(mountainsPerSide);
 
-        Debug.Log("Game started.");
+        Debug.Log("GameManager: Placing pieces...");
+        PlacePiecesForPlayer(true); // Игрок 1
+        PlacePiecesForPlayer(false); // Игрок 2
+
+        Debug.Log("GameManager: Game started successfully!");
+        OnTurnChanged?.Invoke(isPlayer1Turn);
+    }
+
+    /// <summary>
+    /// Размещает фигуры для указанного игрока на его половине доски (z=0–4 для Игрока 1, z=5–9 для Игрока 2).
+    /// </summary>
+    /// <param name="isPlayer1">true, если фигуры для Игрока 1.</param>
+    private void PlacePiecesForPlayer(bool isPlayer1)
+    {
+        List<Vector3Int> availablePositions = new List<Vector3Int>();
+        int zStart = isPlayer1 ? 0 : 5;
+        int zEnd = isPlayer1 ? 5 : 10;
+
+        // Собираем доступные позиции
+        for (int x = 0; x < 10; x++)
+        {
+            for (int z = zStart; z < zEnd; z++)
+            {
+                Vector3Int pos = new Vector3Int(x, 0, z);
+                if (!boardManager.IsBlocked(pos))
+                {
+                    availablePositions.Add(pos);
+                }
+            }
+        }
+
+        // Список фигур и их количества
+        (PieceType type, int count)[] piecesToPlace = {
+            (PieceType.King, kingsPerSide),
+            (PieceType.Dragon, dragonsPerSide),
+            (PieceType.HeavyCavalry, heavyCavalryPerSide),
+            (PieceType.Elephant, elephantsPerSide),
+            (PieceType.LightHorse, lightHorsesPerSide),
+            (PieceType.Spearman, spearmenPerSide),
+            (PieceType.Crossbowman, crossbowmenPerSide),
+            (PieceType.Rabble, rabblePerSide),
+            (PieceType.Catapult, catapultsPerSide),
+            (PieceType.Trebuchet, trebuchetsPerSide)
+        };
+
+        // Размещаем фигуры случайным образом
+        foreach (var (type, count) in piecesToPlace)
+        {
+            for (int i = 0; i < count && availablePositions.Count > 0; i++)
+            {
+                int index = UnityEngine.Random.Range(0, availablePositions.Count);
+                Vector3Int pos = availablePositions[index];
+                PlacePiece(type, isPlayer1, pos);
+                availablePositions.RemoveAt(index);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Создаёт и размещает фигуру на доске через фабрику.
+    /// </summary>
+    /// <param name="type">Тип фигуры.</param>
+    /// <param name="isPlayer1">true, если для Игрока 1.</param>
+    /// <param name="position">Позиция на доске.</param>
+    private void PlacePiece(PieceType type, bool isPlayer1, Vector3Int position)
+    {
+        Debug.Log($"GameManager: Creating {type} for Player {(isPlayer1 ? 1 : 2)} at {position}");
+        Piece piece = pieceFactory.CreatePiece(type, isPlayer1, position);
+        if (piece != null)
+        {
+            boardManager.PlacePiece(piece, position);
+        }
+        else
+        {
+            Debug.LogWarning($"GameManager: Failed to create {type} at {position}");
+        }
     }
 
     /// <summary>
     /// Обрабатывает ход или атаку фигуры.
+    /// Сначала проверяет возможность атаки, затем ход.
     /// </summary>
-    public void MakeMove(IPiece piece, Vector3Int target)
+    /// <param name="piece">Фигура, которая действует.</param>
+    /// <param name="target">Целевая клетка.</param>
+    public void MakeMove(Piece piece, Vector3Int target)
     {
-        // Проверяем, соответствует ли ход текущему игроку
-        if (piece.IsPlayer1 != IsPlayer1Turn) return;
+        Debug.Log($"GameManager: Attempting move for piece {piece.GetType().Name} at {piece.Position} to {target}");
+        if (piece.IsPlayer1 != isPlayer1Turn)
+        {
+            Debug.LogWarning("GameManager: Not your turn!");
+            return;
+        }
 
-        // Получаем доступные ходы и атаки
         var validMoves = piece.GetValidMoves(boardManager);
         var attackMoves = piece.GetAttackMoves(boardManager);
 
-        if (validMoves.Contains(target))
+        if (attackMoves.Contains(target))
         {
-            // Перемещаем фигуру на новую позицию
-            boardManager.RemovePiece(piece.Position);
-            boardManager.PlacePiece(piece, target);
-            Debug.Log($"Moved piece to {target}");
+            Piece targetPiece = boardManager.GetPieceAt(target);
+            if (targetPiece != null && targetPiece.IsPlayer1 != piece.IsPlayer1)
+            {
+                Debug.Log($"GameManager: Valid attack on piece {targetPiece.GetType().Name} at {target}");
+                piece.Attack(target, boardManager);
+                SwitchTurn();
+            }
+            else
+            {
+                Debug.LogWarning($"GameManager: No valid enemy piece at {target} to attack!");
+            }
         }
-        else if (attackMoves.Contains(target))
+        else if (validMoves.Contains(target))
         {
-            // Уничтожаем фигуру противника на целевой позиции
-            boardManager.RemovePiece(target);
-            Debug.Log($"Attacked and removed piece at {target}");
+            Debug.Log($"GameManager: Valid move to {target}");
+            piece.GetComponent<PieceAnimator>().MoveTo(target, () =>
+            {
+                boardManager.MovePiece(piece, piece.Position, target);
+                SwitchTurn();
+            });
         }
         else
         {
-            return; // Недопустимый ход
+            Debug.LogWarning($"GameManager: Invalid move or attack to {target}");
         }
-
-        // Меняем ход
-        IsPlayer1Turn = !IsPlayer1Turn;
-        OnTurnChanged?.Invoke(IsPlayer1Turn);
     }
 
     /// <summary>
-    /// Расставляет начальные фигуры на доске.
+    /// Переключает ход между игроками и уведомляет подписчиков.
     /// </summary>
-    private void SetupInitialPieces()
+    private void SwitchTurn()
     {
-        // Создаём короля для игрока 1
-        var king1 = pieceFactory.CreatePiece(PieceType.King, true, new Vector3Int(5, 0, 0));
-        boardManager.PlacePiece(king1, king1.Position);
-
-        // Создаём короля для игрока 2
-        var king2 = pieceFactory.CreatePiece(PieceType.King, false, new Vector3Int(5, 0, 9));
-        boardManager.PlacePiece(king2, king2.Position);
-
-        // Создаём дракона для игрока 1
-        var dragon1 = pieceFactory.CreatePiece(PieceType.Dragon, true, new Vector3Int(4, 0, 0));
-        boardManager.PlacePiece(dragon1, dragon1.Position);
+        isPlayer1Turn = !isPlayer1Turn;
+        OnTurnChanged?.Invoke(isPlayer1Turn);
+        Debug.Log($"GameManager: Turn switched to Player {(isPlayer1Turn ? 1 : 2)}");
     }
 }

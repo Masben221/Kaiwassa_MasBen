@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3992187466831830831}
   - component: {fileID: 3502049326581091901}
   - component: {fileID: -7127669441868806672}
+  - component: {fileID: 5313506501434559532}
   - component: {fileID: 1074267113438944078}
   m_Layer: 0
   m_Name: KingPiece
@@ -55,6 +56,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40e52ecfcbb44404587f8c0979a522eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &5313506501434559532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5797166320786525573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 917c6d329a55a3a489d4434104f7d3ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDuration: 1
+  jumpHeight: 0
 --- !u!65 &1074267113438944078
 BoxCollider:
   m_ObjectHideFlags: 0

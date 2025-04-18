@@ -1,58 +1,125 @@
 using UnityEngine;
+using Zenject;
 
-// <summary>
-/// Интерфейс фабрики для создания фигур.
-/// Следует паттерну Factory для централизованного создания объектов.
+/// <summary>
+/// Интерфейс фабрики для создания игровых фигур.
 /// </summary>
 public interface IPieceFactory
 {
-    IPiece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position); // Метод создания фигуры
+    Piece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position);
 }
 
 /// <summary>
-/// Перечисление всех типов фигур в игре.
-/// Используется для определения, какую фигуру создавать.
+/// Фабрика для создания игровых фигур.
+/// Отвечает за инстанцирование префабов, их инициализацию и поворот для второго игрока.
 /// </summary>
-public enum PieceType { King, Dragon, Elephant, HeavyHorse, LightHorse, Spearman, Crossbowman, Rabble, Catapult, Trebuchet }
-
-/// <summary>
-/// Фабрика для создания фигур. Задаёт префабы и материалы для каждого игрока.
-/// </summary>
-public class PieceFactory : MonoBehaviour
+public class PieceFactory : MonoBehaviour, IPieceFactory
 {
-    // Префабы фигур, задаются в инспекторе
-    [SerializeField] private GameObject dragonPrefab;
-    [SerializeField] private GameObject kingPrefab;
+    [SerializeField] private GameObject kingPrefab; // Префаб короля
+    [SerializeField] private GameObject dragonPrefab; // Префаб дракона
+    [SerializeField] private GameObject elephantPrefab; // Префаб слона
+    [SerializeField] private GameObject heavyCavalryPrefab; // Префаб тяжёлой кавалерии
+    [SerializeField] private GameObject lightHorsePrefab; // Префаб лёгкой кавалерии
+    [SerializeField] private GameObject spearmanPrefab; // Префаб копейщика
+    [SerializeField] private GameObject crossbowmanPrefab; // Префаб арбалетчика
+    [SerializeField] private GameObject rabblePrefab; // Префаб толпы
+    [SerializeField] private GameObject catapultPrefab; // Префаб катапульты
+    [SerializeField] private GameObject trebuchetPrefab; // Префаб требушета
+    [SerializeField] private Material player1Material; // Материал для Игрока 1
+    [SerializeField] private Material player2Material; // Материал для Игрока 2
 
-    // Материалы для фигур игроков
-    [SerializeField] private Material player1Material; // Для игрока 1
-    [SerializeField] private Material player2Material; // Для игрока 2
+    private DiContainer container; // DI-контейнер Zenject
+
+    [Inject]
+    public void Construct(DiContainer diContainer)
+    {
+        container = diContainer;
+    }
+
+    private void Awake()
+    {
+        if (kingPrefab == null || dragonPrefab == null || heavyCavalryPrefab == null)
+        {
+            Debug.LogError("PieceFactory: Required prefabs (King, Dragon, HeavyCavalry) not assigned!");
+        }
+    }
 
     /// <summary>
-    /// Создаёт фигуру заданного типа с учётом принадлежности игрока.
+    /// Создаёт фигуру указанного типа на заданной позиции.
+    /// Поворачивает фигуры второго игрока на 180 градусов.
     /// </summary>
-    public IPiece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position)
+    /// <param name="type">Тип фигуры (King, Dragon и т.д.).</param>
+    /// <param name="isPlayer1">true, если фигура для Игрока 1.</param>
+    /// <param name="position">Позиция в клеточных координатах.</param>
+    /// <returns>Созданная фигура или null, если создание не удалось.</returns>
+    public Piece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position)
     {
-        // Выбираем префаб в зависимости от типа фигуры
-        GameObject prefab = type switch
+        GameObject prefab = null;
+        switch (type)
         {
-            PieceType.Dragon => dragonPrefab,
-            PieceType.King => kingPrefab,
-            _ => throw new System.NotImplementedException($"Piece type {type} not implemented")
-        };
+            case PieceType.King:
+                prefab = kingPrefab;
+                break;
+            case PieceType.Dragon:
+                prefab = dragonPrefab;
+                break;
+            case PieceType.Elephant:
+                prefab = elephantPrefab;
+                break;
+            case PieceType.HeavyCavalry:
+                prefab = heavyCavalryPrefab;
+                break;
+            case PieceType.LightHorse:
+                prefab = lightHorsePrefab;
+                break;
+            case PieceType.Spearman:
+                prefab = spearmanPrefab;
+                break;
+            case PieceType.Crossbowman:
+                prefab = crossbowmanPrefab;
+                break;
+            case PieceType.Rabble:
+                prefab = rabblePrefab;
+                break;
+            case PieceType.Catapult:
+                prefab = catapultPrefab;
+                break;
+            case PieceType.Trebuchet:
+                prefab = trebuchetPrefab;
+                break;
+            default:
+                Debug.LogError($"PieceFactory: Unknown piece type {type}");
+                return null;
+        }
 
-        // Создаём экземпляр из префаба
-        GameObject instance = Instantiate(prefab, Vector3.zero, Quaternion.identity);
-        IPiece piece = instance.GetComponent<IPiece>();
+        if (prefab == null)
+        {
+            Debug.LogWarning($"PieceFactory: Prefab for {type} is not assigned!");
+            return null;
+        }
 
-        // Выбираем материал в зависимости от игрока
+        // Поворот для второго игрока (180 градусов по Y)
+        Quaternion rotation = isPlayer1 ? Quaternion.identity : Quaternion.Euler(0, 180, 0);
+        GameObject pieceObject = container.InstantiatePrefab(prefab, new Vector3(position.x, 0.5f, position.z), rotation, null);
+        Piece piece = pieceObject.GetComponent<Piece>();
+        if (piece == null)
+        {
+            Debug.LogError($"PieceFactory: No Piece component on {type} prefab!");
+            Destroy(pieceObject);
+            return null;
+        }
+
         Material material = isPlayer1 ? player1Material : player2Material;
+        if (material == null)
+        {
+            Debug.LogError($"PieceFactory: Material for Player {(isPlayer1 ? 1 : 2)} not assigned!");
+            Destroy(pieceObject);
+            return null;
+        }
 
-        // Инициализируем фигуру с нужным материалом
         piece.Initialize(isPlayer1, material);
         piece.SetPosition(position);
-
-        Debug.Log($"Created {type} for Player {(isPlayer1 ? 1 : 2)} at {position}");
+        Debug.Log($"PieceFactory: Created {type} for Player {(isPlayer1 ? 1 : 2)} at {position} (world: {pieceObject.transform.position}, rotation: {pieceObject.transform.rotation.eulerAngles})");
         return piece;
     }
 }

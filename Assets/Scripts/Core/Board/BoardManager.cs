@@ -1,119 +1,255 @@
 ﻿using UnityEngine;
+using Zenject;
+using System.Collections.Generic;
 
 /// <summary>
-/// Интерфейс, определяющий методы для управления игровой доской.
-/// Используется для соблюдения принципа Dependency Inversion (D из SOLID).
+/// Интерфейс для управления игровой доской.
 /// </summary>
 public interface IBoardManager
 {
-    // Инициализирует доску заданного размера в 3D-пространстве
-    void InitializeBoard(int size);
-
-    // Проверяет, находится ли позиция в пределах доски
-    bool IsWithinBounds(Vector3Int position);
-
-    // Проверяет, занята ли клетка фигурой
-    bool IsOccupied(Vector3Int position);
-
-    // Размещает фигуру на заданной 3D-позиции
-    void PlacePiece(IPiece piece, Vector3Int position);
-
-    // Удаляет фигуру с заданной 3D-позиции
-    void RemovePiece(Vector3Int position);
-
-    // Возвращает фигуру, находящуюся на заданной позиции
-    IPiece GetPieceAt(Vector3Int position);
+    void InitializeBoard(int size); // Инициализация доски
+    void PlacePiece(Piece piece, Vector3Int position); // Размещение фигуры
+    Piece GetPieceAt(Vector3Int position); // Получение фигуры по позиции
+    void RemovePiece(Vector3Int position); // Удаление фигуры
+    void MovePiece(Piece piece, Vector3Int from, Vector3Int to); // Перемещение фигуры
+    bool IsWithinBounds(Vector3Int position); // Проверка границ
+    bool IsOccupied(Vector3Int position); // Проверка занятости клетки фигурами
+    bool IsMountain(Vector3Int position); // Проверка, является ли клетка горой
+    void PlaceMountains(int mountainsPerSide); // Размещение гор
+    bool IsBlocked(Vector3Int position); // Проверка, заблокирована ли клетка
 }
 
 /// <summary>
-/// Управляет игровой доской в 3D-пространстве (плоскость XZ).
-/// Хранит состояние клеток и визуализирует доску с плитками разных цветов.
+/// Управляет игровой доской: размещение фигур, гор, состояние клеток.
 /// </summary>
 public class BoardManager : MonoBehaviour, IBoardManager
 {
-    // Размер доски (например, 10x10)
+    [SerializeField] private GameObject tilePrefab; // Префаб плитки
+    [SerializeField] private GameObject mountainPrefab; // Префаб горы
+    [SerializeField] private Material jadeMaterial; // Материал для нефритовых клеток
+    [SerializeField] private Material carnelianMaterial; // Материал для сердоликовых клеток
+    [SerializeField] private Material lapisMaterial; // Материал для клеток с ляпис-лазурью
+
+    private readonly Dictionary<Vector3Int, Piece> pieces = new Dictionary<Vector3Int, Piece>();
+    private readonly Dictionary<Vector3Int, GameObject> tiles = new Dictionary<Vector3Int, GameObject>();
+    private readonly Dictionary<Vector3Int, GameObject> mountains = new Dictionary<Vector3Int, GameObject>();
     private int boardSize;
 
-    // Массив для хранения фигур в 3D (Y=0 для плоскости XZ)
-    private IPiece[,,] board;
-
-    // Префаб плитки для визуализации доски
-    [SerializeField] private GameObject tilePrefab;
-
-    // Массив материалов для плиток (нефрит, сердолик, ляпис-лазурь)
-    [SerializeField] private Material[] tileMaterials;
-
-    // Случайный генератор для выбора материалов
-    private System.Random random = new System.Random();
-
     /// <summary>
-    /// Инициализирует доску заданного размера, создавая плитки с разными материалами.
+    /// Инициализирует доску заданного размера с клетками в шахматном порядке.
     /// </summary>
     public void InitializeBoard(int size)
     {
-        boardSize = size;
-        board = new IPiece[size, 1, size]; // Y=1, так как используем только плоскость XZ
-
-        // Проверяем, что материалы назначены
-        if (tileMaterials == null || tileMaterials.Length < 3)
+        if (tilePrefab == null || mountainPrefab == null || jadeMaterial == null || carnelianMaterial == null || lapisMaterial == null)
         {
-            Debug.LogError("BoardManager: Необходимо назначить минимум 3 материала (нефрит, сердолик, ляпис-лазурь)!");
+            Debug.LogError("Tile prefab, mountain prefab, or materials not assigned in BoardManager!");
             return;
         }
 
-        // Создаём визуальную доску
+        boardSize = size;
+
         for (int x = 0; x < size; x++)
         {
             for (int z = 0; z < size; z++)
             {
-                Vector3 position = new Vector3(x, 0, z);
-                GameObject tile = Instantiate(tilePrefab, position, Quaternion.identity, transform);
-                tile.name = $"Tile_{x}_{z}";
+                Vector3Int position = new Vector3Int(x, 0, z);
+                GameObject tile = Instantiate(tilePrefab, new Vector3(x, 0, z), Quaternion.identity);
+                tiles[position] = tile;
 
-                // Шахматный порядок: выбираем материал на основе суммы x+z
-                Renderer renderer = tile.GetComponent<Renderer>();
-                if (renderer != null)
+                // Шахматный порядок с тремя материалами
+                Material material;
+                if ((x + z) % 3 == 0)
+                    material = jadeMaterial;
+                else if ((x + z) % 3 == 1)
+                    material = carnelianMaterial;
+                else
+                    material = lapisMaterial;
+
+                tile.GetComponent<Renderer>().material = material;
+            }
+        }
+
+        Debug.Log($"Board initialized with size {size}x{size}");
+    }
+
+    /// <summary>
+    /// Размещает указанное количество гор на каждой половине доски.
+    /// </summary>
+    public void PlaceMountains(int mountainsPerSide)
+    {
+        // Половинная доска для игрока 1 (z = 0–4)
+        List<Vector3Int> player1Positions = new List<Vector3Int>();
+        for (int x = 0; x < boardSize; x++)
+        {
+            for (int z = 0; z < boardSize / 2; z++)
+            {
+                Vector3Int pos = new Vector3Int(x, 0, z);
+                if (!pieces.ContainsKey(pos) && !mountains.ContainsKey(pos))
                 {
-                    int materialIndex = (x + z) % 3; // Цикл между 0, 1, 2
-                    renderer.material = tileMaterials[materialIndex];
+                    player1Positions.Add(pos);
                 }
             }
         }
-        Debug.Log($"Board initialized: {size}x{size} with colored tiles.");
-    }
 
-    public bool IsWithinBounds(Vector3Int position)
-    {
-        // Проверяем, находится ли позиция в пределах доски
-        return position.x >= 0 && position.x < boardSize &&
-        position.y == 0 && // Фиксируем Y=0
-        position.z >= 0 && position.z < boardSize;
-    }
-
-    public bool IsOccupied(Vector3Int position)
-    {
-        return IsWithinBounds(position) && board[position.x, position.y, position.z] != null;
-    }
-
-    public void PlacePiece(IPiece piece, Vector3Int position)
-    {
-        if (IsWithinBounds(position))
+        // Половинная доска для игрока 2 (z = 5–9)
+        List<Vector3Int> player2Positions = new List<Vector3Int>();
+        for (int x = 0; x < boardSize; x++)
         {
-            board[position.x, position.y, position.z] = piece;
-            piece.SetPosition(position);
+            for (int z = boardSize / 2; z < boardSize; z++)
+            {
+                Vector3Int pos = new Vector3Int(x, 0, z);
+                if (!pieces.ContainsKey(pos) && !mountains.ContainsKey(pos))
+                {
+                    player2Positions.Add(pos);
+                }
+            }
+        }
+
+        // Размещаем горы для игрока 1
+        mountainsPerSide = Mathf.Min(mountainsPerSide, player1Positions.Count);
+        for (int i = 0; i < mountainsPerSide; i++)
+        {
+            int index = UnityEngine.Random.Range(0, player1Positions.Count);
+            Vector3Int pos = player1Positions[index];
+            GameObject mountain = Instantiate(mountainPrefab, new Vector3(pos.x, 0.5f, pos.z), Quaternion.identity);
+            mountains[pos] = mountain;
+            player1Positions.RemoveAt(index);
+            Debug.Log($"Placed mountain for Player 1 at {pos}");
+        }
+
+        // Размещаем горы для игрока 2
+        mountainsPerSide = Mathf.Min(mountainsPerSide, player2Positions.Count);
+        for (int i = 0; i < mountainsPerSide; i++)
+        {
+            int index = UnityEngine.Random.Range(0, player2Positions.Count);
+            Vector3Int pos = player2Positions[index];
+            GameObject mountain = Instantiate(mountainPrefab, new Vector3(pos.x, 0.5f, pos.z), Quaternion.identity);
+            mountains[pos] = mountain;
+            player2Positions.RemoveAt(index);
+            Debug.Log($"Placed mountain for Player 2 at {pos}");
         }
     }
 
+    /// <summary>
+    /// Размещает фигуру на доске в указанной позиции.
+    /// </summary>
+    public void PlacePiece(Piece piece, Vector3Int position)
+    {
+        if (IsBlocked(position))
+        {
+            Debug.LogWarning($"Position {position} is blocked by a piece or mountain!");
+            return;
+        }
+
+        if (pieces.ContainsKey(position))
+        {
+            Debug.LogWarning($"Position {position} was occupied, removing existing piece.");
+            RemovePiece(position);
+        }
+
+        pieces[position] = piece;
+        piece.SetPosition(position);
+        Debug.Log($"BoardManager: Placed piece {piece.GetType().Name} at {position}");
+    }
+
+    /// <summary>
+    /// Перемещает фигуру из одной позиции в другую.
+    /// </summary>
+    public void MovePiece(Piece piece, Vector3Int from, Vector3Int to)
+    {
+        Debug.Log($"BoardManager: Attempting to move piece {piece.GetType().Name} from {from} to {to}");
+
+        if (!pieces.TryGetValue(from, out Piece existingPiece) || existingPiece != piece)
+        {
+            Debug.LogWarning($"No piece found at {from} or piece mismatch.");
+            return;
+        }
+
+        pieces.Remove(from);
+
+        if (IsMountain(to))
+        {
+            Debug.LogWarning($"Position {to} is blocked by a mountain!");
+            pieces[from] = piece;
+            piece.SetPosition(from);
+            return;
+        }
+
+        if (pieces.ContainsKey(to))
+        {
+            Debug.LogWarning($"Position {to} was occupied, removing existing piece.");
+            RemovePiece(to);
+        }
+
+        pieces[to] = piece;
+        piece.SetPosition(to);
+        Debug.Log($"BoardManager: Moved piece {piece.GetType().Name} from {from} to {to}");
+    }
+
+    /// <summary>
+    /// Возвращает фигуру на указанной позиции или null, если клетка пуста.
+    /// </summary>
+    public Piece GetPieceAt(Vector3Int position)
+    {
+        pieces.TryGetValue(position, out Piece piece);
+        return piece;
+    }
+
+    /// <summary>
+    /// Удаляет фигуру с указанной позиции.
+    /// </summary>
     public void RemovePiece(Vector3Int position)
     {
-        if (IsWithinBounds(position))
+        if (pieces.TryGetValue(position, out Piece piece))
         {
-            board[position.x, position.y, position.z] = null;
+            pieces.Remove(position);
+            if (piece != null && piece.gameObject != null)
+            {
+                Destroy(piece.gameObject);
+                Debug.Log($"BoardManager: Removed piece {piece.GetType().Name} at {position}");
+            }
+            else
+            {
+                Debug.LogWarning($"Piece at {position} was null or already destroyed.");
+            }
         }
+        else
+        {
+            Debug.LogWarning($"No piece found at {position} to remove.");
+        }
+    }    
+
+    /// <summary>
+    /// Проверяет, находится ли позиция в пределах доски.
+    /// </summary>
+    public bool IsWithinBounds(Vector3Int position)
+    {
+        return position.x >= 0 && position.x < boardSize &&
+               position.z >= 0 && position.z < boardSize &&
+               position.y == 0;
     }
 
-    public IPiece GetPieceAt(Vector3Int position)
+    /// <summary>
+    /// Проверяет, занята ли клетка фигурой.
+    /// </summary>
+    public bool IsOccupied(Vector3Int position)
     {
-        return IsWithinBounds(position) ? board[position.x, position.y, position.z] : null;
+        return pieces.ContainsKey(position);
+    }
+
+    /// <summary>
+    /// Проверяет, является ли клетка горой.
+    /// </summary>
+    public bool IsMountain(Vector3Int position)
+    {
+        return mountains.ContainsKey(position);
+    }
+
+    /// <summary>
+    /// Проверяет, заблокирована ли клетка фигурой или горой.
+    /// </summary>
+    public bool IsBlocked(Vector3Int position)
+    {
+        return IsOccupied(position) || IsMountain(position);
     }
 }

@@ -45,7 +45,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tilePrefab: {fileID: 5950096956436643526, guid: 5d845f7cee0d5644e89c8062dcf654ba, type: 3}
-  tileMaterials:
-  - {fileID: 2100000, guid: 27248b76b24587747adb1006c3765f6b, type: 2}
-  - {fileID: 2100000, guid: 0b9df865835b61c4aa7935cec8b0ce55, type: 2}
-  - {fileID: 2100000, guid: 7b18b19d6feccb042a2dea53fcad6cc1, type: 2}
+  mountainPrefab: {fileID: 7114801639385481286, guid: 14d364a8053fac04aae36f88625f2e36, type: 3}
+  jadeMaterial: {fileID: 2100000, guid: 27248b76b24587747adb1006c3765f6b, type: 2}
+  carnelianMaterial: {fileID: 2100000, guid: 0b9df865835b61c4aa7935cec8b0ce55, type: 2}
+  lapisMaterial: {fileID: 2100000, guid: 7b18b19d6feccb042a2dea53fcad6cc1, type: 2}
+  totalMountains: 8

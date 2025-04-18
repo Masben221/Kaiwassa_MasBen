@@ -1,11 +1,28 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections.Generic;
+
+/// <summary>
+/// Интерфейс для стратегий движения фигур.
+/// </summary>
+public interface IMovable
+{
+    List<Vector3Int> CalculateMoves(IBoardManager board, Piece piece);
+}
+
+/// <summary>
+/// Интерфейс для стратегий атаки фигур.
+/// </summary>
+public interface IAttackable
+{
+    List<Vector3Int> CalculateAttacks(IBoardManager board, Piece piece);
+    void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager);
+}
 
 /// <summary>
 /// Интерфейс, определяющий общие свойства и методы для всех игровых фигур в 3D-пространстве.
 /// Используется для обеспечения единообразного взаимодействия с фигурами в игре.
 /// </summary>
-public interface IPiece
+public interface IPiece// отказались от интерфейса так как от него было больше вреда чем пользы
 {
     /// <summary>
     /// Свойство, возвращающее текущую позицию фигуры в 3D-пространстве.
@@ -51,18 +68,3 @@ public interface IPiece
     List<Vector3Int> GetAttackMoves(IBoardManager board);
 }
 
-/// <summary>
-/// Интерфейс для стратегий движения фигур.
-/// </summary>
-public interface IMovable
-{
-    List<Vector3Int> CalculateMoves(IBoardManager board, IPiece piece);
-}
-
-/// <summary>
-/// Интерфейс для стратегий атаки фигур.
-/// </summary>
-public interface IAttackable
-{
-    List<Vector3Int> CalculateAttacks(IBoardManager board, IPiece piece);
-}

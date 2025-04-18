@@ -56,7 +56,7 @@ public class InputHandler : MonoBehaviour
             );
 
             // Проверяем, есть ли фигура на клетке
-            IPiece clickedPiece = boardManager.GetPieceAt(clickedPos);
+            Piece clickedPiece = boardManager.GetPieceAt(clickedPos);
 
             // Если фигура выбрана
             if (selectedPiece != null)
@@ -77,8 +77,8 @@ public class InputHandler : MonoBehaviour
             // Если кликнули на фигуру текущего игрока
             else if (clickedPiece != null && clickedPiece.IsPlayer1 == gameManager.IsPlayer1Turn)
             {
-                // Выбираем фигуру (приводим IPiece к Piece)
-                SelectPiece((Piece)clickedPiece);
+                // Выбираем фигуру
+                SelectPiece(clickedPiece);
             }
             // Если кликнули вне доски, отменяем выделение
             else if (!boardManager.IsWithinBounds(clickedPos))
@@ -114,8 +114,8 @@ public class InputHandler : MonoBehaviour
         {
             GameObject marker = Instantiate(
                 moveMarkerPrefab,
-                new Vector3(move.x, 0.1f, move.z), // Без смещения, так как позиция уже в углу клетки
-                Quaternion.Euler(90, 0, 0) // Параллельно доске
+                new Vector3(move.x, 0.1f, move.z),
+                Quaternion.Euler(90, 0, 0)
             );
             currentMarkers.Add(marker);
         }
@@ -126,8 +126,8 @@ public class InputHandler : MonoBehaviour
         {
             GameObject marker = Instantiate(
                 attackMarkerPrefab,
-                new Vector3(attack.x, 0.1f, attack.z), // Без смещения
-                Quaternion.Euler(90, 0, 0) // Параллельно доске
+                new Vector3(attack.x, 0.1f, attack.z),
+                Quaternion.Euler(90, 0, 0)
             );
             currentMarkers.Add(marker);
         }

@@ -32,7 +32,7 @@ public class GameInstaller : MonoInstaller
             .NonLazy();
 
         // Привязываем PieceFactory из префаба
-        Container.Bind<PieceFactory>()
+        Container.Bind<IPieceFactory>()
             .FromComponentInNewPrefab(pieceFactoryPrefab)
             .AsSingle()
             .NonLazy();
