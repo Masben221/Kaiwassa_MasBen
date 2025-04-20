@@ -54,4 +54,4 @@ MonoBehaviour:
   crossbowmenPerSide: 0
   rabblePerSide: 0
   catapultsPerSide: 1
-  trebuchetsPerSide: 0
+  trebuchetsPerSide: 1

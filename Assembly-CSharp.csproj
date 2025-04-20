@@ -63,6 +63,7 @@
     <Compile Include="Assets\Scripts\Core\Pieces\IMovable.cs" />
     <Compile Include="Assets\Scripts\Zenject\GameInstaller.cs" />
     <Compile Include="Assets\Scripts\Animation\PieceAnimator.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\TrebuchetPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\CatapultPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\KingPiece.cs" />
     <Compile Include="Assets\Scripts\Services\InputHandler.cs" />
