@@ -68,7 +68,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 917c6d329a55a3a489d4434104f7d3ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveDuration: 2
+  moveDuration: 0.5
   jumpHeight: 0
 --- !u!65 &2393685384707432591
 BoxCollider:
@@ -117,7 +117,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6e1716ffff12e024c9771fb250fb2b0a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -0.08
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6e1716ffff12e024c9771fb250fb2b0a, type: 3}
       propertyPath: m_LocalPosition.z

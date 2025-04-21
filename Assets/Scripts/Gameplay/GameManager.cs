@@ -29,8 +29,8 @@ public class GameManager : MonoBehaviour, IGameManager
     [SerializeField] private int elephantsPerSide = 2; // Слоны на сторону
     [SerializeField] private int lightHorsesPerSide = 3; // Лёгкая кавалерия на сторону
     [SerializeField] private int spearmenPerSide = 3; // Копейщики на сторону
-    [SerializeField] private int crossbowmenPerSide = 0; // Арбалетчики на сторону
-    [SerializeField] private int rabblePerSide = 0; // Толпа на сторону
+    [SerializeField] private int crossbowmenPerSide = 3; // Арбалетчики на сторону
+    [SerializeField] private int rabblePerSide = 3; // Толпа на сторону
     [SerializeField] private int catapultsPerSide = 1; // Катапульты на сторону
     [SerializeField] private int trebuchetsPerSide = 1; // Требушеты на сторону
 

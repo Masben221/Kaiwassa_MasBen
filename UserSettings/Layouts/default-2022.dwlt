@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 2560
     height: 997
   m_ShowMode: 4
-  m_Title: Game
+  m_Title: Scene
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 371}
   m_MaxSize: {x: 10000, y: 10000}
@@ -120,7 +120,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 99
+  controlID: 42
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -146,7 +146,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 17
+  controlID: 43
   draggingID: 0
 --- !u!114 &7
 MonoBehaviour:
@@ -629,23 +629,23 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: b6ddfeff
+      m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: aee8feffbae8feff16e9feff72edfeffd833ffffe433ffffec39ffffce91ffffda91ffffaa96ffff2cfbfffff4ffffff
+      m_ExpandedIDs: 4881ffffd881ffffe481ffffb486ffff2a8cffff4291ffff3696ffff1e9bffff449fffff509fffff14a5ffff6cabffff2cacffff38acffff58b1ffff2eb8ffff3ab8ffff76b8ffffb2b8ffffbeb8ffffd2b8ffff1eb9ffff2ab9ffff6ebeffff0ae1ffff16e1ffff3ae1ffff46e1fffff2e6ffff2cfbfffff4ffffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: 
-        m_OriginalName: 
+        m_Name: ElephantPiece
+        m_OriginalName: ElephantPiece
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
           y: 0
           width: 0
           height: 0
-        m_UserData: 0
+        m_UserData: 27298
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 11
+        m_OriginalEventType: 0
         m_IsRenamingFilename: 0
         m_ClientGUIView: {fileID: 7}
       m_SearchString: 
@@ -700,7 +700,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scripts/Services
+    - "Assets/Prefabs/\u0424\u0438\u0433\u0443\u0440\u044B"
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
@@ -708,16 +708,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 96
   m_LastFolders:
-  - Assets/Scripts/Services
+  - "Assets/Prefabs/\u0424\u0438\u0433\u0443\u0440\u044B"
   m_LastFoldersGridSize: 96
   m_LastProjectPath: A:\CODE\MASBENGAMES\Kaiwassa_MasBen
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 78600000
-    m_LastClickedID: 24696
-    m_ExpandedIDs: 00000000e25f0000e45f0000e65f0000
+    m_SelectedIDs: 90600000
+    m_LastClickedID: 24720
+    m_ExpandedIDs: 00000000e25f0000e45f0000e65f000066600000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1170,9 +1170,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 5.8147545, y: 0.8575138, z: 4.141308}
+    m_Target: {x: 4.332595, y: 0.30724266, z: 2.2375393}
     speed: 2
-    m_Value: {x: 5.8147545, y: 0.8575138, z: 4.141308}
+    m_Value: {x: 4.332595, y: 0.30724266, z: 2.2375393}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1218,13 +1218,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.30712914, y: 0.32572863, z: -0.11278984, w: -0.88708854}
+    m_Target: {x: -0.054229587, y: 0.5455657, z: -0.03541057, w: -0.8356076}
     speed: 2
-    m_Value: {x: -0.3071176, y: 0.3257164, z: -0.11278561, w: -0.8870552}
+    m_Value: {x: -0.26245502, y: -0.6009136, z: 0.2181968, w: -0.7227797}
   m_Size:
-    m_Target: 3.1728625
+    m_Target: 0.74721366
     speed: 2
-    m_Value: 3.1728625
+    m_Value: 0.658338
   m_Ortho:
     m_Target: 0
     speed: 2

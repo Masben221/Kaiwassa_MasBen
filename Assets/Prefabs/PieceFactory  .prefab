@@ -50,8 +50,8 @@ MonoBehaviour:
   heavyCavalryPrefab: {fileID: 5717480514354363987, guid: 0d529a30a3d179a4c9b2672fe0b86d0d, type: 3}
   lightHorsePrefab: {fileID: 5717480514354363987, guid: 5b6d40499f732b14884f61da6c43f373, type: 3}
   spearmanPrefab: {fileID: 5797166320786525573, guid: f4f5f0288f7cd2b429ac619b5478a521, type: 3}
-  crossbowmanPrefab: {fileID: 0}
-  rabblePrefab: {fileID: 0}
+  crossbowmanPrefab: {fileID: 5717480514354363987, guid: fb0a090dab1305f4b80f046e8d5e1aa9, type: 3}
+  rabblePrefab: {fileID: 5797166320786525573, guid: 8ee39923bef694e44ba13e19f827a43c, type: 3}
   catapultPrefab: {fileID: 5717480514354363987, guid: 1dfcae21910afd746848c6653d317539, type: 3}
   trebuchetPrefab: {fileID: 5717480514354363987, guid: 06b5a062cbd6b074fb9f9495df628b37, type: 3}
   player1Material: {fileID: 2100000, guid: bf59a829c1be22c40945a3d6973cc7ed, type: 2}

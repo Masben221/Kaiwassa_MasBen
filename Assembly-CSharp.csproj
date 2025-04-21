@@ -76,6 +76,8 @@
     <Compile Include="Assets\Scripts\Core\Pieces\Piece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\DragonPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\PieceFactory.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\CrossbowmanPiece.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\RabblePiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\HeavyHorsePiece.cs" />
   </ItemGroup>
   <ItemGroup>
