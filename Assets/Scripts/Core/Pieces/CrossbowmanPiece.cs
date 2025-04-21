@@ -51,7 +51,7 @@ public class CrossbowmanMoveStrategy : IMovable
 
 /// <summary>
 /// Стратегия атаки для Арбалетчиков.
-/// Реализует дальний бой: атака на 2 клетки по прямой или диагонали, требует прямой видимости.
+/// Реализует дальний бой: атака на 1-2 клетки по прямой или диагонали, требует прямой видимости.
 /// </summary>
 public class CrossbowmanAttackStrategy : IAttackable
 {
@@ -68,17 +68,27 @@ public class CrossbowmanAttackStrategy : IAttackable
             foreach (int dz in directions)
             {
                 if (dx == 0 && dz == 0) continue; // Пропускаем текущую позицию
-                Vector3Int targetPos = pos + new Vector3Int(dx * 2, 0, dz * 2);
-                if (!board.IsWithinBounds(targetPos)) continue;
 
-                // Проверяем прямую видимость (промежуточная клетка)
+                // Проверяем клетки на расстоянии 1
+                Vector3Int targetPos1 = pos + new Vector3Int(dx, 0, dz);
+                if (board.IsWithinBounds(targetPos1) && board.IsOccupied(targetPos1) &&
+                    board.GetPieceAt(targetPos1).IsPlayer1 != piece.IsPlayer1)
+                {
+                    attacks.Add(targetPos1); // Атака на 1 клетку не требует проверки видимости
+                }
+
+                // Проверяем клетки на расстоянии 2
+                Vector3Int targetPos2 = pos + new Vector3Int(dx * 2, 0, dz * 2);
+                if (!board.IsWithinBounds(targetPos2)) continue;
+
+                // Проверяем прямую видимость для атаки на 2 клетки
                 Vector3Int midPos = pos + new Vector3Int(dx, 0, dz);
                 if (board.IsBlocked(midPos)) continue; // Путь заблокирован
 
                 // Проверяем, есть ли вражеская фигура на целевой клетке
-                if (board.IsOccupied(targetPos) && board.GetPieceAt(targetPos).IsPlayer1 != piece.IsPlayer1)
+                if (board.IsOccupied(targetPos2) && board.GetPieceAt(targetPos2).IsPlayer1 != piece.IsPlayer1)
                 {
-                    attacks.Add(targetPos);
+                    attacks.Add(targetPos2);
                 }
             }
         }
