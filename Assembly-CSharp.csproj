@@ -63,17 +63,20 @@
     <Compile Include="Assets\Scripts\Core\Pieces\IMovable.cs" />
     <Compile Include="Assets\Scripts\Zenject\GameInstaller.cs" />
     <Compile Include="Assets\Scripts\Animation\PieceAnimator.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\LightHorsePiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\TrebuchetPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\CatapultPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\KingPiece.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\SpearmanPiece.cs" />
     <Compile Include="Assets\Scripts\Services\InputHandler.cs" />
     <Compile Include="Assets\Scripts\UI\UISystem.cs" />
     <Compile Include="Assets\Scripts\Core\Board\BoardManager.cs" />
     <Compile Include="Assets\Scripts\Gameplay\GameManager.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\ElephantPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\Piece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\DragonPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\PieceFactory.cs" />
-    <Compile Include="Assets\Scripts\Core\Pieces\HeavyCavalryPiece.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\HeavyHorsePiece.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

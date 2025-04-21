@@ -48,9 +48,9 @@ MonoBehaviour:
   kingsPerSide: 1
   dragonsPerSide: 1
   heavyCavalryPerSide: 2
-  elephantsPerSide: 0
-  lightHorsesPerSide: 0
-  spearmenPerSide: 0
+  elephantsPerSide: 2
+  lightHorsesPerSide: 3
+  spearmenPerSide: 3
   crossbowmenPerSide: 0
   rabblePerSide: 0
   catapultsPerSide: 1

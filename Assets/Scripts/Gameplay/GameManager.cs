@@ -26,13 +26,13 @@ public class GameManager : MonoBehaviour, IGameManager
     [SerializeField] private int kingsPerSide = 1; // Короли на сторону
     [SerializeField] private int dragonsPerSide = 1; // Драконы на сторону
     [SerializeField] private int heavyCavalryPerSide = 2; // Тяжёлая кавалерия на сторону
-    [SerializeField] private int elephantsPerSide = 0; // Слоны на сторону
-    [SerializeField] private int lightHorsesPerSide = 0; // Лёгкая кавалерия на сторону
-    [SerializeField] private int spearmenPerSide = 0; // Копейщики на сторону
+    [SerializeField] private int elephantsPerSide = 2; // Слоны на сторону
+    [SerializeField] private int lightHorsesPerSide = 3; // Лёгкая кавалерия на сторону
+    [SerializeField] private int spearmenPerSide = 3; // Копейщики на сторону
     [SerializeField] private int crossbowmenPerSide = 0; // Арбалетчики на сторону
     [SerializeField] private int rabblePerSide = 0; // Толпа на сторону
-    [SerializeField] private int catapultsPerSide = 0; // Катапульты на сторону
-    [SerializeField] private int trebuchetsPerSide = 0; // Требушеты на сторону
+    [SerializeField] private int catapultsPerSide = 1; // Катапульты на сторону
+    [SerializeField] private int trebuchetsPerSide = 1; // Требушеты на сторону
 
     private bool isPlayer1Turn = true; // Текущий ход (true = Игрок 1)
     public bool IsPlayer1Turn => isPlayer1Turn; // Геттер для текущего хода

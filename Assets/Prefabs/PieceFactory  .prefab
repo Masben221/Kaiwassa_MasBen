@@ -46,10 +46,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   kingPrefab: {fileID: 5797166320786525573, guid: 27f957c61017c78468218ab28c41f789, type: 3}
   dragonPrefab: {fileID: 5717480514354363987, guid: 10eaf0f024a240e4d86a8cab0fcd06f5, type: 3}
-  elephantPrefab: {fileID: 0}
+  elephantPrefab: {fileID: 5717480514354363987, guid: bcf31cdcdab741447ab0f5cdf42eeab6, type: 3}
   heavyCavalryPrefab: {fileID: 5717480514354363987, guid: 0d529a30a3d179a4c9b2672fe0b86d0d, type: 3}
-  lightHorsePrefab: {fileID: 0}
-  spearmanPrefab: {fileID: 0}
+  lightHorsePrefab: {fileID: 5717480514354363987, guid: 5b6d40499f732b14884f61da6c43f373, type: 3}
+  spearmanPrefab: {fileID: 5797166320786525573, guid: f4f5f0288f7cd2b429ac619b5478a521, type: 3}
   crossbowmanPrefab: {fileID: 0}
   rabblePrefab: {fileID: 0}
   catapultPrefab: {fileID: 5717480514354363987, guid: 1dfcae21910afd746848c6653d317539, type: 3}

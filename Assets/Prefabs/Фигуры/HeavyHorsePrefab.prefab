@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 637440597812507186}
   - component: {fileID: 2393685384707432591}
   m_Layer: 0
-  m_Name: HeavyCavalryPrefab
+  m_Name: HeavyHorsePrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
