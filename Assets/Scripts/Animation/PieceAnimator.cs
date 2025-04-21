@@ -22,11 +22,11 @@ public class PieceAnimator : MonoBehaviour
     {
         if (isMoving)
         {
-            Debug.LogWarning($"PieceAnimator: Already moving for {GetComponent<Piece>().GetType().Name}");
+            //Debug.LogWarning($"PieceAnimator: Already moving for {GetComponent<Piece>().GetType().Name}");
             return;
         }
 
-        Debug.Log($"PieceAnimator: MoveTo called for {GetComponent<Piece>().GetType().Name} to {target}");
+        //Debug.Log($"PieceAnimator: MoveTo called for {GetComponent<Piece>().GetType().Name} to {target}");
         isMoving = true;
 
         Vector3 startPos = transform.position;

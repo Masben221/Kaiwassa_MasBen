@@ -157,7 +157,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
     /// </summary>
     public void MovePiece(Piece piece, Vector3Int from, Vector3Int to)
     {
-        Debug.Log($"BoardManager: Attempting to move piece {piece.GetType().Name} from {from} to {to}");
+        //Debug.Log($"BoardManager: Attempting to move piece {piece.GetType().Name} from {from} to {to}");
 
         if (!pieces.TryGetValue(from, out Piece existingPiece) || existingPiece != piece)
         {
