@@ -20,7 +20,7 @@ public class DragonPiece : Piece
 
 /// <summary>
 /// —тратеги€ движени€ дл€ дракона.
-/// ѕозвол€ет двигатьс€ на 1-3 клетки по пр€мой или диагонали, перепрыгива€ преп€тстви€.
+/// ѕозвол€ет двигатьс€ на 1-3 клетки по пр€мой или диагонали, перепрыгива€ преп€тстви€, только на пустые клетки.
 /// </summary>
 public class DragonMoveStrategy : IMovable
 {
@@ -43,8 +43,8 @@ public class DragonMoveStrategy : IMovable
                     {
                         break;
                     }
-                    if (!board.IsMountain(newPos) &&
-                        (!board.IsOccupied(newPos) || (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1)))
+                    // ƒобавл€ем только пустые клетки
+                    if (!board.IsBlocked(newPos))
                     {
                         moves.Add(newPos);
                     }
@@ -80,20 +80,7 @@ public class DragonAttackStrategy : IAttackable
                     {
                         break;
                     }
-                    bool pathBlocked = false;
-                    for (int j = 1; j < i; j++)
-                    {
-                        Vector3Int midPos = pos + new Vector3Int(dx * j, 0, dz * j);
-                        if (board.IsOccupied(midPos))
-                        {
-                            pathBlocked = true;
-                            break;
-                        }
-                    }
-                    if (pathBlocked)
-                    {
-                        continue;
-                    }
+                    
                     if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1)
                     {
                         attacks.Add(newPos);
