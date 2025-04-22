@@ -80,57 +80,45 @@ public class ElephantAttackStrategy : IAttackable
 
         foreach (var dir in directions)
         {
+            int enemiesFound = 0;
+           
             for (int i = 1; i <= 3; i++)
             {
                 Vector3Int newPos = pos + dir * i;
+
+                // Если newPos вне доски, прерываем направление
                 if (!board.IsWithinBounds(newPos))
                 {
                     break;
                 }
-                // Проверяем путь до цели (все клетки перед newPos)
-                bool pathBlocked = false;
-                for (int j = 1; j < i; j++)
-                {
-                    Vector3Int midPos = pos + dir * j;
-                    if (board.IsBlocked(midPos) || board.IsOccupied(midPos))
-                    {
-                        pathBlocked = true;
-                        break;
-                    }
-                }
-                if (pathBlocked)
+                
+                // Если на пути гора, прерываем направление
+                if (board.IsMountain(newPos))
                 {
                     break;
                 }
-                // Проверяем целевую клетку
-                if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1 && !board.IsMountain(newPos))
+                
+                // Если на пути своя фигура, прерываем направление
+                if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 == piece.IsPlayer1)
                 {
-                    attacks.Add(newPos);
-                    // Проверяем следующую клетку, если текущая не последняя
-                    if (i < 3)
+                    break;
+                }
+
+                // Если на пути фигура противника, то добавляем ее в список атак
+                if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1)
+                {
+                    attacks.Add(newPos); // Добавляем вражескую фигуру в список атак
+                    enemiesFound++;
+                    if (enemiesFound >= 2)// если это вторая или более фигура для атаки, то прерываем направление
                     {
-                        Vector3Int nextPos = pos + dir * (i + 1);
-                        if (board.IsWithinBounds(nextPos) && board.IsOccupied(nextPos) &&
-                            board.GetPieceAt(nextPos).IsPlayer1 != piece.IsPlayer1 && !board.IsMountain(nextPos))
-                        {
-                            // Проверяем путь до следующей клетки
-                            bool nextPathBlocked = false;
-                            for (int j = 1; j <= i; j++)
-                            {
-                                Vector3Int midPos = pos + dir * j;
-                                if (board.IsBlocked(midPos) || (board.IsOccupied(midPos) && midPos != newPos))
-                                {
-                                    nextPathBlocked = true;
-                                    break;
-                                }
-                            }
-                            if (!nextPathBlocked)
-                            {
-                                attacks.Add(nextPos);
-                            }
-                        }
+                        break; // Максимум две фигуры
                     }
-                    break; // Прерываем направление после первой или второй фигуры
+                }
+
+                // Если была клетка с врагом и текущая позиция пустая, то прерываем направление ибо мы можем атаковать только подряд две фигуры а не через пустой промежуток
+                else if (enemiesFound == 1 && !board.IsBlocked(newPos))
+                {
+                    break;
                 }
             }
         }

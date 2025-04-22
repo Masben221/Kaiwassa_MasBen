@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 2560
     height: 997
   m_ShowMode: 4
-  m_Title: Scene
+  m_Title: Project
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 371}
   m_MaxSize: {x: 10000, y: 10000}
@@ -120,7 +120,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 97
+  controlID: 99
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -146,7 +146,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 17
+  controlID: 43
   draggingID: 0
 --- !u!114 &7
 MonoBehaviour:
@@ -256,7 +256,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 98
+  controlID: 100
   draggingID: 0
 --- !u!114 &11
 MonoBehaviour:
@@ -277,8 +277,8 @@ MonoBehaviour:
     y: 0
     width: 555
     height: 642
-  m_MinSize: {x: 275, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 276, y: 71}
+  m_MaxSize: {x: 4001, y: 4021}
   m_ActualView: {fileID: 22}
   m_Panes:
   - {fileID: 22}
@@ -447,8 +447,8 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: f65e0000
-      m_LastClickedID: 24310
+      m_SelectedIDs: 864f0000
+      m_LastClickedID: 0
       m_ExpandedIDs: 2cfbffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
@@ -518,24 +518,24 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scripts/Services
+    - Assets/Scripts/Core/Pieces
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
     m_FilterByTypeIntersection: 0
   m_ViewMode: 1
-  m_StartGridSize: 96
+  m_StartGridSize: 75
   m_LastFolders:
-  - Assets/Scripts/Services
-  m_LastFoldersGridSize: 96
+  - Assets/Scripts/Core/Pieces
+  m_LastFoldersGridSize: 75
   m_LastProjectPath: A:\CODE\MASBENGAMES\Kaiwassa_MasBen
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 80600000
-    m_LastClickedID: 24704
-    m_ExpandedIDs: 00000000ea5f0000ec5f0000ee5f0000
+    m_SelectedIDs: 7e600000
+    m_LastClickedID: 24702
+    m_ExpandedIDs: 00000000ee5f0000f05f0000f25f0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -563,7 +563,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 00000000ea5f0000ec5f0000ee5f0000
+    m_ExpandedIDs: 00000000ee5f0000f05f0000f25f0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -616,7 +616,7 @@ MonoBehaviour:
       m_ResourceFile: 
     m_NewAssetIndexInList: -1
     m_ScrollPosition: {x: 0, y: 0}
-    m_GridSize: 96
+    m_GridSize: 75
   m_SkipHiddenPackages: 0
   m_DirectoriesAreaWidth: 240
 --- !u!114 &16
@@ -1220,11 +1220,11 @@ MonoBehaviour:
   m_Rotation:
     m_Target: {x: 0.42239025, y: -0.559063, z: 0.39945653, w: 0.59116054}
     speed: 2
-    m_Value: {x: 0.42327628, y: -0.55846286, z: 0.40029445, w: 0.5905259}
+    m_Value: {x: 0.42239, y: -0.55906266, z: 0.3994563, w: 0.5911602}
   m_Size:
     m_Target: 21.473833
     speed: 2
-    m_Value: 22.48569
+    m_Value: 21.473833
   m_Ortho:
     m_Target: 0
     speed: 2
