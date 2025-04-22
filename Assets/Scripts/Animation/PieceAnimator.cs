@@ -4,7 +4,7 @@ using System.Collections;
 
 /// <summary>
 /// Компонент для анимации движения фигур.
-/// Выполняет плавное перемещение с прыжком.
+/// Выполняет плавное перемещение с прыжком и уведомляет о начале/завершении анимации.
 /// </summary>
 public class PieceAnimator : MonoBehaviour
 {
@@ -12,6 +12,10 @@ public class PieceAnimator : MonoBehaviour
     [SerializeField] private float jumpHeight = 1f; // Высота прыжка
 
     private bool isMoving; // Флаг, выполняется ли анимация
+
+    // События для уведомления о начале и завершении анимации
+    public static event Action OnAnimationStarted;
+    public static event Action OnAnimationFinished;
 
     /// <summary>
     /// Перемещает фигуру в целевую позицию с анимацией прыжка.
@@ -22,12 +26,15 @@ public class PieceAnimator : MonoBehaviour
     {
         if (isMoving)
         {
-            //Debug.LogWarning($"PieceAnimator: Already moving for {GetComponent<Piece>().GetType().Name}");
+            Debug.LogWarning($"PieceAnimator: Already moving for {GetComponent<Piece>().GetType().Name}");
             return;
         }
 
-        //Debug.Log($"PieceAnimator: MoveTo called for {GetComponent<Piece>().GetType().Name} to {target}");
+        Debug.Log($"PieceAnimator: MoveTo called for {GetComponent<Piece>().GetType().Name} to {target}");
         isMoving = true;
+
+        // Уведомляем о начале анимации
+        OnAnimationStarted?.Invoke();
 
         Vector3 startPos = transform.position;
         Vector3 endPos = new Vector3(target.x, 0.5f, target.z); // y=0.5f для высоты
@@ -37,6 +44,8 @@ public class PieceAnimator : MonoBehaviour
         {
             isMoving = false;
             transform.position = endPos;
+            // Уведомляем о завершении анимации
+            OnAnimationFinished?.Invoke();
             onComplete?.Invoke();
         }));
 

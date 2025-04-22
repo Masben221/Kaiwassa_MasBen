@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Обрабатывает ввод игрока (мышь или тачскрин) для выбора фигур и ходов.
+/// Блокирует ввод во время анимаций.
 /// </summary>
 public class InputHandler : MonoBehaviour
 {
@@ -27,13 +28,35 @@ public class InputHandler : MonoBehaviour
     // Исходной материал выбранной фигуры (для восстановления)
     private Material originalMaterial;
 
+    // Флаг для блокировки ввода во время анимации
+    private bool isInputBlocked;
+
     /// <summary>
-    /// Обрабатывает ввод игрока в каждом кадре.
+    /// Инициализация: подписка на события анимации.
+    /// </summary>
+    private void Awake()
+    {
+        PieceAnimator.OnAnimationStarted += BlockInput;
+        PieceAnimator.OnAnimationFinished += UnblockInput;
+    }
+
+    /// <summary>
+    /// Очистка: отписка от событий анимации.
+    /// </summary>
+    private void OnDestroy()
+    {
+        PieceAnimator.OnAnimationStarted -= BlockInput;
+        PieceAnimator.OnAnimationFinished -= UnblockInput;
+        ClearSelection();
+    }
+
+    /// <summary>
+    /// Обрабатывает ввод игрока в каждом кадре, если ввод не заблокирован.
     /// </summary>
     private void Update()
     {
-        // Проверяем клик мыши или касание (работает для мыши и тачскрина)
-        if (Input.GetMouseButtonDown(0))
+        // Проверяем клик мыши или касание, только если ввод не заблокирован
+        if (!isInputBlocked && Input.GetMouseButtonDown(0))
         {
             HandleClick();
         }
@@ -162,10 +185,20 @@ public class InputHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Очистка при уничтожении объекта.
+    /// Блокирует ввод во время анимации.
     /// </summary>
-    private void OnDestroy()
+    private void BlockInput()
     {
-        ClearSelection();
+        isInputBlocked = true;
+        Debug.Log("InputHandler: Input blocked during animation.");
+    }
+
+    /// <summary>
+    /// Разблокирует ввод после завершения анимации.
+    /// </summary>
+    private void UnblockInput()
+    {
+        isInputBlocked = false;
+        Debug.Log("InputHandler: Input unblocked after animation.");
     }
 }
