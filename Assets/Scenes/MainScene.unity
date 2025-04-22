@@ -339,6 +339,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 705507995}
+  - component: {fileID: 705507996}
   - component: {fileID: 705507994}
   m_Layer: 0
   m_Name: Directional Light
@@ -424,6 +425,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 30, y: 0, z: 0}
+--- !u!114 &705507996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 705507993}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 274361254612ac44e99085428f454010, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lightPosition: {x: 4.5, y: 10, z: 4.5}
+  lightRotation: {x: 180, y: 0, z: 0}
+  lightIntensity: 1
+  lightColor: {r: 1, g: 0.95, b: 0.9, a: 1}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -529,9 +546,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b41cf27f7540ac49ac5dd47a1b1d91d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraHeight: 10
-  boardCenter: {x: 4.5, y: 0, z: 4.5}
-  orthographicSize: 5.5
+  cameraPosition: {x: 7, y: 2.8, z: 4.5}
+  cameraRotation: {x: 45, y: -90, z: 0}
+  orthographicSize: 3.8
+  nearClippingPlane: -3
 --- !u!1001 &972237570
 PrefabInstance:
   m_ObjectHideFlags: 0
