@@ -70,6 +70,7 @@
     <Compile Include="Assets\Scripts\Core\Pieces\SpearmanPiece.cs" />
     <Compile Include="Assets\Scripts\Services\InputHandler.cs" />
     <Compile Include="Assets\Scripts\UI\UISystem.cs" />
+    <Compile Include="Assets\Scripts\UI\UIMainMenu.cs" />
     <Compile Include="Assets\Scripts\Core\Board\BoardManager.cs" />
     <Compile Include="Assets\Scripts\Gameplay\GameManager.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\ElephantPiece.cs" />

@@ -8,7 +8,7 @@ using System.Collections.Generic;
 /// </summary>
 public interface IGameManager
 {
-    void StartGame(); // Инициализация игры
+    void StartGame(int mountainsPerSide); // Инициализация игры с числом гор
     void MakeMove(Piece piece, Vector3Int target); // Выполнение хода или атаки
     bool IsPlayer1Turn { get; } // Чей ход
     event Action<bool> OnTurnChanged; // Событие смены хода
@@ -22,7 +22,6 @@ public class GameManager : MonoBehaviour, IGameManager
     [Inject] private IBoardManager boardManager; // Интерфейс доски
     [Inject] private IPieceFactory pieceFactory; // Фабрика фигур
 
-    [SerializeField] private int mountainsPerSide = 4; // Количество гор на сторону
     [SerializeField] private int kingsPerSide = 1; // Короли на сторону
     [SerializeField] private int dragonsPerSide = 1; // Драконы на сторону
     [SerializeField] private int heavyCavalryPerSide = 2; // Тяжёлая кавалерия на сторону
@@ -40,16 +39,16 @@ public class GameManager : MonoBehaviour, IGameManager
 
     private void Start()
     {
-        Debug.Log("GameManager: Start called.");
-        StartGame();
+        Debug.Log("GameManager: Waiting for UI to start game.");
+        // StartGame больше не вызывается автоматически
     }
 
     /// <summary>
     /// Инициализирует игру: создаёт доску 10x10, размещает горы и фигуры.
     /// </summary>
-    public void StartGame()
+    public void StartGame(int mountainsPerSide)
     {
-        Debug.Log("GameManager: StartGame called.");
+        Debug.Log($"GameManager: StartGame called with {mountainsPerSide} mountains per side.");
         boardManager.InitializeBoard(10);
 
         Debug.Log("GameManager: Placing mountains...");
@@ -66,7 +65,6 @@ public class GameManager : MonoBehaviour, IGameManager
     /// <summary>
     /// Размещает фигуры для указанного игрока на его половине доски (z=0–4 для Игрока 1, z=5–9 для Игрока 2).
     /// </summary>
-    /// <param name="isPlayer1">true, если фигуры для Игрока 1.</param>
     private void PlacePiecesForPlayer(bool isPlayer1)
     {
         List<Vector3Int> availablePositions = new List<Vector3Int>();
@@ -116,9 +114,6 @@ public class GameManager : MonoBehaviour, IGameManager
     /// <summary>
     /// Создаёт и размещает фигуру на доске через фабрику.
     /// </summary>
-    /// <param name="type">Тип фигуры.</param>
-    /// <param name="isPlayer1">true, если для Игрока 1.</param>
-    /// <param name="position">Позиция на доске.</param>
     private void PlacePiece(PieceType type, bool isPlayer1, Vector3Int position)
     {
         Debug.Log($"GameManager: Creating {type} for Player {(isPlayer1 ? 1 : 2)} at {position}");
@@ -137,8 +132,6 @@ public class GameManager : MonoBehaviour, IGameManager
     /// Обрабатывает ход или атаку фигуры.
     /// Сначала проверяет возможность атаки, затем ход.
     /// </summary>
-    /// <param name="piece">Фигура, которая действует.</param>
-    /// <param name="target">Целевая клетка.</param>
     public void MakeMove(Piece piece, Vector3Int target)
     {
         Debug.Log($"GameManager: Attempting move for piece {piece.GetType().Name} at {piece.Position} to {target}");
