@@ -65,6 +65,7 @@
     <Compile Include="Assets\Scripts\Animation\PieceAnimator.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\LightHorsePiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\TrebuchetPiece.cs" />
+    <Compile Include="Assets\Scripts\Core\Board\PiecePlacementManager.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\CatapultPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\KingPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\SpearmanPiece.cs" />

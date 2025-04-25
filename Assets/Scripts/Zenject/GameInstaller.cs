@@ -11,6 +11,7 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private GameObject pieceFactoryPrefab;
     [SerializeField] private GameObject gameManagerPrefab;
     [SerializeField] private GameObject inputHandlerPrefab;
+    [SerializeField] private GameObject piecePlacementManagerPrefab;
 
     /// <summary>
     /// Метод, вызываемый Zenject для настройки зависимостей.
@@ -31,8 +32,9 @@ public class GameInstaller : MonoInstaller
             .AsSingle()
             .NonLazy();
 
-        // Привязываем PieceFactory из префаба
+        // Привязываем IPieceFactory к PieceFactory из префаба
         Container.Bind<IPieceFactory>()
+            .To<PieceFactory>()
             .FromComponentInNewPrefab(pieceFactoryPrefab)
             .AsSingle()
             .NonLazy();
@@ -40,6 +42,13 @@ public class GameInstaller : MonoInstaller
         // Привязываем InputHandler из префаба
         Container.Bind<InputHandler>()
             .FromComponentInNewPrefab(inputHandlerPrefab)
+            .AsSingle()
+            .NonLazy();
+
+        // Привязываем IPiecePlacementManager к PiecePlacementManager из префаба
+        Container.Bind<IPiecePlacementManager>()
+            .To<PiecePlacementManager>()
+            .FromComponentInNewPrefab(piecePlacementManagerPrefab)
             .AsSingle()
             .NonLazy();
 

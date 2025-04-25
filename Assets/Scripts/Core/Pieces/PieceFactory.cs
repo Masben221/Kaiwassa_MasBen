@@ -2,15 +2,16 @@ using UnityEngine;
 using Zenject;
 
 /// <summary>
-/// Интерфейс фабрики для создания игровых фигур.
+/// Интерфейс фабрики для создания игровых фигур и гор.
 /// </summary>
 public interface IPieceFactory
 {
     Piece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position);
+    GameObject CreateMountain(Vector3Int position);
 }
 
 /// <summary>
-/// Фабрика для создания игровых фигур.
+/// Фабрика для создания игровых фигур и гор.
 /// Отвечает за инстанцирование префабов, их инициализацию и поворот для второго игрока.
 /// </summary>
 public class PieceFactory : MonoBehaviour, IPieceFactory
@@ -25,6 +26,7 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
     [SerializeField] private GameObject rabblePrefab; // Префаб толпы
     [SerializeField] private GameObject catapultPrefab; // Префаб катапульты
     [SerializeField] private GameObject trebuchetPrefab; // Префаб требушета
+    [SerializeField] private GameObject mountainPrefab; // Префаб горы
     [SerializeField] private Material player1Material; // Материал для Игрока 1
     [SerializeField] private Material player2Material; // Материал для Игрока 2
 
@@ -38,9 +40,9 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
 
     private void Awake()
     {
-        if (kingPrefab == null || dragonPrefab == null || heavyCavalryPrefab == null)
+        if (kingPrefab == null || dragonPrefab == null || heavyCavalryPrefab == null || mountainPrefab == null)
         {
-            Debug.LogError("PieceFactory: Required prefabs (King, Dragon, HeavyCavalry) not assigned!");
+            Debug.LogError("PieceFactory: Required prefabs (King, Dragon, HeavyCavalry, Mountain) not assigned!");
         }
     }
 
@@ -121,5 +123,23 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
         piece.SetPosition(position);
         Debug.Log($"PieceFactory: Created {type} for Player {(isPlayer1 ? 1 : 2)} at {position} (world: {pieceObject.transform.position}, rotation: {pieceObject.transform.rotation.eulerAngles})");
         return piece;
+    }
+
+    /// <summary>
+    /// Создаёт гору на заданной позиции.
+    /// </summary>
+    /// <param name="position">Позиция в клеточных координатах.</param>
+    /// <returns>Созданная гора или null, если создание не удалось.</returns>
+    public GameObject CreateMountain(Vector3Int position)
+    {
+        if (mountainPrefab == null)
+        {
+            Debug.LogWarning("PieceFactory: Mountain prefab is not assigned!");
+            return null;
+        }
+
+        GameObject mountain = container.InstantiatePrefab(mountainPrefab, new Vector3(position.x, 0.5f, position.z), Quaternion.identity, null);
+        Debug.Log($"PieceFactory: Created mountain at {position} (world: {mountain.transform.position})");
+        return mountain;
     }
 }

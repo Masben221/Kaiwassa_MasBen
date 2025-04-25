@@ -17,6 +17,8 @@ public interface IBoardManager
     bool IsMountain(Vector3Int position); // Проверка, является ли клетка горой
     void PlaceMountains(int mountainsPerSide); // Размещение гор
     bool IsBlocked(Vector3Int position); // Проверка, заблокирована ли клетка
+    void PlaceMountain(Vector3Int position, GameObject mountain); // Размещение горы
+    Dictionary<Vector3Int, Piece> GetAllPieces(); // Получение всех фигур
 }
 
 /// <summary>
@@ -25,7 +27,6 @@ public interface IBoardManager
 public class BoardManager : MonoBehaviour, IBoardManager
 {
     [SerializeField] private GameObject tilePrefab; // Префаб плитки
-    [SerializeField] private GameObject mountainPrefab; // Префаб горы
     [SerializeField] private Material jadeMaterial; // Материал для нефритовых клеток
     [SerializeField] private Material carnelianMaterial; // Материал для сердоликовых клеток
     [SerializeField] private Material lapisMaterial; // Материал для клеток с ляпис-лазурью
@@ -35,14 +36,11 @@ public class BoardManager : MonoBehaviour, IBoardManager
     private readonly Dictionary<Vector3Int, GameObject> mountains = new Dictionary<Vector3Int, GameObject>();
     private int boardSize;
 
-    /// <summary>
-    /// Инициализирует доску заданного размера с клетками в шахматном порядке.
-    /// </summary>
     public void InitializeBoard(int size)
     {
-        if (tilePrefab == null || mountainPrefab == null || jadeMaterial == null || carnelianMaterial == null || lapisMaterial == null)
+        if (tilePrefab == null || jadeMaterial == null || carnelianMaterial == null || lapisMaterial == null)
         {
-            Debug.LogError("Tile prefab, mountain prefab, or materials not assigned in BoardManager!");
+            Debug.LogError("Tile prefab or materials not assigned in BoardManager!");
             return;
         }
 
@@ -56,7 +54,6 @@ public class BoardManager : MonoBehaviour, IBoardManager
                 GameObject tile = Instantiate(tilePrefab, new Vector3(x, 0, z), Quaternion.identity);
                 tiles[position] = tile;
 
-                // Шахматный порядок с тремя материалами
                 Material material;
                 if ((x + z) % 3 == 0)
                     material = jadeMaterial;
@@ -72,67 +69,25 @@ public class BoardManager : MonoBehaviour, IBoardManager
         Debug.Log($"Board initialized with size {size}x{size}");
     }
 
-    /// <summary>
-    /// Размещает указанное количество гор на каждой половине доски.
-    /// </summary>
     public void PlaceMountains(int mountainsPerSide)
     {
-        // Половинная доска для игрока 1 (z = 0–4)
-        List<Vector3Int> player1Positions = new List<Vector3Int>();
-        for (int x = 0; x < boardSize; x++)
-        {
-            for (int z = 0; z < boardSize / 2; z++)
-            {
-                Vector3Int pos = new Vector3Int(x, 0, z);
-                if (!pieces.ContainsKey(pos) && !mountains.ContainsKey(pos))
-                {
-                    player1Positions.Add(pos);
-                }
-            }
-        }
-
-        // Половинная доска для игрока 2 (z = 5–9)
-        List<Vector3Int> player2Positions = new List<Vector3Int>();
-        for (int x = 0; x < boardSize; x++)
-        {
-            for (int z = boardSize / 2; z < boardSize; z++)
-            {
-                Vector3Int pos = new Vector3Int(x, 0, z);
-                if (!pieces.ContainsKey(pos) && !mountains.ContainsKey(pos))
-                {
-                    player2Positions.Add(pos);
-                }
-            }
-        }
-
-        // Размещаем горы для игрока 1
-        mountainsPerSide = Mathf.Min(mountainsPerSide, player1Positions.Count);
-        for (int i = 0; i < mountainsPerSide; i++)
-        {
-            int index = UnityEngine.Random.Range(0, player1Positions.Count);
-            Vector3Int pos = player1Positions[index];
-            GameObject mountain = Instantiate(mountainPrefab, new Vector3(pos.x, 0.5f, pos.z), Quaternion.identity);
-            mountains[pos] = mountain;
-            player1Positions.RemoveAt(index);
-            Debug.Log($"Placed mountain for Player 1 at {pos}");
-        }
-
-        // Размещаем горы для игрока 2
-        mountainsPerSide = Mathf.Min(mountainsPerSide, player2Positions.Count);
-        for (int i = 0; i < mountainsPerSide; i++)
-        {
-            int index = UnityEngine.Random.Range(0, player2Positions.Count);
-            Vector3Int pos = player2Positions[index];
-            GameObject mountain = Instantiate(mountainPrefab, new Vector3(pos.x, 0.5f, pos.z), Quaternion.identity);
-            mountains[pos] = mountain;
-            player2Positions.RemoveAt(index);
-            Debug.Log($"Placed mountain for Player 2 at {pos}");
-        }
+        Debug.LogWarning("BoardManager.PlaceMountains is deprecated. Use PiecePlacementManager.PlaceMountains instead.");
     }
 
     /// <summary>
-    /// Размещает фигуру на доске в указанной позиции.
+    /// Размещает гору на указанной позиции.
     /// </summary>
+    public void PlaceMountain(Vector3Int position, GameObject mountain)
+    {
+        if (IsBlocked(position))
+        {
+            Debug.LogWarning($"BoardManager: Position {position} is already blocked!");
+            return;
+        }
+        mountains[position] = mountain;
+        Debug.Log($"BoardManager: Placed mountain at {position}");
+    }
+
     public void PlacePiece(Piece piece, Vector3Int position)
     {
         if (IsBlocked(position))
@@ -152,13 +107,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
         Debug.Log($"BoardManager: Placed piece {piece.GetType().Name} at {position}");
     }
 
-    /// <summary>
-    /// Перемещает фигуру из одной позиции в другую.
-    /// </summary>
     public void MovePiece(Piece piece, Vector3Int from, Vector3Int to)
     {
-        //Debug.Log($"BoardManager: Attempting to move piece {piece.GetType().Name} from {from} to {to}");
-
         if (!pieces.TryGetValue(from, out Piece existingPiece) || existingPiece != piece)
         {
             Debug.LogWarning($"No piece found at {from} or piece mismatch.");
@@ -186,18 +136,12 @@ public class BoardManager : MonoBehaviour, IBoardManager
         Debug.Log($"BoardManager: Moved piece {piece.GetType().Name} from {from} to {to}");
     }
 
-    /// <summary>
-    /// Возвращает фигуру на указанной позиции или null, если клетка пуста.
-    /// </summary>
     public Piece GetPieceAt(Vector3Int position)
     {
         pieces.TryGetValue(position, out Piece piece);
         return piece;
     }
 
-    /// <summary>
-    /// Удаляет фигуру с указанной позиции.
-    /// </summary>
     public void RemovePiece(Vector3Int position)
     {
         if (pieces.TryGetValue(position, out Piece piece))
@@ -217,11 +161,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
         {
             Debug.LogWarning($"No piece found at {position} to remove.");
         }
-    }    
+    }
 
-    /// <summary>
-    /// Проверяет, находится ли позиция в пределах доски.
-    /// </summary>
     public bool IsWithinBounds(Vector3Int position)
     {
         return position.x >= 0 && position.x < boardSize &&
@@ -229,27 +170,26 @@ public class BoardManager : MonoBehaviour, IBoardManager
                position.y == 0;
     }
 
-    /// <summary>
-    /// Проверяет, занята ли клетка фигурой.
-    /// </summary>
     public bool IsOccupied(Vector3Int position)
     {
         return pieces.ContainsKey(position);
     }
 
-    /// <summary>
-    /// Проверяет, является ли клетка горой.
-    /// </summary>
     public bool IsMountain(Vector3Int position)
     {
         return mountains.ContainsKey(position);
     }
 
-    /// <summary>
-    /// Проверяет, заблокирована ли клетка фигурой или горой.
-    /// </summary>
     public bool IsBlocked(Vector3Int position)
     {
         return IsOccupied(position) || IsMountain(position);
+    }
+
+    /// <summary>
+    /// Возвращает копию словаря всех фигур на доске.
+    /// </summary>
+    public Dictionary<Vector3Int, Piece> GetAllPieces()
+    {
+        return new Dictionary<Vector3Int, Piece>(pieces);
     }
 }

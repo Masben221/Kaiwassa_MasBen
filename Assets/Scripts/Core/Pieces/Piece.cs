@@ -28,9 +28,11 @@ public abstract class Piece : MonoBehaviour
     protected IAttackable attackStrategy; // Стратегия атаки фигуры
     private Vector3Int position; // Позиция фигуры на доске (в клетках)
     private bool isPlayer1; // Принадлежность игроку (true = Игрок 1, false = Игрок 2)
+    [SerializeField] private PieceType type; // Тип фигуры
 
     public Vector3Int Position => position; // Геттер для позиции
     public bool IsPlayer1 => isPlayer1; // Геттер для принадлежности игроку
+    public PieceType Type => type; // Геттер для типа фигуры
 
     private void Awake()
     {

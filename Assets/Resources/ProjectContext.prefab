@@ -78,3 +78,4 @@ MonoBehaviour:
   pieceFactoryPrefab: {fileID: 504612660905381440, guid: 182bfb2004219f74b83a9f80a603d4f5, type: 3}
   gameManagerPrefab: {fileID: 2948161732513643488, guid: c19562fb4c467534c9d468db3420aeff, type: 3}
   inputHandlerPrefab: {fileID: 3257278698643313096, guid: dfbcd8c8ef447a84db8706d1375e6fc6, type: 3}
+  piecePlacementManagerPrefab: {fileID: 3156477064284750635, guid: ab2de7a30530ddf4194762da999bea6a, type: 3}
