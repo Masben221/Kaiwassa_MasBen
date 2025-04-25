@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Класс для фигуры "Раббл" (Ополченцы).
-/// Реализует движение на 1 клетку вперёд и ближнюю атаку на 1 клетку вперёд.
+/// Реализует движение и атаку на 1 клетку по горизонтали (X) и вертикали (Z).
 /// </summary>
 public class RabblePiece : Piece
 {
@@ -20,7 +20,7 @@ public class RabblePiece : Piece
 
 /// <summary>
 /// Стратегия движения для Раббл.
-/// Позволяет двигаться на 1 клетку вперёд (вдоль оси Z в сторону противника).
+/// Позволяет двигаться на 1 клетку по горизонтали (x ± 1) или вертикали (z ± 1).
 /// </summary>
 public class RabbleMoveStrategy : IMovable
 {
@@ -29,13 +29,22 @@ public class RabbleMoveStrategy : IMovable
         List<Vector3Int> moves = new List<Vector3Int>();
         Vector3Int pos = piece.Position;
 
-        // Направление "вперёд" зависит от игрока
-        int dz = piece.IsPlayer1 ? 1 : -1; // Игрок 1: +Z, Игрок 2: -Z
-        Vector3Int newPos = pos + new Vector3Int(0, 0, dz);
-
-        if (board.IsWithinBounds(newPos) && !board.IsBlocked(newPos))
+        // Возможные направления: влево, вправо, вверх, вниз
+        Vector3Int[] directions = new[]
         {
-            moves.Add(newPos); // Добавляем только свободную клетку
+            new Vector3Int(1, 0, 0),  // вправо (x + 1)
+            new Vector3Int(-1, 0, 0), // влево (x - 1)
+            new Vector3Int(0, 0, 1),  // вверх (z + 1)
+            new Vector3Int(0, 0, -1)  // вниз (z - 1)
+        };
+
+        foreach (var dir in directions)
+        {
+            Vector3Int newPos = pos + dir;
+            if (board.IsWithinBounds(newPos) && !board.IsBlocked(newPos))
+            {
+                moves.Add(newPos); // Добавляем только свободную клетку
+            }
         }
 
         return moves;
@@ -44,7 +53,7 @@ public class RabbleMoveStrategy : IMovable
 
 /// <summary>
 /// Стратегия атаки для Раббл.
-/// Реализует ближний бой: атака на 1 клетку вперёд, занимает клетку противника.
+/// Реализует ближний бой: атака на 1 клетку по горизонтали (x ± 1) или вертикали (z ± 1), занимает клетку противника.
 /// </summary>
 public class RabbleAttackStrategy : IAttackable
 {
@@ -53,14 +62,23 @@ public class RabbleAttackStrategy : IAttackable
         List<Vector3Int> attacks = new List<Vector3Int>();
         Vector3Int pos = piece.Position;
 
-        // Направление "вперёд" зависит от игрока
-        int dz = piece.IsPlayer1 ? 1 : -1; // Игрок 1: +Z, Игрок 2: -Z
-        Vector3Int targetPos = pos + new Vector3Int(0, 0, dz);
-
-        if (board.IsWithinBounds(targetPos) && board.IsOccupied(targetPos) &&
-            board.GetPieceAt(targetPos).IsPlayer1 != piece.IsPlayer1 && !board.IsMountain(targetPos))
+        // Возможные направления: влево, вправо, вверх, вниз
+        Vector3Int[] directions = new[]
         {
-            attacks.Add(targetPos);
+            new Vector3Int(1, 0, 0),  // вправо (x + 1)
+            new Vector3Int(-1, 0, 0), // влево (x - 1)
+            new Vector3Int(0, 0, 1),  // вверх (z + 1)
+            new Vector3Int(0, 0, -1)  // вниз (z - 1)
+        };
+
+        foreach (var dir in directions)
+        {
+            Vector3Int targetPos = pos + dir;
+            if (board.IsWithinBounds(targetPos) && board.IsOccupied(targetPos) &&
+                board.GetPieceAt(targetPos).IsPlayer1 != piece.IsPlayer1 && !board.IsMountain(targetPos))
+            {
+                attacks.Add(targetPos);
+            }
         }
 
         return attacks;

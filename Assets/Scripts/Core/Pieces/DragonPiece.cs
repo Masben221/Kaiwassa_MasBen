@@ -57,7 +57,7 @@ public class DragonMoveStrategy : IMovable
 
 /// <summary>
 /// —тратеги€ атаки дл€ дракона.
-/// –еализует дальний бой: атака на 1-3 клетки по пр€мой/диагонали через горы, но не через фигуры.
+/// –еализует дальний бой: атака на 1-3 клетки по пр€мой или диагонали, только по пр€мой видимости (без гор или фигур на пути).
 /// </summary>
 public class DragonAttackStrategy : IAttackable
 {
@@ -80,7 +80,25 @@ public class DragonAttackStrategy : IAttackable
                     {
                         break;
                     }
-                    
+
+                    // ѕровер€ем пр€мую видимость: нет гор или фигур на пути
+                    bool isPathClear = true;
+                    for (int j = 1; j < i; j++)
+                    {
+                        Vector3Int intermediatePos = pos + new Vector3Int(dx * j, 0, dz * j);
+                        if (board.IsBlocked(intermediatePos) || board.IsOccupied(intermediatePos))
+                        {
+                            isPathClear = false;
+                            break;
+                        }
+                    }
+
+                    if (!isPathClear)
+                    {
+                        break; // ѕрерываем, если путь заблокирован
+                    }
+
+                    // ѕровер€ем, есть ли вражеска€ фигура в конечной точке
                     if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1)
                     {
                         attacks.Add(newPos);

@@ -49,7 +49,7 @@ public class UIMainMenu : MonoBehaviour
 
         // Настраиваем слайдер
         mountainsSlider.minValue = 0;
-        mountainsSlider.maxValue = 10;
+        mountainsSlider.maxValue = 8;
         mountainsSlider.wholeNumbers = true;
         mountainsSlider.value = selectedMountains;
         mountainsValueText.text = selectedMountains.ToString();
