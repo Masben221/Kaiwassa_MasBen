@@ -12,6 +12,7 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private GameObject gameManagerPrefab;
     [SerializeField] private GameObject inputHandlerPrefab;
     [SerializeField] private GameObject piecePlacementManagerPrefab;
+    [SerializeField] private GameObject manualPlacementManagerPrefab;
 
     /// <summary>
     /// Метод, вызываемый Zenject для настройки зависимостей.
@@ -45,10 +46,19 @@ public class GameInstaller : MonoInstaller
             .AsSingle()
             .NonLazy();
 
-        // Привязываем IPiecePlacementManager к PiecePlacementManager из префаба
+        // Привязываем IPiecePlacementManager для случайной расстановки
         Container.Bind<IPiecePlacementManager>()
+            .WithId("Random")
             .To<PiecePlacementManager>()
             .FromComponentInNewPrefab(piecePlacementManagerPrefab)
+            .AsSingle()
+            .NonLazy();
+
+        // Привязываем IPiecePlacementManager для ручной расстановки
+        Container.Bind<IPiecePlacementManager>()
+            .WithId("Manual")
+            .To<ManualPlacementManager>()
+            .FromComponentInNewPrefab(manualPlacementManagerPrefab)
             .AsSingle()
             .NonLazy();
 

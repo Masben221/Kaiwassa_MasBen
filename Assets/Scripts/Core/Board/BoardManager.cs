@@ -19,6 +19,7 @@ public interface IBoardManager
     bool IsBlocked(Vector3Int position); // Проверка, заблокирована ли клетка
     void PlaceMountain(Vector3Int position, GameObject mountain); // Размещение горы
     Dictionary<Vector3Int, Piece> GetAllPieces(); // Получение всех фигур
+    GameObject GetTileAt(Vector3Int position);
 }
 
 /// <summary>
@@ -191,5 +192,16 @@ public class BoardManager : MonoBehaviour, IBoardManager
     public Dictionary<Vector3Int, Piece> GetAllPieces()
     {
         return new Dictionary<Vector3Int, Piece>(pieces);
+    }
+
+    /// <summary>
+    /// Возвращает объект плитки по указанной позиции.
+    /// </summary>
+    /// <param name="position">Позиция на доске.</param>
+    /// <returns>GameObject плитки или null, если плитка не найдена.</returns>
+    public GameObject GetTileAt(Vector3Int position)
+    {
+        tiles.TryGetValue(position, out GameObject tile);
+        return tile;
     }
 }

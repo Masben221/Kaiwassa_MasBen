@@ -7,7 +7,7 @@ using System;
 /// </summary>
 public interface IGameManager
 {
-    void StartGame(int mountainsPerSide); // Инициализация игры с числом гор
+    void StartGame(int mountainsPerSide, bool isRandomPlacement); // Инициализация игры с числом гор и режимом
     void MakeMove(Piece piece, Vector3Int target); // Выполнение хода или атаки
     bool IsPlayer1Turn { get; } // Чей ход
     event Action<bool> OnTurnChanged; // Событие смены хода
@@ -18,8 +18,9 @@ public interface IGameManager
 /// </summary>
 public class GameManager : MonoBehaviour, IGameManager
 {
+    [Inject(Id = "Random")] private IPiecePlacementManager randomPlacementManager; // Менеджер случайной расстановки
+    [Inject(Id = "Manual")] private IPiecePlacementManager manualPlacementManager; // Менеджер ручной расстановки
     [Inject] private IBoardManager boardManager; // Интерфейс доски
-    [Inject] private IPiecePlacementManager piecePlacementManager; // Интерфейс расстановки
 
     private bool isPlayer1Turn = true; // Текущий ход (true = Игрок 1)
     public bool IsPlayer1Turn => isPlayer1Turn; // Геттер для текущего хода
@@ -33,17 +34,21 @@ public class GameManager : MonoBehaviour, IGameManager
     /// <summary>
     /// Инициализирует игру: создаёт доску 10x10, размещает горы и фигуры.
     /// </summary>
-    public void StartGame(int mountainsPerSide)
+    /// <param name="mountainsPerSide">Количество гор на сторону.</param>
+    /// <param name="isRandomPlacement">true, если используется случайная расстановка.</param>
+    public void StartGame(int mountainsPerSide, bool isRandomPlacement)
     {
-        Debug.Log($"GameManager: StartGame called with {mountainsPerSide} mountains per side.");
+        Debug.Log($"GameManager: StartGame called with {mountainsPerSide} mountains per side, RandomPlacement: {isRandomPlacement}");
         boardManager.InitializeBoard(10);
 
+        var placementManager = isRandomPlacement ? randomPlacementManager : manualPlacementManager;
+
         Debug.Log("GameManager: Placing mountains...");
-        piecePlacementManager.PlaceMountains(mountainsPerSide);
+        placementManager.PlaceMountains(mountainsPerSide);
 
         Debug.Log("GameManager: Placing pieces...");
-        piecePlacementManager.PlacePiecesForPlayer(true); // Игрок 1
-        piecePlacementManager.PlacePiecesForPlayer(false); // Игрок 2
+        placementManager.PlacePiecesForPlayer(true); // Игрок 1
+        placementManager.PlacePiecesForPlayer(false); // Игрок 2
 
         Debug.Log("GameManager: Game started successfully!");
         OnTurnChanged?.Invoke(isPlayer1Turn);

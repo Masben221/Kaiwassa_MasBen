@@ -5,12 +5,19 @@ using System.Linq;
 using Zenject;
 
 /// <summary>
-/// Интерфейс для управления расстановкой гор и фигур.
+/// Интерфейс для управления размещением фигур и гор на доске.
 /// </summary>
 public interface IPiecePlacementManager
 {
-    void PlaceMountains(int mountainsPerSide);
-    void PlacePiecesForPlayer(bool isPlayer1);
+    void PlaceMountains(int mountainsPerSide); // Размещение гор
+    void PlacePiecesForPlayer(bool isPlayer1); // Размещение фигур для игрока
+    void Initialize(int mountainsPerSide); // Инициализация менеджера
+    bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain); // Проверка возможности размещения
+    bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain); // Размещение фигуры или горы
+    int GetRemainingCount(bool isPlayer1, PieceType type, bool isMountain); // Получение количества оставшихся элементов
+    bool HasCompletedPlacement(bool isPlayer1); // Проверка завершения расстановки
+    bool IsKingNotPlaced(bool isPlayer1); // Проверка, размещён ли король
+    int GetMountainsPerSide { get; } // Количество гор на сторону
 }
 
 /// <summary>
@@ -547,5 +554,57 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
                 return pair.Key;
         }
         return null;
+    }
+
+    // Заглушки для новых методов интерфейса (не используются в автоматической расстановке)
+    public void Initialize(int mountainsPerSide)
+    {
+        // Заглушка: не требуется для автоматической расстановки
+        Debug.Log("PiecePlacementManager: Initialize not implemented for automatic placement.");
+    }
+
+    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain)
+    {
+        // Заглушка: не используется
+        Debug.LogWarning("PiecePlacementManager: CanPlace not implemented.");
+        return false;
+    }
+
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain)
+    {
+        // Заглушка: не используется
+        Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain not implemented.");
+        return false;
+    }
+
+    public int GetRemainingCount(bool isPlayer1, PieceType type, bool isMountain)
+    {
+        // Заглушка: не используется
+        Debug.LogWarning("PiecePlacementManager: GetRemainingCount not implemented.");
+        return 0;
+    }
+
+    public bool HasCompletedPlacement(bool isPlayer1)
+    {
+        // Заглушка: не используется
+        Debug.LogWarning("PiecePlacementManager: HasCompletedPlacement not implemented.");
+        return true; // Предполагаем, что автоматическая расстановка завершена
+    }
+
+    public bool IsKingNotPlaced(bool isPlayer1)
+    {
+        // Заглушка: не используется
+        Debug.LogWarning("PiecePlacementManager: IsKingNotPlaced not implemented.");
+        return false;
+    }
+
+    public int GetMountainsPerSide
+    {
+        get
+        {
+            // Заглушка: не используется
+            Debug.LogWarning("PiecePlacementManager: GetMountainsPerSide not implemented.");
+            return 0;
+        }
     }
 }
