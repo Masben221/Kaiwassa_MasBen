@@ -7,7 +7,7 @@ using Zenject;
 public interface IPieceFactory
 {
     Piece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position);
-    GameObject CreateMountain(Vector3Int position);
+    Piece CreateMountain(Vector3Int position); // »зменено на Piece
 }
 
 /// <summary>
@@ -89,6 +89,9 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
             case PieceType.Trebuchet:
                 prefab = trebuchetPrefab;
                 break;
+            case PieceType.Mountain:
+                prefab = mountainPrefab;
+                break;
             default:
                 Debug.LogError($"PieceFactory: Unknown piece type {type}");
                 return null;
@@ -100,8 +103,8 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
             return null;
         }
 
-        // ѕоворот дл€ второго игрока (180 градусов по Y)
-        Quaternion rotation = isPlayer1 ? Quaternion.identity : Quaternion.Euler(0, 180, 0);
+        // ѕоворот дл€ второго игрока (180 градусов по Y), дл€ гор поворот не нужен
+        Quaternion rotation = (type != PieceType.Mountain && !isPlayer1) ? Quaternion.Euler(0, 180, 0) : Quaternion.identity;
         GameObject pieceObject = container.InstantiatePrefab(prefab, new Vector3(position.x, 0.5f, position.z), rotation, null);
         Piece piece = pieceObject.GetComponent<Piece>();
         if (piece == null)
@@ -130,16 +133,8 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
     /// </summary>
     /// <param name="position">ѕозици€ в клеточных координатах.</param>
     /// <returns>—озданна€ гора или null, если создание не удалось.</returns>
-    public GameObject CreateMountain(Vector3Int position)
+    public Piece CreateMountain(Vector3Int position)
     {
-        if (mountainPrefab == null)
-        {
-            Debug.LogWarning("PieceFactory: Mountain prefab is not assigned!");
-            return null;
-        }
-
-        GameObject mountain = container.InstantiatePrefab(mountainPrefab, new Vector3(position.x, 0.5f, position.z), Quaternion.identity, null);
-        Debug.Log($"PieceFactory: Created mountain at {position} (world: {mountain.transform.position})");
-        return mountain;
+        return CreatePiece(PieceType.Mountain, true, position); // »грок 1, так как горы нейтральны
     }
 }

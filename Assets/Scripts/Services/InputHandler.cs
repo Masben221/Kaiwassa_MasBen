@@ -2,10 +2,14 @@ using UnityEngine;
 using Zenject;
 using System.Collections.Generic;
 
+/// <summary>
+/// Обрабатывает ввод игрока (мышь или тачскрин) для выбора фигур и ходов.
+/// Во время фазы расстановки позволяет перетаскивать размещённые фигуры/горы.
+/// </summary>
 public class InputHandler : MonoBehaviour
 {
     [Inject] private IGameManager gameManager;
-    [Inject] private IBoardManager boardManager;
+    [Inject] private IBoardManager boardManager;    
 
     [SerializeField] private GameObject moveMarkerPrefab;
     [SerializeField] private GameObject attackMarkerPrefab;
@@ -37,15 +41,13 @@ public class InputHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Обрабатывает клик мыши:
+    /// - Во время расстановки: запускает drag-and-drop для фигур/гор.
+    /// - В игре: выбирает фигуры или выполняет ходы/атаки.
+    /// </summary>
     private void HandleClick()
     {
-        // Блокируем ввод во время фазы расстановки
-        if (gameManager.IsInPlacementPhase)
-        {
-            Debug.Log("InputHandler: Input blocked during placement phase.");
-            return;
-        }
-
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
@@ -57,6 +59,30 @@ public class InputHandler : MonoBehaviour
 
             Piece clickedPiece = boardManager.GetPieceAt(clickedPos);
 
+            if (gameManager.IsInPlacementPhase)
+            {
+                // Во время фазы расстановки обрабатываем клики по фигурам/горам
+                if (clickedPiece != null)
+                {
+                    var dragHandler = clickedPiece.GetComponent<BoardPieceDragHandler>();
+                    if (dragHandler != null)
+                    {
+                        dragHandler.StartDragging();
+                        Debug.Log($"InputHandler: Started dragging piece {clickedPiece.Type} at {clickedPos}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"InputHandler: No BoardPieceDragHandler found on piece at {clickedPos}");
+                    }
+                }
+                else
+                {
+                    Debug.Log("InputHandler: Clicked on empty tile during placement phase, ignoring.");
+                }
+                return;
+            }
+
+            // Логика для игровой фазы
             if (selectedPiece != null)
             {
                 var validMoves = selectedPiece.GetValidMoves(boardManager);

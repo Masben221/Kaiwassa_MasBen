@@ -6,34 +6,34 @@ using System.Collections.Generic;
 /// </summary>
 public interface IBoardManager
 {
-    void InitializeBoard(int size); // Инициализация доски
-    void PlacePiece(Piece piece, Vector3Int position); // Размещение фигуры
-    Piece GetPieceAt(Vector3Int position); // Получение фигуры по позиции
-    void RemovePiece(Vector3Int position); // Удаление фигуры
-    void MovePiece(Piece piece, Vector3Int from, Vector3Int to); // Перемещение фигуры
-    bool IsWithinBounds(Vector3Int position); // Проверка границ
-    bool IsOccupied(Vector3Int position); // Проверка занятости клетки фигурами
-    bool IsMountain(Vector3Int position); // Проверка, является ли клетка горой
-    void PlaceMountains(int mountainsPerSide); // Размещение гор
-    bool IsBlocked(Vector3Int position); // Проверка, заблокирована ли клетка
-    void PlaceMountain(Vector3Int position, GameObject mountain); // Размещение горы
-    Dictionary<Vector3Int, Piece> GetAllPieces(); // Получение всех фигур
+    void InitializeBoard(int size);
+    void PlacePiece(Piece piece, Vector3Int position);
+    Piece GetPieceAt(Vector3Int position);
+    void RemovePiece(Vector3Int position);
+    void MovePiece(Piece piece, Vector3Int from, Vector3Int to);
+    bool IsWithinBounds(Vector3Int position);
+    bool IsOccupied(Vector3Int position);
+    bool IsMountain(Vector3Int position); // Оставлено для совместимости
+    void PlaceMountains(int mountainsPerSide); // Оставлено для совместимости
+    bool IsBlocked(Vector3Int position);
+    void PlaceMountain(Vector3Int position, GameObject mountain); // Оставлено для совместимости
+    void RemoveMountain(Vector3Int position); // Оставлено для совместимости
+    Dictionary<Vector3Int, Piece> GetAllPieces();
     GameObject GetTileAt(Vector3Int position);
 }
 
 /// <summary>
-/// Управляет игровой доской: размещение фигур, гор, состояние клеток.
+/// Управляет игровой доской: размещение фигур и гор, состояние клеток.
 /// </summary>
 public class BoardManager : MonoBehaviour, IBoardManager
 {
-    [SerializeField] private GameObject tilePrefab; // Префаб плитки
-    [SerializeField] private Material jadeMaterial; // Материал для нефритовых клеток
-    [SerializeField] private Material carnelianMaterial; // Материал для сердоликовых клеток
-    [SerializeField] private Material lapisMaterial; // Материал для клеток с ляпис-лазурью
+    [SerializeField] private GameObject tilePrefab;
+    [SerializeField] private Material jadeMaterial;
+    [SerializeField] private Material carnelianMaterial;
+    [SerializeField] private Material lapisMaterial;
 
     private readonly Dictionary<Vector3Int, Piece> pieces = new Dictionary<Vector3Int, Piece>();
     private readonly Dictionary<Vector3Int, GameObject> tiles = new Dictionary<Vector3Int, GameObject>();
-    private readonly Dictionary<Vector3Int, GameObject> mountains = new Dictionary<Vector3Int, GameObject>();
     private int boardSize;
 
     public void InitializeBoard(int size)
@@ -74,25 +74,27 @@ public class BoardManager : MonoBehaviour, IBoardManager
         Debug.LogWarning("BoardManager.PlaceMountains is deprecated. Use PiecePlacementManager.PlaceMountains instead.");
     }
 
-    /// <summary>
-    /// Размещает гору на указанной позиции.
-    /// </summary>
     public void PlaceMountain(Vector3Int position, GameObject mountain)
     {
-        if (IsBlocked(position))
+        Piece piece = mountain.GetComponent<Piece>();
+        if (piece == null || piece.Type != PieceType.Mountain)
         {
-            Debug.LogWarning($"BoardManager: Position {position} is already blocked!");
+            Debug.LogWarning($"BoardManager: Invalid mountain at {position}, must have Piece component with Type=Mountain");
             return;
         }
-        mountains[position] = mountain;
-        Debug.Log($"BoardManager: Placed mountain at {position}");
+        PlacePiece(piece, position);
+    }
+
+    public void RemoveMountain(Vector3Int position)
+    {
+        RemovePiece(position); // Горы теперь в pieces
     }
 
     public void PlacePiece(Piece piece, Vector3Int position)
     {
-        if (IsBlocked(position))
+        if (IsOccupied(position))
         {
-            Debug.LogWarning($"Position {position} is blocked by a piece or mountain!");
+            Debug.LogWarning($"Position {position} is already occupied!");
             return;
         }
 
@@ -117,9 +119,9 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
         pieces.Remove(from);
 
-        if (IsMountain(to))
+        if (IsOccupied(to))
         {
-            Debug.LogWarning($"Position {to} is blocked by a mountain!");
+            Debug.LogWarning($"Position {to} is already occupied!");
             pieces[from] = piece;
             piece.SetPosition(from);
             return;
@@ -177,27 +179,19 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool IsMountain(Vector3Int position)
     {
-        return mountains.ContainsKey(position);
+        return pieces.TryGetValue(position, out Piece piece) && piece.Type == PieceType.Mountain;
     }
 
     public bool IsBlocked(Vector3Int position)
     {
-        return IsOccupied(position) || IsMountain(position);
+        return IsOccupied(position); // Горы теперь в pieces
     }
 
-    /// <summary>
-    /// Возвращает копию словаря всех фигур на доске.
-    /// </summary>
     public Dictionary<Vector3Int, Piece> GetAllPieces()
     {
         return new Dictionary<Vector3Int, Piece>(pieces);
     }
 
-    /// <summary>
-    /// Возвращает объект плитки по указанной позиции.
-    /// </summary>
-    /// <param name="position">Позиция на доске.</param>
-    /// <returns>GameObject плитки или null, если плитка не найдена.</returns>
     public GameObject GetTileAt(Vector3Int position)
     {
         tiles.TryGetValue(position, out GameObject tile);

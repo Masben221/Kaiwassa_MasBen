@@ -68,6 +68,7 @@
     <Compile Include="Assets\Scripts\Core\Pieces\TrebuchetPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Board\PiecePlacementManager.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\CatapultPiece.cs" />
+    <Compile Include="Assets\Scripts\Core\Board\BoardPieceDragHandler.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\KingPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\SpearmanPiece.cs" />
     <Compile Include="Assets\Scripts\Services\InputHandler.cs" />
@@ -80,7 +81,7 @@
     <Compile Include="Assets\Scripts\Core\Pieces\Piece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\DragonPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\PieceFactory.cs" />
-    <Compile Include="Assets\Scripts\Core\Board\PieceDragHandlerExisting.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\MountainPiece.cs" />
     <Compile Include="Assets\Scripts\Services\CameraController.cs" />
     <Compile Include="Assets\Scripts\Services\LightController.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\CrossbowmanPiece.cs" />

@@ -7,29 +7,26 @@ using DG.Tweening;
 
 /// <summary>
 /// Управляет UI для ручной расстановки фигур и гор.
-/// Реализует drag-and-drop для размещения на доске.
+/// Реализует drag-and-drop для размещения из панели и поддержку перетаскивания размещённых фигур/гор.
 /// </summary>
 public class UIManualPlacement : MonoBehaviour
 {
-    [Inject] private IGameManager gameManager; // Интерфейс для управления игрой
-    [Inject] private IBoardManager boardManager; // Интерфейс для управления доской
-    [Inject(Id = "Manual")] private IPiecePlacementManager placementManager; // Менеджер ручной расстановки
-    [Inject] private IPieceFactory pieceFactory; // Фабрика для создания фигур и гор
+    [Inject] private IGameManager gameManager;
+    [Inject] private IBoardManager boardManager;
+    [Inject(Id = "Manual")] private IPiecePlacementManager placementManager;
+    [Inject] private IPieceFactory pieceFactory;
 
-    [SerializeField] private GameObject placementPanel; // Основная панель UI
-    [SerializeField] private RectTransform player1Panel; // Панель игрока 1 (слева)
-    [SerializeField] private RectTransform player2Panel; // Панель игрока 2 (справа)
-    [SerializeField] private Button player1FinishButton; // Кнопка завершения для игрока 1
-    [SerializeField] private Button player2FinishButton; // Кнопка завершения для игрока 2
-    [SerializeField] private Material highlightMaterial; // Материал для подсветки клеток (зелёный)
-    [SerializeField] private Font buttonFont; // Шрифт для текста кнопок (опционально)
+    [SerializeField] private GameObject placementPanel;
+    [SerializeField] private RectTransform player1Panel;
+    [SerializeField] private RectTransform player2Panel;
+    [SerializeField] private Button player1FinishButton;
+    [SerializeField] private Button player2FinishButton;
+    [SerializeField] private Material highlightMaterial;
+    [SerializeField] private Font buttonFont;
 
-    private bool isPlayer1Turn = true; // Текущий игрок (начинает игрок 1)
-    private Vector3Int? highlightedTile; // Текущая подсвеченная клетка
-    private Dictionary<Vector3Int, Material> originalTileMaterials = new Dictionary<Vector3Int, Material>(); // Исходные материалы плиток
-
-    // Публичное свойство для доступа к текущему игроку
-    public bool IsPlayer1Turn => isPlayer1Turn;
+    private bool isPlayer1Turn = true;
+    private Vector3Int? highlightedTile;
+    private Dictionary<Vector3Int, Material> originalTileMaterials = new Dictionary<Vector3Int, Material>();
 
     private void Awake()
     {
@@ -75,10 +72,11 @@ public class UIManualPlacement : MonoBehaviour
     private void CreatePieceButtons(RectTransform panel, bool isPlayer1)
     {
         float yOffset = -20f;
-        CreatePieceButton(panel, isPlayer1, null, true, ref yOffset);
+        CreatePieceButton(panel, isPlayer1, null, true, ref yOffset); // Горы
         foreach (PieceType type in System.Enum.GetValues(typeof(PieceType)))
         {
-            CreatePieceButton(panel, isPlayer1, type, false, ref yOffset);
+            if (type != PieceType.Mountain)
+                CreatePieceButton(panel, isPlayer1, type, false, ref yOffset);
         }
     }
 
@@ -131,10 +129,6 @@ public class UIManualPlacement : MonoBehaviour
             renderer.material = highlightMaterial;
             Debug.Log($"UIManualPlacement: Highlighted tile at {position}");
         }
-        else
-        {
-            Debug.LogWarning($"UIManualPlacement: No tile found at {position}");
-        }
     }
 
     public void ClearHighlight()
@@ -152,23 +146,25 @@ public class UIManualPlacement : MonoBehaviour
         }
     }
 
-    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType? type, bool isMountain)
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain)
     {
-        bool success = placementManager.PlacePieceOrMountain(isPlayer1, position, type ?? PieceType.King, isMountain);
+        bool success = placementManager.PlacePieceOrMountain(isPlayer1, position, type, isMountain);
         if (success)
         {
+            var piece = boardManager.GetPieceAt(position);
+            if (piece != null)
+            {
+                var dragHandler = piece.gameObject.AddComponent<BoardPieceDragHandler>();
+                dragHandler.Initialize();
+            }
             UpdatePlayerPanels();
             UpdateFinishButtons();
-            Debug.Log($"UIManualPlacement: Placed {(isMountain ? "mountain" : type.ToString())} at {position} for Player {(isPlayer1 ? 1 : 2)}");
-        }
-        else
-        {
-            Debug.LogWarning($"UIManualPlacement: Failed to place {(isMountain ? "mountain" : type.ToString())} at {position}");
+            Debug.Log($"UIManualPlacement: Placed {(isMountain ? "mountain" : type.ToString())} at {position}");
         }
         return success;
     }
 
-    private void UpdatePlayerPanels()
+    public void UpdatePlayerPanels()
     {
         SetupPlayerPanels();
     }
@@ -177,39 +173,36 @@ public class UIManualPlacement : MonoBehaviour
     {
         player1FinishButton.interactable = isPlayer1Turn && placementManager.HasCompletedPlacement(true);
         player2FinishButton.interactable = !isPlayer1Turn && placementManager.HasCompletedPlacement(false);
-        Debug.Log($"UIManualPlacement: Finish buttons updated. Player1: {player1FinishButton.interactable}, Player2: {player2FinishButton.interactable}");
     }
 
     private void OnPlayer1Finish()
     {
         if (!placementManager.HasCompletedPlacement(true))
         {
-            Debug.LogWarning("UIManualPlacement: Player 1 must place all pieces and mountains before finishing!");
+            Debug.LogWarning("UIManualPlacement: Player 1 must place all pieces and mountains!");
             return;
         }
 
         isPlayer1Turn = false;
         player1FinishButton.interactable = false;
         player2FinishButton.interactable = placementManager.HasCompletedPlacement(false);
-        Debug.Log("UIManualPlacement: Player 1 finished placement.");
     }
 
     private void OnPlayer2Finish()
     {
         if (!placementManager.HasCompletedPlacement(false))
         {
-            Debug.LogWarning("UIManualPlacement: Player 2 must place all pieces and mountains before finishing!");
+            Debug.LogWarning("UIManualPlacement: Player 2 must place all pieces and mountains!");
             return;
         }
 
         placementPanel.SetActive(false);
         gameManager.StartGame(placementManager.GetMountainsPerSide, false);
-        Debug.Log("UIManualPlacement: Player 2 finished placement, starting game.");
     }
 }
 
 /// <summary>
-/// Обработчик drag-and-drop для новых фигур и гор.
+/// Обработчик drag-and-drop для фигур и гор из UI панели.
 /// </summary>
 public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
@@ -229,33 +222,21 @@ public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
         this.isMountain = isMountain;
         this.uiManager = uiManager;
         this.pieceFactory = pieceFactory;
-        Debug.Log($"PieceDragHandler: Initialized for {(isMountain ? "mountain" : type.ToString())} for Player {(isPlayer1 ? 1 : 2)}");
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (isPlayer1 != uiManager.IsPlayer1Turn)
-        {
-            Debug.LogWarning($"PieceDragHandler: Cannot drag, it's {(isPlayer1 ? "Player 1" : "Player 2")}'s turn!");
-            return;
-        }
-
         if (isMountain)
         {
-            var mountainPiece = pieceFactory.CreateMountain(Vector3Int.zero);
-            previewObject = mountainPiece != null ? mountainPiece.gameObject : null;
+            previewObject = pieceFactory.CreateMountain(Vector3Int.zero).gameObject;
         }
-        else
+        else if (type.HasValue)
         {
-            var piece = pieceFactory.CreatePiece(type ?? PieceType.King, isPlayer1, Vector3Int.zero);
-            previewObject = piece != null ? piece.gameObject : null;
+            previewObject = pieceFactory.CreatePiece(type.Value, isPlayer1, Vector3Int.zero).gameObject;
         }
 
         if (previewObject != null)
         {
-            var collider = previewObject.GetComponent<Collider>();
-            if (collider != null) collider.enabled = false;
-
             var renderer = previewObject.GetComponentInChildren<Renderer>();
             if (renderer != null)
             {
@@ -274,27 +255,18 @@ public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
                 transparentMat.color = color;
                 renderer.material = transparentMat;
             }
-            else
-            {
-                Debug.LogWarning($"PieceDragHandler: No Renderer found on preview for {(isMountain ? "mountain" : type.ToString())}");
-            }
 
             previewObject.transform.DORotate(new Vector3(0, 360, 0), 2f, RotateMode.FastBeyond360)
                 .SetLoops(-1, LoopType.Incremental)
                 .SetEase(Ease.Linear);
-
-            Debug.Log($"PieceDragHandler: Created preview for {(isMountain ? "mountain" : type.ToString())}");
         }
-        else
-        {
-            Debug.LogWarning($"PieceDragHandler: Failed to create preview for {(isMountain ? "mountain" : type.ToString())}");
-        }
-
-        Debug.Log($"PieceDragHandler: Started dragging {(isMountain ? "mountain" : type.ToString())} for Player {(isPlayer1 ? 1 : 2)}");
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (previewObject == null)
+            return;
+
         Ray ray = Camera.main.ScreenPointToRay(eventData.position);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
@@ -303,67 +275,39 @@ public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
                 0,
                 Mathf.FloorToInt(hit.point.z + 0.5f)
             );
+
             uiManager.HighlightTile(position, isPlayer1, isMountain);
             lastHighlighted = position;
 
-            if (previewObject != null)
-            {
-                previewObject.transform.position = new Vector3(position.x, 0.5f, position.z);
-            }
+            previewObject.transform.position = new Vector3(position.x, 0.5f, position.z);
         }
         else
         {
             uiManager.ClearHighlight();
             lastHighlighted = null;
 
-            if (previewObject != null && Camera.main != null)
+            Ray cursorRay = Camera.main.ScreenPointToRay(eventData.position);
+            Plane boardPlane = new Plane(Vector3.up, new Vector3(0, 0.5f, 0));
+            if (boardPlane.Raycast(cursorRay, out float distance))
             {
-                Ray cursorRay = Camera.main.ScreenPointToRay(eventData.position);
-                Plane boardPlane = new Plane(Vector3.up, new Vector3(0, 0.5f, 0));
-                if (boardPlane.Raycast(cursorRay, out float distance))
-                {
-                    Vector3 worldPoint = cursorRay.GetPoint(distance);
-                    previewObject.transform.position = new Vector3(worldPoint.x, 0.5f, worldPoint.z);
-                }
-                else
-                {
-                    Vector3 screenPoint = new Vector3(eventData.position.x, eventData.position.y, 10f);
-                    Vector3 fallbackPoint = Camera.main.ScreenToWorldPoint(screenPoint);
-                    previewObject.transform.position = new Vector3(fallbackPoint.x, 0.5f, fallbackPoint.z);
-                }
+                Vector3 worldPoint = cursorRay.GetPoint(distance);
+                previewObject.transform.position = new Vector3(worldPoint.x, 0.5f, worldPoint.z);
             }
-            Debug.Log("PieceDragHandler: Raycast missed, no tile hit.");
         }
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        bool placed = false;
-        if (lastHighlighted.HasValue)
-        {
-            placed = uiManager.PlacePieceOrMountain(isPlayer1, lastHighlighted.Value, type, isMountain);
-            if (placed)
-            {
-                Debug.Log($"PieceDragHandler: Dropped {(isMountain ? "mountain" : type.ToString())} at {lastHighlighted.Value}");
-            }
-        }
-
         if (previewObject != null)
         {
             previewObject.transform.DOKill();
-            var renderer = previewObject.GetComponentInChildren<Renderer>();
-            if (renderer != null && originalMaterial != null)
-            {
-                renderer.material = originalMaterial;
-            }
             Destroy(previewObject);
-            previewObject = null;
-            originalMaterial = null;
         }
 
-        if (!placed)
+        if (lastHighlighted.HasValue)
         {
-            Debug.Log("PieceDragHandler: Drop failed, no tile highlighted or placement invalid.");
+            PieceType targetType = isMountain ? PieceType.Mountain : type.Value;
+            uiManager.PlacePieceOrMountain(isPlayer1, lastHighlighted.Value, targetType, isMountain);
         }
 
         uiManager.ClearHighlight();

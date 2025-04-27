@@ -15,11 +15,12 @@ public enum PieceType
     Crossbowman,
     Rabble,
     Catapult,
-    Trebuchet
+    Trebuchet,
+    Mountain // Добавлено для гор
 }
 
 /// <summary>
-/// Абстрактный базовый класс для всех игровых фигур.
+/// Абстрактный базовый класс для всех игровых фигур и гор.
 /// Отвечает за позиционирование, инициализацию и делегирование движения/атаки через стратегии.
 /// </summary>
 public abstract class Piece : MonoBehaviour
@@ -41,7 +42,7 @@ public abstract class Piece : MonoBehaviour
 
     /// <summary>
     /// Абстрактный метод для настройки стратегий движения и атаки.
-    /// Реализуется в дочерних классах (KingPiece, DragonPiece и т.д.).
+    /// Реализуется в дочерних классах (KingPiece, DragonPiece, MountainPiece и т.д.).
     /// </summary>
     protected abstract void SetupStrategies();
 
