@@ -2,47 +2,26 @@ using UnityEngine;
 using Zenject;
 using System.Collections.Generic;
 
-/// <summary>
-/// Обрабатывает ввод игрока (мышь или тачскрин) для выбора фигур и ходов.
-/// Блокирует ввод во время анимаций.
-/// </summary>
 public class InputHandler : MonoBehaviour
 {
-    // Зависимости, инжектируемые через Zenject
     [Inject] private IGameManager gameManager;
     [Inject] private IBoardManager boardManager;
 
-    // Префабы для маркеров клеток
-    [SerializeField] private GameObject moveMarkerPrefab; // Для ходов
-    [SerializeField] private GameObject attackMarkerPrefab; // Для атак
+    [SerializeField] private GameObject moveMarkerPrefab;
+    [SerializeField] private GameObject attackMarkerPrefab;
 
-    // Текущая выбранная фигура
     private Piece selectedPiece;
-
-    // Список текущих маркеров на доске
     private List<GameObject> currentMarkers = new List<GameObject>();
-
-    // Материал для подсветки выбранной фигуры
     [SerializeField] private Material highlightMaterial;
-
-    // Исходной материал выбранной фигуры (для восстановления)
     private Material originalMaterial;
-
-    // Флаг для блокировки ввода во время анимации
     private bool isInputBlocked;
 
-    /// <summary>
-    /// Инициализация: подписка на события анимации.
-    /// </summary>
     private void Awake()
     {
         PieceAnimator.OnAnimationStarted += BlockInput;
         PieceAnimator.OnAnimationFinished += UnblockInput;
     }
 
-    /// <summary>
-    /// Очистка: отписка от событий анимации.
-    /// </summary>
     private void OnDestroy()
     {
         PieceAnimator.OnAnimationStarted -= BlockInput;
@@ -50,60 +29,50 @@ public class InputHandler : MonoBehaviour
         ClearSelection();
     }
 
-    /// <summary>
-    /// Обрабатывает ввод игрока в каждом кадре, если ввод не заблокирован.
-    /// </summary>
     private void Update()
     {
-        // Проверяем клик мыши или касание, только если ввод не заблокирован
         if (!isInputBlocked && Input.GetMouseButtonDown(0))
         {
             HandleClick();
         }
     }
 
-    /// <summary>
-    /// Обрабатывает клик: выбирает фигуру, выполняет ход/атаку или отменяет выделение.
-    /// </summary>
     private void HandleClick()
     {
-        // Создаём луч из позиции мыши/касания
+        // Блокируем ввод во время фазы расстановки
+        if (gameManager.IsInPlacementPhase)
+        {
+            Debug.Log("InputHandler: Input blocked during placement phase.");
+            return;
+        }
+
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
-            // Получаем 3D-позицию клика, учитывая центр клетки
             Vector3Int clickedPos = new Vector3Int(
                 Mathf.FloorToInt(hit.point.x + 0.5f),
                 0,
                 Mathf.FloorToInt(hit.point.z + 0.5f)
             );
 
-            // Проверяем, есть ли фигура на клетке
             Piece clickedPiece = boardManager.GetPieceAt(clickedPos);
 
-            // Если фигура выбрана
             if (selectedPiece != null)
             {
-                // Проверяем, является ли клетка допустимым ходом или атакой
                 var validMoves = selectedPiece.GetValidMoves(boardManager);
                 var attackMoves = selectedPiece.GetAttackMoves(boardManager);
 
                 if (validMoves.Contains(clickedPos) || attackMoves.Contains(clickedPos))
                 {
-                    // Выполняем ход или атаку
                     gameManager.MakeMove(selectedPiece, clickedPos);
                 }
 
-                // Сбрасываем выделение
                 ClearSelection();
             }
-            // Если кликнули на фигуру текущего игрока
             else if (clickedPiece != null && clickedPiece.IsPlayer1 == gameManager.IsPlayer1Turn)
             {
-                // Выбираем фигуру
                 SelectPiece(clickedPiece);
             }
-            // Если кликнули вне доски, отменяем выделение
             else if (!boardManager.IsWithinBounds(clickedPos))
             {
                 ClearSelection();
@@ -111,19 +80,14 @@ public class InputHandler : MonoBehaviour
         }
         else
         {
-            // Если кликнули вне объектов, отменяем выделение
             ClearSelection();
         }
     }
 
-    /// <summary>
-    /// Выбирает фигуру и подсвечивает клетки для ходов и атак.
-    /// </summary>
     private void SelectPiece(Piece piece)
     {
         selectedPiece = piece;
 
-        // Подсвечиваем фигуру
         Renderer renderer = piece.GetComponentInChildren<Renderer>();
         if (renderer != null && highlightMaterial != null)
         {
@@ -131,7 +95,6 @@ public class InputHandler : MonoBehaviour
             renderer.material = highlightMaterial;
         }
 
-        // Показываем маркеры для доступных ходов
         var validMoves = piece.GetValidMoves(boardManager);
         foreach (var move in validMoves)
         {
@@ -143,7 +106,6 @@ public class InputHandler : MonoBehaviour
             currentMarkers.Add(marker);
         }
 
-        // Показываем маркеры для доступных атак
         var attackMoves = piece.GetAttackMoves(boardManager);
         foreach (var attack in attackMoves)
         {
@@ -158,12 +120,8 @@ public class InputHandler : MonoBehaviour
         Debug.Log($"Selected piece at {piece.Position}");
     }
 
-    /// <summary>
-    /// Очищает текущее выделение и убирает маркеры.
-    /// </summary>
     private void ClearSelection()
     {
-        // Восстанавливаем материал фигуры
         if (selectedPiece != null)
         {
             Renderer renderer = selectedPiece.GetComponentInChildren<Renderer>();
@@ -173,7 +131,6 @@ public class InputHandler : MonoBehaviour
             }
         }
 
-        // Удаляем все маркеры
         foreach (var marker in currentMarkers)
         {
             Destroy(marker);
@@ -184,18 +141,12 @@ public class InputHandler : MonoBehaviour
         Debug.Log("Selection cleared.");
     }
 
-    /// <summary>
-    /// Блокирует ввод во время анимации.
-    /// </summary>
     private void BlockInput()
     {
         isInputBlocked = true;
         Debug.Log("InputHandler: Input blocked during animation.");
     }
 
-    /// <summary>
-    /// Разблокирует ввод после завершения анимации.
-    /// </summary>
     private void UnblockInput()
     {
         isInputBlocked = false;

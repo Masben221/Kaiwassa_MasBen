@@ -2,41 +2,36 @@ using UnityEngine;
 using Zenject;
 using System;
 
-/// <summary>
-/// Интерфейс для управления игрой.
-/// </summary>
 public interface IGameManager
 {
-    void StartGame(int mountainsPerSide, bool isRandomPlacement); // Инициализация игры с числом гор и режимом
-    void MakeMove(Piece piece, Vector3Int target); // Выполнение хода или атаки
-    bool IsPlayer1Turn { get; } // Чей ход
-    event Action<bool> OnTurnChanged; // Событие смены хода
+    void StartGame(int mountainsPerSide, bool isRandomPlacement);
+    void MakeMove(Piece piece, Vector3Int target);
+    bool IsPlayer1Turn { get; }
+    bool IsInPlacementPhase { get; set; } // Добавляем сеттер
+    event Action<bool> OnTurnChanged;
 }
 
-/// <summary>
-/// Управляет логикой игры: инициализация доски, размещение фигур, обработка ходов и атак, смена игроков.
-/// </summary>
 public class GameManager : MonoBehaviour, IGameManager
 {
-    [Inject(Id = "Random")] private IPiecePlacementManager randomPlacementManager; // Менеджер случайной расстановки
-    [Inject(Id = "Manual")] private IPiecePlacementManager manualPlacementManager; // Менеджер ручной расстановки
-    [Inject] private IBoardManager boardManager; // Интерфейс доски
+    [Inject(Id = "Random")] private IPiecePlacementManager randomPlacementManager;
+    [Inject(Id = "Manual")] private IPiecePlacementManager manualPlacementManager;
+    [Inject] private IBoardManager boardManager;
 
-    private bool isPlayer1Turn = true; // Текущий ход (true = Игрок 1)
-    private bool isInPlacementPhase = true; // Флаг стадии расстановки
-    public bool IsPlayer1Turn => isPlayer1Turn; // Геттер для текущего хода
-    public event Action<bool> OnTurnChanged; // Событие смены хода
+    private bool isPlayer1Turn = true;
+    private bool isInPlacementPhase = false;
+    public bool IsPlayer1Turn => isPlayer1Turn;
+    public bool IsInPlacementPhase
+    {
+        get => isInPlacementPhase;
+        set => isInPlacementPhase = value;
+    }
+    public event Action<bool> OnTurnChanged;
 
     private void Start()
     {
         Debug.Log("GameManager: Waiting for UI to start game.");
     }
 
-    /// <summary>
-    /// Инициализирует игру: создаёт доску 10x10, размещает горы и фигуры.
-    /// </summary>
-    /// <param name="mountainsPerSide">Количество гор на сторону.</param>
-    /// <param name="isRandomPlacement">true, если используется случайная расстановка.</param>
     public void StartGame(int mountainsPerSide, bool isRandomPlacement)
     {
         Debug.Log($"GameManager: StartGame called with {mountainsPerSide} mountains per side, RandomPlacement: {isRandomPlacement}");
@@ -48,26 +43,16 @@ public class GameManager : MonoBehaviour, IGameManager
         placementManager.PlaceMountains(mountainsPerSide);
 
         Debug.Log("GameManager: Placing pieces...");
-        placementManager.PlacePiecesForPlayer(true); // Игрок 1
-        placementManager.PlacePiecesForPlayer(false); // Игрок 2
+        placementManager.PlacePiecesForPlayer(true);
+        placementManager.PlacePiecesForPlayer(false);
 
-        isInPlacementPhase = false; // Завершаем стадию расстановки
+        isInPlacementPhase = false;
         Debug.Log("GameManager: Game started successfully!");
         OnTurnChanged?.Invoke(isPlayer1Turn);
     }
 
-    /// <summary>
-    /// Обрабатывает ход или атаку фигуры.
-    /// Сначала проверяет возможность атаки, затем ход.
-    /// </summary>
     public void MakeMove(Piece piece, Vector3Int target)
     {
-        if (isInPlacementPhase)
-        {
-            Debug.LogWarning("GameManager: Moves are blocked during placement phase!");
-            return;
-        }
-
         Debug.Log($"GameManager: Attempting move for piece {piece.GetType().Name} at {piece.Position} to {target}");
         if (piece.IsPlayer1 != isPlayer1Turn)
         {
@@ -107,9 +92,6 @@ public class GameManager : MonoBehaviour, IGameManager
         }
     }
 
-    /// <summary>
-    /// Переключает ход между игроками и уведомляет подписчиков.
-    /// </summary>
     private void SwitchTurn()
     {
         isPlayer1Turn = !isPlayer1Turn;
