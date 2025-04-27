@@ -23,6 +23,7 @@ public class GameManager : MonoBehaviour, IGameManager
     [Inject] private IBoardManager boardManager; // Интерфейс доски
 
     private bool isPlayer1Turn = true; // Текущий ход (true = Игрок 1)
+    private bool isInPlacementPhase = true; // Флаг стадии расстановки
     public bool IsPlayer1Turn => isPlayer1Turn; // Геттер для текущего хода
     public event Action<bool> OnTurnChanged; // Событие смены хода
 
@@ -50,6 +51,7 @@ public class GameManager : MonoBehaviour, IGameManager
         placementManager.PlacePiecesForPlayer(true); // Игрок 1
         placementManager.PlacePiecesForPlayer(false); // Игрок 2
 
+        isInPlacementPhase = false; // Завершаем стадию расстановки
         Debug.Log("GameManager: Game started successfully!");
         OnTurnChanged?.Invoke(isPlayer1Turn);
     }
@@ -60,6 +62,12 @@ public class GameManager : MonoBehaviour, IGameManager
     /// </summary>
     public void MakeMove(Piece piece, Vector3Int target)
     {
+        if (isInPlacementPhase)
+        {
+            Debug.LogWarning("GameManager: Moves are blocked during placement phase!");
+            return;
+        }
+
         Debug.Log($"GameManager: Attempting move for piece {piece.GetType().Name} at {piece.Position} to {target}");
         if (piece.IsPlayer1 != isPlayer1Turn)
         {

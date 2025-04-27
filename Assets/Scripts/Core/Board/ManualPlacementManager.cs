@@ -1,9 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using Zenject;
-
-/// <summary>
+using Zenject;/// <summary>
 /// Управляет логикой ручной расстановки фигур и гор.
 /// Реализует интерфейс IPiecePlacementManager для совместимости с системой.
 /// </summary>
@@ -35,18 +33,18 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
 
         // Инициализация фигур для обоих игроков (соответствует PiecePlacementManager)
         player1Pieces = new Dictionary<PieceType, int>
-        {
-            { PieceType.King, 1 },
-            { PieceType.Dragon, 1 },
-            { PieceType.Elephant, 2 },
-            { PieceType.HeavyCavalry, 2 },
-            { PieceType.LightHorse, 3 },
-            { PieceType.Spearman, 3 },
-            { PieceType.Crossbowman, 3 },
-            { PieceType.Rabble, 3 },
-            { PieceType.Catapult, 1 },
-            { PieceType.Trebuchet, 1 }
-        };
+    {
+        { PieceType.King, 1 },
+        { PieceType.Dragon, 1 },
+        { PieceType.Elephant, 2 },
+        { PieceType.HeavyCavalry, 2 },
+        { PieceType.LightHorse, 3 },
+        { PieceType.Spearman, 3 },
+        { PieceType.Crossbowman, 3 },
+        { PieceType.Rabble, 3 },
+        { PieceType.Catapult, 1 },
+        { PieceType.Trebuchet, 1 }
+    };
         player2Pieces = new Dictionary<PieceType, int>(player1Pieces); // Копия для игрока 2
         Debug.Log($"ManualPlacementManager: Initialized with {mountainsPerSide} mountains per side.");
     }
@@ -169,4 +167,5 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
     // Реализация интерфейса IPiecePlacementManager (заглушки для совместимости с автоматической расстановкой)
     public void PlaceMountains(int mountainsPerSide) { /* Заглушка: горы уже размещены вручную */ }
     public void PlacePiecesForPlayer(bool isPlayer1) { /* Заглушка: фигуры уже размещены вручную */ }
+
 }

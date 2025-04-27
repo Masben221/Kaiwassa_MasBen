@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using Zenject;
 using System.Collections.Generic;
 
 /// <summary>

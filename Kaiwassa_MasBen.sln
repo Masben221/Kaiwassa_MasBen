@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zenject-ReflectionBaking-Ed
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zenject-Editor", "Zenject-Editor.csproj", "{086EE13E-C09A-CD42-334D-BA7CBF96C2DE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-firstpass", "Assembly-CSharp-firstpass.csproj", "{73241B76-E203-D4DC-951D-05FA37DCD569}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zenject-TestFramework", "Zenject-TestFramework.csproj", "{858558FB-7AB0-8920-E350-8D7DFC3915EB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zenject-PoolMonitor-Editor", "Zenject-PoolMonitor-Editor.csproj", "{FDCEB186-2517-4152-AF83-82689B98E7D2}"
@@ -53,6 +55,10 @@ Global
 		{086EE13E-C09A-CD42-334D-BA7CBF96C2DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{086EE13E-C09A-CD42-334D-BA7CBF96C2DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{086EE13E-C09A-CD42-334D-BA7CBF96C2DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73241B76-E203-D4DC-951D-05FA37DCD569}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73241B76-E203-D4DC-951D-05FA37DCD569}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73241B76-E203-D4DC-951D-05FA37DCD569}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73241B76-E203-D4DC-951D-05FA37DCD569}.Release|Any CPU.Build.0 = Release|Any CPU
 		{858558FB-7AB0-8920-E350-8D7DFC3915EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{858558FB-7AB0-8920-E350-8D7DFC3915EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{858558FB-7AB0-8920-E350-8D7DFC3915EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
