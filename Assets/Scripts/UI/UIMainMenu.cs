@@ -1,105 +1,64 @@
 using UnityEngine;
 using UnityEngine.UI;
-using Zenject;
 
 public class UIMainMenu : MonoBehaviour
 {
-    [SerializeField] private GameObject mainMenuPanel;
-    [SerializeField] private GameObject settingsPanel;
-    [SerializeField] private Button startGameButton;
-    [SerializeField] private Button randomPlacementButton;
-    [SerializeField] private Button manualPlacementButton;
-    [SerializeField] private Slider mountainsSlider;
-    [SerializeField] private Text mountainsValueText; // Текст для отображения количества гор
-    [SerializeField] private UIManualPlacement manualPlacement;
-
-    [Inject] private IGameManager gameManager;
-    [Inject] private IBoardManager boardManager;
-
-    private bool isRandomPlacement = true;
-    private int selectedMountains = 4;
+    // Ссылки на UI-элементы, которые задаются в инспекторе
+    [SerializeField] private GameObject mainMenuPanel; // Панель главного меню
+    [SerializeField] private GameObject settingsPanel; // Панель настроек
+    [SerializeField] private GameObject placementPanel; // Панель расстановки фигур
+    [SerializeField] private Button startGameButton; // Кнопка "Старт игры"
+    [SerializeField] private Button selectCharButton; // Кнопка "Выбор персонажа"
+    [SerializeField] private Button settingsButton; // Кнопка "Настройки"
+    [SerializeField] private UIManualPlacement manualPlacement; // Ссылка на компонент UIManualPlacement
 
     private void Awake()
     {
-        // Проверяем наличие всех необходимых UI-элементов
-        if (!mainMenuPanel || !settingsPanel || !startGameButton || !randomPlacementButton ||
-            !manualPlacementButton || !mountainsSlider || !mountainsValueText || !manualPlacement)
+        // Проверяем, что все UI-элементы заданы в инспекторе
+        if (!mainMenuPanel || !settingsPanel || !placementPanel || !startGameButton ||
+            !selectCharButton || !settingsButton || !manualPlacement)
         {
             Debug.LogError("UIMainMenu: One or more UI elements are not assigned in the Inspector!");
             return;
         }
 
-        // Настраиваем слушатели кнопок и слайдера
+        // Назначаем обработчики событий для кнопок
         startGameButton.onClick.AddListener(OnStartGame);
-        randomPlacementButton.onClick.AddListener(OnRandomPlacementSelected);
-        manualPlacementButton.onClick.AddListener(OnManualPlacementSelected);
+        selectCharButton.onClick.AddListener(OnSelectCharacter);
+        settingsButton.onClick.AddListener(OnSettings);
 
-        // Настраиваем слайдер для выбора количества гор (0–8, начальное значение 4)
-        mountainsSlider.minValue = 0;
-        mountainsSlider.maxValue = 8;
-        mountainsSlider.value = selectedMountains;
-        mountainsSlider.onValueChanged.AddListener(OnMountainsSliderChanged);
-
-        // Инициализируем текст с текущим значением
-        mountainsValueText.text = selectedMountains.ToString();
-
-        // Показываем settingsPanel, скрываем mainMenuPanel
-        settingsPanel.SetActive(true);
-        mainMenuPanel.SetActive(false);
+        // Изначально показываем только главное меню
+        mainMenuPanel.SetActive(true);
+        settingsPanel.SetActive(false);
+        placementPanel.SetActive(false);
     }
 
     private void OnDestroy()
     {
+        // Очищаем обработчики событий при уничтожении объекта
         startGameButton.onClick.RemoveListener(OnStartGame);
-        randomPlacementButton.onClick.RemoveListener(OnRandomPlacementSelected);
-        manualPlacementButton.onClick.RemoveListener(OnManualPlacementSelected);
-        mountainsSlider.onValueChanged.RemoveListener(OnMountainsSliderChanged);
+        selectCharButton.onClick.RemoveListener(OnSelectCharacter);
+        settingsButton.onClick.RemoveListener(OnSettings);
     }
 
-    /// <summary>
-    /// Показывает главное меню с выбором типа расстановки.
-    /// </summary>
+    // Обработчик нажатия кнопки "Старт игры"
     private void OnStartGame()
     {
-        if (mainMenuPanel != null)
-            mainMenuPanel.SetActive(true);
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
+        mainMenuPanel.SetActive(false); // Скрываем главное меню
+        placementPanel.SetActive(true); // Показываем панель расстановки
+        manualPlacement.Initialize(4); // Инициализируем расстановку с 4 горами по умолчанию
     }
 
-    /// <summary>
-    /// Запускает игру с автоматической расстановкой фигур.
-    /// </summary>
-    private void OnRandomPlacementSelected()
+    // Обработчик нажатия кнопки "Выбор персонажа" (заглушка)
+    private void OnSelectCharacter()
     {
-        isRandomPlacement = true;
-        if (mainMenuPanel != null)
-            mainMenuPanel.SetActive(false);
-        gameManager.StartGame(selectedMountains, isRandomPlacement);
+        Debug.Log("UIMainMenu: Select Character - Not implemented yet.");
     }
 
-    /// <summary>
-    /// Переходит к ручной расстановке фигур.
-    /// </summary>
-    private void OnManualPlacementSelected()
+    // Обработчик нажатия кнопки "Настройки"
+    private void OnSettings()
     {
-        isRandomPlacement = false;
-        if (mainMenuPanel != null)
-            mainMenuPanel.SetActive(false);
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
-        boardManager.InitializeBoard(10);
-        gameManager.IsInPlacementPhase = true; // Устанавливаем фазу расстановки
-        manualPlacement.Initialize(selectedMountains);
-    }
-
-    /// <summary>
-    /// Обновляет количество гор и текст на основе значения слайдера.
-    /// </summary>
-    private void OnMountainsSliderChanged(float value)
-    {
-        selectedMountains = Mathf.FloorToInt(value);
-        if (mountainsValueText != null)
-            mountainsValueText.text = selectedMountains.ToString();
+        mainMenuPanel.SetActive(false); // Скрываем главное меню
+        settingsPanel.SetActive(true); // Показываем панель настроек
     }
 }
