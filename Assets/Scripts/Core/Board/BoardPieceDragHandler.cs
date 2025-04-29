@@ -4,7 +4,7 @@ using DG.Tweening;
 using Zenject;
 
 /// <summary>
-/// Перетаскивание фигур/гор на доске.
+/// Перетаскивание фигур и гор на доске во время фазы расстановки.
 /// </summary>
 public class BoardPieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
@@ -27,6 +27,10 @@ public class BoardPieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHa
         this.gameManager = gameManager;
     }
 
+    /// <summary>
+    /// Инициализирует обработчик перетаскивания.
+    /// </summary>
+    /// <param name="uiManager">UI-менеджер для взаимодействия.</param>
     public void Initialize(UIManualPlacement uiManager = null)
     {
         this.uiManager = uiManager;
@@ -40,6 +44,9 @@ public class BoardPieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHa
         originalPosition = piece.Position;
     }
 
+    /// <summary>
+    /// Запускает процесс перетаскивания фигуры или горы.
+    /// </summary>
     public void StartDragging()
     {
         if (gameManager == null || !gameManager.IsInPlacementPhase)
@@ -79,6 +86,10 @@ public class BoardPieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHa
 
     public void OnPointerDown(PointerEventData eventData) { }
 
+    /// <summary>
+    /// Обрабатывает перетаскивание, обновляя позицию и подсветку клеток.
+    /// </summary>
+    /// <param name="eventData">Данные события указателя.</param>
     public void OnDrag(PointerEventData eventData)
     {
         if (!isDragging) return;
@@ -93,10 +104,9 @@ public class BoardPieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHa
                 Mathf.FloorToInt(hit.point.z + 0.5f)
             );
 
-            bool isMountain = piece.Type == PieceType.Mountain;
             if (position != originalPosition && uiManager != null)
             {
-                uiManager.HighlightTile(position, piece.IsPlayer1, isMountain, piece.Type);
+                uiManager.HighlightTile(position, piece.IsPlayer1, piece.Type);
                 lastHighlighted = position;
             }
             else
@@ -122,6 +132,10 @@ public class BoardPieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHa
         }
     }
 
+    /// <summary>
+    /// Обрабатывает отпускание мыши, размещая или возвращая фигуру.
+    /// </summary>
+    /// <param name="eventData">Данные события указателя.</param>
     public void OnPointerUp(PointerEventData eventData)
     {
         if (!isDragging) return;

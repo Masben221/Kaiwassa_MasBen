@@ -41,27 +41,27 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
         reservedPassagesPlayer2.Clear();
     }
 
-    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain)
+    public bool CanPlace(bool isPlayer1, Vector3Int position, PieceType type, bool isMove = false)
     {
         Debug.LogWarning("PiecePlacementManager: CanPlace not supported in automatic placement.");
         return false;
     }
 
-    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain, PieceType type, bool isMove = false)
+    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain)
     {
-        Debug.LogWarning("PiecePlacementManager: CanPlace with type not supported in automatic placement.");
+        Debug.LogWarning("PiecePlacementManager: CanPlace with isMountain not supported in automatic placement.");
         return false;
     }
 
-    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain)
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMove = false)
     {
         Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain not supported in automatic placement.");
         return false;
     }
 
-    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain, bool isMove = false)
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type)
     {
-        Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain with isMove not supported in automatic placement.");
+        Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain without isMove not supported in automatic placement.");
         return false;
     }
 
@@ -83,7 +83,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
         return false;
     }
 
-    public int GetRemainingCount(bool isPlayer1, PieceType type, bool isMountain)
+    public int GetRemainingCount(bool isPlayer1, PieceType type)
     {
         Debug.LogWarning("PiecePlacementManager: GetRemainingCount not supported in automatic placement.");
         return 0;
@@ -244,7 +244,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
                 positions.RemoveAt(index);
                 continue;
             }
-            Piece mountain = pieceFactory.CreateMountain(pos);
+            Piece mountain = pieceFactory.CreatePiece(PieceType.Mountain, isPlayer1, pos);
             if (mountain != null)
             {
                 boardManager.PlacePiece(mountain, pos);

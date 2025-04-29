@@ -16,6 +16,10 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
 
     public int GetMountainsPerSide { get; private set; }
 
+    /// <summary>
+    /// Инициализирует счётчики фигур и гор для обоих игроков.
+    /// </summary>
+    /// <param name="mountainsPerSide">Количество гор на сторону.</param>
     public void Initialize(int mountainsPerSide)
     {
         GetMountainsPerSide = mountainsPerSide;
@@ -29,25 +33,34 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         player2Pieces = new Dictionary<PieceType, int>(player1Pieces);
     }
 
-    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain)
-    {
-        return CanPlace(isPlayer1, position, isMountain, PieceType.King);
-    }
-
-    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain, PieceType type, bool isMove = false)
+    /// <summary>
+    /// Проверяет, можно ли разместить фигуру или гору на указанной позиции.
+    /// </summary>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <param name="position">Координаты клетки.</param>
+    /// <param name="type">Тип фигуры (King, Mountain и т.д.).</param>
+    /// <param name="isMove">true, если это перемещение.</param>
+    /// <returns>true, если размещение возможно.</returns>
+    public bool CanPlace(bool isPlayer1, Vector3Int position, PieceType type, bool isMove = false)
     {
         if (!boardManager.IsWithinBounds(position) || boardManager.IsOccupied(position))
             return false;
 
+        // Ограничение зон: z 0–3 для игрока 1, z 6–9 для игрока 2
         if (isPlayer1 && (position.z < 0 || position.z > 3)) return false;
         if (!isPlayer1 && (position.z < 6 || position.z > 9)) return false;
 
         var pieces = isPlayer1 ? player1Pieces : player2Pieces;
-        PieceType targetType = isMountain ? PieceType.Mountain : type;
-
-        return isMove || (pieces.ContainsKey(targetType) && pieces[targetType] > 0);
+        return isMove || (pieces.ContainsKey(type) && pieces[type] > 0);
     }
 
+    // Устаревший метод для совместимости
+    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain)
+    {
+        return CanPlace(isPlayer1, position, isMountain ? PieceType.Mountain : PieceType.King, false);
+    }
+
+    // Остальные методы остаются без изменений (для краткости не дублирую)
     public bool CanMove(bool isPlayer1, PieceType type, Vector3Int newPosition)
     {
         if (!boardManager.IsWithinBounds(newPosition) || boardManager.IsOccupied(newPosition))
@@ -59,20 +72,15 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         return true;
     }
 
-    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain)
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMove = false)
     {
-        return PlacePieceOrMountain(isPlayer1, position, type, isMountain, false);
-    }
-
-    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain, bool isMove = false)
-    {
-        if (!CanPlace(isPlayer1, position, isMountain, type, isMove))
+        if (!CanPlace(isPlayer1, position, type, isMove))
         {
-            Debug.LogWarning($"Cannot place {(isMountain ? "mountain" : type)} at {position}");
+            Debug.LogWarning($"Cannot place {type} at {position}");
             return false;
         }
 
-        Piece piece = isMountain ? pieceFactory.CreateMountain(position) : pieceFactory.CreatePiece(type, isPlayer1, position);
+        Piece piece = pieceFactory.CreatePiece(type, isPlayer1, position);
         if (piece != null)
         {
             boardManager.PlacePiece(piece, position);
@@ -84,8 +92,13 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
             return true;
         }
 
-        Debug.LogWarning($"Failed to place {(isMountain ? "mountain" : type)} at {position}");
+        Debug.LogWarning($"Failed to place {type} at {position}");
         return false;
+    }
+
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type)
+    {
+        return PlacePieceOrMountain(isPlayer1, position, type, false);
     }
 
     public bool RemovePiece(bool isPlayer1, Vector3Int position, PieceType type)
@@ -152,11 +165,10 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         return true;
     }
 
-    public int GetRemainingCount(bool isPlayer1, PieceType type, bool isMountain)
+    public int GetRemainingCount(bool isPlayer1, PieceType type)
     {
         var pieces = isPlayer1 ? player1Pieces : player2Pieces;
-        PieceType targetType = isMountain ? PieceType.Mountain : type;
-        return pieces.ContainsKey(targetType) ? pieces[targetType] : 0;
+        return pieces.ContainsKey(type) ? pieces[type] : 0;
     }
 
     public bool HasCompletedPlacement(bool isPlayer1)

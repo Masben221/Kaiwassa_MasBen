@@ -48,14 +48,22 @@ public class UIManualPlacement : MonoBehaviour
         ClearHighlight();
     }
 
+    /// <summary>
+    /// Инициализирует UI для расстановки, создавая панели для игроков.
+    /// </summary>
+    /// <param name="mountainsPerSide">Количество гор на сторону.</param>
     public void Initialize(int mountainsPerSide)
     {
+        // TODO: В будущем добавить возможность динамического изменения mountainsPerSide через UI
         placementManager.Initialize(mountainsPerSide);
         SetupPlayerPanels();
         placementPanel.SetActive(true);
         UpdateFinishButtons();
     }
 
+    /// <summary>
+    /// Создаёт панели с кнопками для каждого игрока.
+    /// </summary>
     private void SetupPlayerPanels()
     {
         foreach (Transform child in player1Panel) Destroy(child.gameObject);
@@ -65,23 +73,41 @@ public class UIManualPlacement : MonoBehaviour
         CreatePieceButtons(player2Panel, false);
     }
 
+    /// <summary>
+    /// Создаёт кнопки для фигур и гор на указанной панели, с горами вверху списка.
+    /// </summary>
+    /// <param name="panel">Панель игрока.</param>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
     private void CreatePieceButtons(RectTransform panel, bool isPlayer1)
     {
         float yOffset = -20f;
-        CreatePieceButton(panel, isPlayer1, null, true, ref yOffset);
+
+        // Сначала создаём кнопку для гор
+        CreatePieceButton(panel, isPlayer1, PieceType.Mountain, ref yOffset);
+
+        // Затем создаём кнопки для остальных типов фигур
         foreach (PieceType type in System.Enum.GetValues(typeof(PieceType)))
         {
-            if (type != PieceType.Mountain)
-                CreatePieceButton(panel, isPlayer1, type, false, ref yOffset);
+            if (type != PieceType.Mountain) // Пропускаем горы, так как они уже добавлены
+            {
+                CreatePieceButton(panel, isPlayer1, type, ref yOffset);
+            }
         }
     }
 
-    private void CreatePieceButton(RectTransform panel, bool isPlayer1, PieceType? type, bool isMountain, ref float yOffset)
+    /// <summary>
+    /// Создаёт кнопку для конкретного типа фигуры или горы.
+    /// </summary>
+    /// <param name="panel">Панель игрока.</param>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <param name="type">Тип фигуры (King, Mountain и т.д.).</param>
+    /// <param name="yOffset">Смещение по Y для позиционирования.</param>
+    private void CreatePieceButton(RectTransform panel, bool isPlayer1, PieceType type, ref float yOffset)
     {
-        int count = placementManager.GetRemainingCount(isPlayer1, type ?? PieceType.King, isMountain);
+        int count = placementManager.GetRemainingCount(isPlayer1, type);
         if (count <= 0) return;
 
-        GameObject buttonObj = new GameObject(isMountain ? "Mountain" : type.ToString());
+        GameObject buttonObj = new GameObject(type.ToString());
         buttonObj.transform.SetParent(panel, false);
         RectTransform rt = buttonObj.AddComponent<RectTransform>();
         rt.sizeDelta = new Vector2(100, 50);
@@ -89,12 +115,12 @@ public class UIManualPlacement : MonoBehaviour
         yOffset -= 60f;
 
         Image image = buttonObj.AddComponent<Image>();
-        image.color = isMountain ? Color.gray : Random.ColorHSV(0f, 1f, 0.5f, 1f, 0.5f, 1f);
+        image.color = type == PieceType.Mountain ? Color.gray : Random.ColorHSV(0f, 1f, 0.5f, 1f, 0.5f, 1f);
 
         GameObject textObj = new GameObject("Text");
         textObj.transform.SetParent(buttonObj.transform, false);
         Text text = textObj.AddComponent<Text>();
-        text.text = $"{(isMountain ? "Mountain" : type.ToString())} x{count}";
+        text.text = $"{type} x{count}";
         text.font = buttonFont != null ? buttonFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.color = Color.black;
         text.alignment = TextAnchor.MiddleCenter;
@@ -102,19 +128,31 @@ public class UIManualPlacement : MonoBehaviour
         textRt.sizeDelta = new Vector2(90, 40);
 
         PieceDragHandler dragHandler = buttonObj.AddComponent<PieceDragHandler>();
-        dragHandler.Initialize(isPlayer1, type, isMountain, this, pieceFactory);
+        dragHandler.Initialize(isPlayer1, type, this, pieceFactory);
     }
 
-    public void HighlightTile(Vector3Int position, bool isPlayer1, bool isMountain, PieceType type)
+    /// <summary>
+    /// Подсвечивает клетку, если она доступна для размещения фигуры.
+    /// </summary>
+    /// <param name="position">Координаты клетки.</param>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <param name="type">Тип фигуры (King, Mountain и т.д.).</param>
+    public void HighlightTile(Vector3Int position, bool isPlayer1, PieceType type)
     {
         var piece = boardManager.GetPieceAt(position);
-        if (piece != null && piece.IsPlayer1 == isPlayer1 && piece.Type == (isMountain ? PieceType.Mountain : type))
+        if (piece != null)
         {
-            ClearHighlight();
-            return;
+            // Если клетка занята, проверяем, соответствует ли фигура игроку и типу
+            if (piece.IsPlayer1 == isPlayer1 && piece.Type == type)
+            {
+                ClearHighlight();
+                return;
+            }
+            // Используем принадлежность фигуры на доске для проверки перемещения
+            isPlayer1 = piece.IsPlayer1;
         }
 
-        if (!(placementManager as ManualPlacementManager).CanMove(isPlayer1, isMountain ? PieceType.Mountain : type, position))
+        if (!(placementManager as ManualPlacementManager).CanMove(isPlayer1, type, position))
         {
             ClearHighlight();
             return;
@@ -131,6 +169,9 @@ public class UIManualPlacement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Очищает подсветку клетки.
+    /// </summary>
     public void ClearHighlight()
     {
         if (highlightedTile.HasValue)
@@ -145,9 +186,16 @@ public class UIManualPlacement : MonoBehaviour
         }
     }
 
-    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain, bool isMove = false)
+    /// <summary>
+    /// Размещает фигуру или гору на доске.
+    /// </summary>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <param name="position">Координаты клетки.</param>
+    /// <param name="type">Тип фигуры (King, Mountain и т.д.).</param>
+    /// <returns>true, если размещение успешно.</returns>
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type)
     {
-        bool success = (placementManager as ManualPlacementManager).PlacePieceOrMountain(isPlayer1, position, type, isMountain, isMove);
+        bool success = (placementManager as ManualPlacementManager).PlacePieceOrMountain(isPlayer1, position, type);
         if (success)
         {
             var piece = boardManager.GetPieceAt(position);
@@ -164,17 +212,26 @@ public class UIManualPlacement : MonoBehaviour
         return success;
     }
 
+    /// <summary>
+    /// Обновляет панели игроков, перестраивая кнопки.
+    /// </summary>
     public void UpdatePlayerPanels()
     {
         SetupPlayerPanels();
     }
 
+    /// <summary>
+    /// Обновляет состояние кнопок завершения расстановки.
+    /// </summary>
     private void UpdateFinishButtons()
     {
         player1FinishButton.interactable = isPlayer1Turn && placementManager.HasCompletedPlacement(true);
         player2FinishButton.interactable = !isPlayer1Turn && placementManager.HasCompletedPlacement(false);
     }
 
+    /// <summary>
+    /// Завершает расстановку для игрока 1, переключая ход.
+    /// </summary>
     private void OnPlayer1Finish()
     {
         if (!placementManager.HasCompletedPlacement(true))
@@ -188,6 +245,9 @@ public class UIManualPlacement : MonoBehaviour
         player2FinishButton.interactable = placementManager.HasCompletedPlacement(false);
     }
 
+    /// <summary>
+    /// Завершает расстановку для игрока 2, начиная игру.
+    /// </summary>
     private void OnPlayer2Finish()
     {
         if (!placementManager.HasCompletedPlacement(false))

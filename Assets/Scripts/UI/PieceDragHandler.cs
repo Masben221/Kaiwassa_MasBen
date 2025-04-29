@@ -3,14 +3,13 @@ using UnityEngine.EventSystems;
 using DG.Tweening;
 
 /// <summary>
-/// Обработчик drag-and-drop для фигур и гор из UI панели.
+/// Обработчик drag-and-drop для фигур и гор из UI-панели.
 /// Отвечает за создание визуального предпросмотра, подсветку клеток и размещение объектов на доске.
 /// </summary>
 public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
-    private bool isPlayer1; // True, если фигура принадлежит игроку 1, иначе игроку 2
-    private PieceType? type; // Тип фигуры (null для гор)
-    private bool isMountain; // True, если это гора, иначе фигура
+    private bool isPlayer1; // true, если фигура принадлежит игроку 1, иначе игроку 2
+    private PieceType? type; // Тип фигуры (King, Dragon, Mountain и т.д.)
     private UIManualPlacement uiManager; // UI-менеджер для взаимодействия с панелями и подсветкой
     private IPieceFactory pieceFactory; // Фабрика для создания фигур и гор
     private Vector3Int? lastHighlighted; // Последняя подсвеченная клетка
@@ -20,16 +19,14 @@ public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
     /// <summary>
     /// Инициализирует обработчик drag-and-drop.
     /// </summary>
-    /// <param name="isPlayer1">True, если для игрока 1, иначе для игрока 2.</param>
-    /// <param name="type">Тип фигуры (null для гор).</param>
-    /// <param name="isMountain">True, если это гора.</param>
+    /// <param name="isPlayer1">true, если для игрока 1, иначе для игрока 2.</param>
+    /// <param name="type">Тип фигуры (King, Dragon, Mountain и т.д.).</param>
     /// <param name="uiManager">UI-менеджер для взаимодействия.</param>
     /// <param name="pieceFactory">Фабрика для создания объектов.</param>
-    public void Initialize(bool isPlayer1, PieceType? type, bool isMountain, UIManualPlacement uiManager, IPieceFactory pieceFactory)
+    public void Initialize(bool isPlayer1, PieceType? type, UIManualPlacement uiManager, IPieceFactory pieceFactory)
     {
         this.isPlayer1 = isPlayer1;
         this.type = type;
-        this.isMountain = isMountain;
         this.uiManager = uiManager;
         this.pieceFactory = pieceFactory;
     }
@@ -40,14 +37,9 @@ public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
     /// <param name="eventData">Данные события указателя.</param>
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (isMountain)
-        {
-            previewObject = pieceFactory.CreateMountain(Vector3Int.zero).gameObject;
-        }
-        else if (type.HasValue)
-        {
-            previewObject = pieceFactory.CreatePiece(type.Value, isPlayer1, Vector3Int.zero).gameObject;
-        }
+        if (!type.HasValue) return;
+
+        previewObject = pieceFactory.CreatePiece(type.Value, isPlayer1, Vector3Int.zero).gameObject;
 
         if (previewObject != null)
         {
@@ -82,8 +74,7 @@ public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
     /// <param name="eventData">Данные события указателя.</param>
     public void OnDrag(PointerEventData eventData)
     {
-        if (previewObject == null)
-            return;
+        if (previewObject == null || !type.HasValue) return;
 
         Ray ray = Camera.main.ScreenPointToRay(eventData.position);
         if (Physics.Raycast(ray, out RaycastHit hit))
@@ -95,7 +86,7 @@ public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
             );
 
             // Подсвечиваем клетку с учётом типа фигуры
-            uiManager.HighlightTile(position, isPlayer1, isMountain, isMountain ? PieceType.Mountain : type.Value);
+            uiManager.HighlightTile(position, isPlayer1, type.Value);
             lastHighlighted = position;
 
             previewObject.transform.position = new Vector3(position.x, 0.5f, position.z);
@@ -127,11 +118,10 @@ public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
             Destroy(previewObject);
         }
 
-        if (lastHighlighted.HasValue)
+        if (lastHighlighted.HasValue && type.HasValue)
         {
-            PieceType targetType = isMountain ? PieceType.Mountain : type.Value;
             // Размещаем новую фигуру (не перемещение)
-            uiManager.PlacePieceOrMountain(isPlayer1, lastHighlighted.Value, targetType, isMountain, isMove: false);
+            uiManager.PlacePieceOrMountain(isPlayer1, lastHighlighted.Value, type.Value);
         }
 
         uiManager.ClearHighlight();

@@ -1,11 +1,6 @@
 using UnityEngine;
 using System;
-using System.Collections;
 
-/// <summary>
-/// Компонент для анимации движения фигур.
-/// Выполняет плавное перемещение с прыжком и уведомляет о начале/завершении анимации.
-/// </summary>
 public class PieceAnimator : MonoBehaviour
 {
     [SerializeField] private float moveDuration = 0.5f; // Длительность анимации
@@ -26,11 +21,25 @@ public class PieceAnimator : MonoBehaviour
     {
         if (isMoving)
         {
-            Debug.LogWarning($"PieceAnimator: Already moving for {GetComponent<Piece>().GetType().Name}");
+            Debug.LogWarning($"PieceAnimator: Already moving for {gameObject.name}");
             return;
         }
 
-        Debug.Log($"PieceAnimator: MoveTo called for {GetComponent<Piece>().GetType().Name} to {target}");
+        Piece piece = GetComponent<Piece>();
+        if (piece == null)
+        {
+            Debug.LogError($"PieceAnimator: No Piece component on {gameObject.name}");
+            return;
+        }
+
+        if (piece.Type == PieceType.Mountain)
+        {
+            Debug.LogWarning($"PieceAnimator: Cannot animate Mountain at {target}");
+            onComplete?.Invoke();
+            return;
+        }
+
+        Debug.Log($"PieceAnimator: MoveTo called for {piece.Type} to {target}");
         isMoving = true;
 
         // Уведомляем о начале анимации
@@ -38,8 +47,6 @@ public class PieceAnimator : MonoBehaviour
 
         Vector3 startPos = transform.position;
         Vector3 endPos = new Vector3(target.x, 0.5f, target.z); // y=0.5f для высоты
-        float elapsedTime = 0f;
-
         StartCoroutine(MoveCoroutine(startPos, endPos, () =>
         {
             isMoving = false;
@@ -48,18 +55,19 @@ public class PieceAnimator : MonoBehaviour
             OnAnimationFinished?.Invoke();
             onComplete?.Invoke();
         }));
+    }
 
-        IEnumerator MoveCoroutine(Vector3 start, Vector3 end, Action callback)
+    private System.Collections.IEnumerator MoveCoroutine(Vector3 start, Vector3 end, Action callback)
+    {
+        float elapsedTime = 0f;
+        while (elapsedTime < moveDuration)
         {
-            while (elapsedTime < moveDuration)
-            {
-                elapsedTime += Time.deltaTime;
-                float t = elapsedTime / moveDuration;
-                float height = jumpHeight * Mathf.Sin(t * Mathf.PI);
-                transform.position = Vector3.Lerp(start, end, t) + new Vector3(0, height, 0);
-                yield return null;
-            }
-            callback?.Invoke();
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / moveDuration;
+            float height = jumpHeight * Mathf.Sin(t * Mathf.PI);
+            transform.position = Vector3.Lerp(start, end, t) + new Vector3(0, height, 0);
+            yield return null;
         }
+        callback?.Invoke();
     }
 }

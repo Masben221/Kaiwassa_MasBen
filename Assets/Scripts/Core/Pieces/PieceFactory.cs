@@ -2,12 +2,11 @@ using UnityEngine;
 using Zenject;
 
 /// <summary>
-/// Интерфейс фабрики для создания игровых фигур и гор.
+/// Интерфейс фабрики для создания игровых фигур, включая горы.
 /// </summary>
 public interface IPieceFactory
 {
     Piece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position);
-    Piece CreateMountain(Vector3Int position); // Изменено на Piece
 }
 
 /// <summary>
@@ -16,21 +15,21 @@ public interface IPieceFactory
 /// </summary>
 public class PieceFactory : MonoBehaviour, IPieceFactory
 {
-    [SerializeField] private GameObject kingPrefab; // Префаб короля
-    [SerializeField] private GameObject dragonPrefab; // Префаб дракона
-    [SerializeField] private GameObject elephantPrefab; // Префаб слона
-    [SerializeField] private GameObject heavyCavalryPrefab; // Префаб тяжёлой кавалерии
-    [SerializeField] private GameObject lightHorsePrefab; // Префаб лёгкой кавалерии
-    [SerializeField] private GameObject spearmanPrefab; // Префаб копейщика
-    [SerializeField] private GameObject crossbowmanPrefab; // Префаб арбалетчика
-    [SerializeField] private GameObject rabblePrefab; // Префаб толпы
-    [SerializeField] private GameObject catapultPrefab; // Префаб катапульты
-    [SerializeField] private GameObject trebuchetPrefab; // Префаб требушета
-    [SerializeField] private GameObject mountainPrefab; // Префаб горы
-    [SerializeField] private Material player1Material; // Материал для Игрока 1
-    [SerializeField] private Material player2Material; // Материал для Игрока 2
+    [SerializeField] private GameObject kingPrefab;
+    [SerializeField] private GameObject dragonPrefab;
+    [SerializeField] private GameObject elephantPrefab;
+    [SerializeField] private GameObject heavyCavalryPrefab;
+    [SerializeField] private GameObject lightHorsePrefab;
+    [SerializeField] private GameObject spearmanPrefab;
+    [SerializeField] private GameObject crossbowmanPrefab;
+    [SerializeField] private GameObject rabblePrefab;
+    [SerializeField] private GameObject catapultPrefab;
+    [SerializeField] private GameObject trebuchetPrefab;
+    [SerializeField] private GameObject mountainPrefab;
+    [SerializeField] private Material player1Material;
+    [SerializeField] private Material player2Material;
 
-    private DiContainer container; // DI-контейнер Zenject
+    private DiContainer container;
 
     [Inject]
     public void Construct(DiContainer diContainer)
@@ -47,11 +46,11 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
     }
 
     /// <summary>
-    /// Создаёт фигуру указанного типа на заданной позиции.
-    /// Поворачивает фигуры второго игрока на 180 градусов.
+    /// Создаёт фигуру или гору указанного типа на заданной позиции.
+    /// Поворачивает фигуры второго игрока на 180 градусов (кроме гор).
     /// </summary>
-    /// <param name="type">Тип фигуры (King, Dragon и т.д.).</param>
-    /// <param name="isPlayer1">true, если фигура для Игрока 1.</param>
+    /// <param name="type">Тип фигуры (King, Dragon, Mountain и т.д.).</param>
+    /// <param name="isPlayer1">true, если фигура для игрока 1.</param>
     /// <param name="position">Позиция в клеточных координатах.</param>
     /// <returns>Созданная фигура или null, если создание не удалось.</returns>
     public Piece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position)
@@ -126,15 +125,5 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
         piece.SetPosition(position);
         Debug.Log($"PieceFactory: Created {type} for Player {(isPlayer1 ? 1 : 2)} at {position} (world: {pieceObject.transform.position}, rotation: {pieceObject.transform.rotation.eulerAngles})");
         return piece;
-    }
-
-    /// <summary>
-    /// Создаёт гору на заданной позиции.
-    /// </summary>
-    /// <param name="position">Позиция в клеточных координатах.</param>
-    /// <returns>Созданная гора или null, если создание не удалось.</returns>
-    public Piece CreateMountain(Vector3Int position)
-    {
-        return CreatePiece(PieceType.Mountain, true, position); // Игрок 1, так как горы нейтральны
     }
 }
