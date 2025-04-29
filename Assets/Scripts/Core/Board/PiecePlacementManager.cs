@@ -5,23 +5,6 @@ using System.Linq;
 using Zenject;
 
 /// <summary>
-/// Интерфейс для управления размещением фигур и гор на доске.
-/// </summary>
-public interface IPiecePlacementManager
-{
-    void PlaceMountains(int mountainsPerSide); // Размещение гор
-    void PlacePiecesForPlayer(bool isPlayer1); // Размещение фигур для игрока
-    void Initialize(int mountainsPerSide); // Инициализация менеджера
-    bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain); // Проверка возможности размещения
-    bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain); // Размещение фигуры или горы
-    bool RemovePiece(bool isPlayer1, Vector3Int position, PieceType type); // Удаление фигуры или горы
-    int GetRemainingCount(bool isPlayer1, PieceType type, bool isMountain); // Получение количества оставшихся элементов
-    bool HasCompletedPlacement(bool isPlayer1); // Проверка завершения расстановки
-    bool IsKingNotPlaced(bool isPlayer1); // Проверка, размещён ли король
-    int GetMountainsPerSide { get; } // Количество гор на сторону
-}
-
-/// <summary>
 /// Управляет логикой автоматической расстановки гор и фигур на доске.
 /// Следует принципу единственной ответственности (SOLID).
 /// </summary>
@@ -45,6 +28,78 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     private readonly List<Vector3Int> blockedPositions = new List<Vector3Int>();
     private List<int> reservedPassagesPlayer1 = new List<int>();
     private List<int> reservedPassagesPlayer2 = new List<int>();
+    private int mountainsPerSide;
+
+    public int GetMountainsPerSide => mountainsPerSide;
+
+    public void Initialize(int mountainsPerSide)
+    {
+        this.mountainsPerSide = mountainsPerSide;
+        occupiedPositions.Clear();
+        blockedPositions.Clear();
+        reservedPassagesPlayer1.Clear();
+        reservedPassagesPlayer2.Clear();
+    }
+
+    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain)
+    {
+        Debug.LogWarning("PiecePlacementManager: CanPlace not supported in automatic placement.");
+        return false;
+    }
+
+    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain, PieceType type, bool isMove = false)
+    {
+        Debug.LogWarning("PiecePlacementManager: CanPlace with type not supported in automatic placement.");
+        return false;
+    }
+
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain)
+    {
+        Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain not supported in automatic placement.");
+        return false;
+    }
+
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain, bool isMove = false)
+    {
+        Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain with isMove not supported in automatic placement.");
+        return false;
+    }
+
+    public bool RemovePiece(bool isPlayer1, Vector3Int position, PieceType type)
+    {
+        Debug.LogWarning("PiecePlacementManager: RemovePiece not supported in automatic placement.");
+        return false;
+    }
+
+    public bool RemovePiece(Piece piece)
+    {
+        Debug.LogWarning("PiecePlacementManager: RemovePiece(Piece) not supported in automatic placement.");
+        return false;
+    }
+
+    public bool MovePiece(Piece piece, Vector3Int from, Vector3Int to)
+    {
+        Debug.LogWarning("PiecePlacementManager: MovePiece not supported in automatic placement.");
+        return false;
+    }
+
+    public int GetRemainingCount(bool isPlayer1, PieceType type, bool isMountain)
+    {
+        Debug.LogWarning("PiecePlacementManager: GetRemainingCount not supported in automatic placement.");
+        return 0;
+    }
+
+    public bool HasCompletedPlacement(bool isPlayer1)
+    {
+        Debug.LogWarning("PiecePlacementManager: HasCompletedPlacement not supported in automatic placement.");
+        return true; // Автоматическая расстановка считается завершённой после PlacePiecesForPlayer
+    }
+
+    public bool IsKingNotPlaced(bool isPlayer1)
+    {
+        Debug.LogWarning("PiecePlacementManager: IsKingNotPlaced not supported in automatic placement.");
+        return false; // Предполагается, что король размещён автоматически
+    }
 
     public void PlaceMountains(int mountainsPerSide)
     {
@@ -54,7 +109,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
             return;
         }
 
-        mountainsPerSide = Mathf.Min(mountainsPerSide, 8);
+        this.mountainsPerSide = Mathf.Min(mountainsPerSide, 8);
 
         occupiedPositions.Clear();
         reservedPassagesPlayer1.Clear();
@@ -189,10 +244,10 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
                 positions.RemoveAt(index);
                 continue;
             }
-            Piece mountain = pieceFactory.CreateMountain(pos); // Теперь возвращает Piece
+            Piece mountain = pieceFactory.CreateMountain(pos);
             if (mountain != null)
             {
-                boardManager.PlacePiece(mountain, pos); // Используем PlacePiece вместо PlaceMountain
+                boardManager.PlacePiece(mountain, pos);
                 occupiedPositions.Add(pos);
                 Debug.Log($"PiecePlacementManager: Placed mountain for Player {(isPlayer1 ? 1 : 2)} at {pos}");
             }
@@ -473,66 +528,6 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
         else
         {
             Debug.LogWarning($"PiecePlacementManager: Failed to create {type} at {position}");
-        }
-    }
-
-    private Vector3Int? GetPiecePosition(PieceType type, bool isPlayer1)
-    {
-        foreach (var pair in boardManager.GetAllPieces())
-        {
-            if (pair.Value.Type == type && pair.Value.IsPlayer1 == isPlayer1)
-                return pair.Key;
-        }
-        return null;
-    }
-
-    public bool RemovePiece(bool isPlayer1, Vector3Int position, PieceType type)
-    {
-        Debug.LogWarning("PiecePlacementManager: RemovePiece not implemented for automatic placement.");
-        return false; // Автоматическая расстановка не поддерживает удаление
-    }
-
-    public void Initialize(int mountainsPerSide)
-    {
-        Debug.Log("PiecePlacementManager: Initialize not implemented for automatic placement.");
-    }
-
-    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain)
-    {
-        Debug.LogWarning("PiecePlacementManager: CanPlace not implemented.");
-        return false;
-    }
-
-    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain)
-    {
-        Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain not implemented.");
-        return false;
-    }
-
-    public int GetRemainingCount(bool isPlayer1, PieceType type, bool isMountain)
-    {
-        Debug.LogWarning("PiecePlacementManager: GetRemainingCount not implemented.");
-        return 0;
-    }
-
-    public bool HasCompletedPlacement(bool isPlayer1)
-    {
-        Debug.LogWarning("PiecePlacementManager: HasCompletedPlacement not implemented.");
-        return true;
-    }
-
-    public bool IsKingNotPlaced(bool isPlayer1)
-    {
-        Debug.LogWarning("PiecePlacementManager: IsKingNotPlaced not implemented.");
-        return false;
-    }
-
-    public int GetMountainsPerSide
-    {
-        get
-        {
-            Debug.LogWarning("PiecePlacementManager: GetMountainsPerSide not implemented.");
-            return 0;
         }
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using Zenject;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// Обрабатывает ввод игрока (мышь или тачскрин) для выбора фигур и ходов.
@@ -9,7 +10,7 @@ using System.Collections.Generic;
 public class InputHandler : MonoBehaviour
 {
     [Inject] private IGameManager gameManager;
-    [Inject] private IBoardManager boardManager;    
+    [Inject] private IBoardManager boardManager;
 
     [SerializeField] private GameObject moveMarkerPrefab;
     [SerializeField] private GameObject attackMarkerPrefab;
@@ -19,6 +20,7 @@ public class InputHandler : MonoBehaviour
     [SerializeField] private Material highlightMaterial;
     private Material originalMaterial;
     private bool isInputBlocked;
+    private BoardPieceDragHandler activeDragHandler; // Для отслеживания текущего перетаскивания
 
     private void Awake()
     {
@@ -35,9 +37,22 @@ public class InputHandler : MonoBehaviour
 
     private void Update()
     {
-        if (!isInputBlocked && Input.GetMouseButtonDown(0))
+        if (!isInputBlocked)
         {
-            HandleClick();
+            if (Input.GetMouseButtonDown(0))
+            {
+                HandleClick();
+            }
+            else if (Input.GetMouseButton(0) && activeDragHandler != null)
+            {
+                // Обрабатываем перетаскивание, если мышь зажата
+                HandleDrag();
+            }
+            else if (Input.GetMouseButtonUp(0) && activeDragHandler != null)
+            {
+                // Обрабатываем отпускание мыши
+                HandlePointerUp();
+            }
         }
     }
 
@@ -67,6 +82,7 @@ public class InputHandler : MonoBehaviour
                     var dragHandler = clickedPiece.GetComponent<BoardPieceDragHandler>();
                     if (dragHandler != null)
                     {
+                        activeDragHandler = dragHandler;
                         dragHandler.StartDragging();
                         Debug.Log($"InputHandler: Started dragging piece {clickedPiece.Type} at {clickedPos}");
                     }
@@ -108,6 +124,41 @@ public class InputHandler : MonoBehaviour
         {
             ClearSelection();
         }
+    }
+
+    /// <summary>
+    /// Обрабатывает перетаскивание во время фазы расстановки.
+    /// Вызывается, пока мышь зажата и есть активный dragHandler.
+    /// </summary>
+    private void HandleDrag()
+    {
+        if (activeDragHandler == null)
+            return;
+
+        // Создаём событие для передачи в OnDrag
+        PointerEventData eventData = new PointerEventData(UnityEngine.EventSystems.EventSystem.current)
+        {
+            position = Input.mousePosition
+        };
+        activeDragHandler.OnDrag(eventData);
+    }
+
+    /// <summary>
+    /// Обрабатывает отпускание мыши во время фазы расстановки.
+    /// Вызывается, когда мышь отпущена и есть активный dragHandler.
+    /// </summary>
+    private void HandlePointerUp()
+    {
+        if (activeDragHandler == null)
+            return;
+
+        // Создаём событие для передачи в OnPointerUp
+        PointerEventData eventData = new PointerEventData(UnityEngine.EventSystems.EventSystem.current)
+        {
+            position = Input.mousePosition
+        };
+        activeDragHandler.OnPointerUp(eventData);
+        activeDragHandler = null;
     }
 
     private void SelectPiece(Piece piece)

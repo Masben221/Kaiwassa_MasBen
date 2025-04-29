@@ -4,8 +4,7 @@ using System.Linq;
 using Zenject;
 
 /// <summary>
-/// Управляет логикой ручной расстановки фигур и гор.
-/// Реализует интерфейс IPiecePlacementManager для совместимости с системой.
+/// Управляет ручной расстановкой фигур и гор.
 /// </summary>
 public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
 {
@@ -19,46 +18,57 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
 
     public void Initialize(int mountainsPerSide)
     {
-        this.GetMountainsPerSide = mountainsPerSide;
-
+        GetMountainsPerSide = mountainsPerSide;
         player1Pieces = new Dictionary<PieceType, int>
         {
-            { PieceType.King, 1 },
-            { PieceType.Dragon, 1 },
-            { PieceType.Elephant, 2 },
-            { PieceType.HeavyCavalry, 2 },
-            { PieceType.LightHorse, 3 },
-            { PieceType.Spearman, 3 },
-            { PieceType.Crossbowman, 3 },
-            { PieceType.Rabble, 3 },
-            { PieceType.Catapult, 1 },
-            { PieceType.Trebuchet, 1 },
-            { PieceType.Mountain, mountainsPerSide }
+            { PieceType.King, 1 }, { PieceType.Dragon, 1 }, { PieceType.Elephant, 2 },
+            { PieceType.HeavyCavalry, 2 }, { PieceType.LightHorse, 3 }, { PieceType.Spearman, 3 },
+            { PieceType.Crossbowman, 3 }, { PieceType.Rabble, 3 }, { PieceType.Catapult, 1 },
+            { PieceType.Trebuchet, 1 }, { PieceType.Mountain, mountainsPerSide }
         };
         player2Pieces = new Dictionary<PieceType, int>(player1Pieces);
-        Debug.Log($"ManualPlacementManager: Initialized with {mountainsPerSide} mountains per side.");
     }
 
     public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain)
     {
+        return CanPlace(isPlayer1, position, isMountain, PieceType.King);
+    }
+
+    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain, PieceType type, bool isMove = false)
+    {
         if (!boardManager.IsWithinBounds(position) || boardManager.IsOccupied(position))
             return false;
 
-        if (isPlayer1 && (position.z < 0 || position.z > 3))
-            return false;
-        if (!isPlayer1 && (position.z < 6 || position.z > 9))
-            return false;
+        if (isPlayer1 && (position.z < 0 || position.z > 3)) return false;
+        if (!isPlayer1 && (position.z < 6 || position.z > 9)) return false;
 
         var pieces = isPlayer1 ? player1Pieces : player2Pieces;
-        PieceType type = isMountain ? PieceType.Mountain : PieceType.King;
-        return pieces.ContainsKey(type) && pieces[type] > 0;
+        PieceType targetType = isMountain ? PieceType.Mountain : type;
+
+        return isMove || (pieces.ContainsKey(targetType) && pieces[targetType] > 0);
+    }
+
+    public bool CanMove(bool isPlayer1, PieceType type, Vector3Int newPosition)
+    {
+        if (!boardManager.IsWithinBounds(newPosition) || boardManager.IsOccupied(newPosition))
+            return false;
+
+        if (isPlayer1 && (newPosition.z < 0 || newPosition.z > 3)) return false;
+        if (!isPlayer1 && (newPosition.z < 6 || newPosition.z > 9)) return false;
+
+        return true;
     }
 
     public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain)
     {
-        if (!CanPlace(isPlayer1, position, isMountain))
+        return PlacePieceOrMountain(isPlayer1, position, type, isMountain, false);
+    }
+
+    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMountain, bool isMove = false)
+    {
+        if (!CanPlace(isPlayer1, position, isMountain, type, isMove))
         {
-            Debug.LogWarning($"ManualPlacementManager: Cannot place {(isMountain ? "mountain" : type.ToString())} at {position} for Player {(isPlayer1 ? 1 : 2)}");
+            Debug.LogWarning($"Cannot place {(isMountain ? "mountain" : type)} at {position}");
             return false;
         }
 
@@ -66,13 +76,15 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         if (piece != null)
         {
             boardManager.PlacePiece(piece, position);
-            var pieces = isPlayer1 ? player1Pieces : player2Pieces;
-            pieces[type]--;
-            Debug.Log($"ManualPlacementManager: Placed {(isMountain ? "mountain" : type.ToString())} at {position} for Player {(isPlayer1 ? 1 : 2)}");
+            if (!isMove)
+            {
+                var pieces = isPlayer1 ? player1Pieces : player2Pieces;
+                pieces[type]--;
+            }
             return true;
         }
 
-        Debug.LogWarning($"ManualPlacementManager: Failed to place {(isMountain ? "mountain" : type.ToString())} at {position}");
+        Debug.LogWarning($"Failed to place {(isMountain ? "mountain" : type)} at {position}");
         return false;
     }
 
@@ -80,7 +92,7 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
     {
         if (!boardManager.IsWithinBounds(position))
         {
-            Debug.LogWarning($"ManualPlacementManager: Cannot remove piece at {position} (out of bounds)");
+            Debug.LogWarning($"Cannot remove piece at {position}");
             return false;
         }
 
@@ -89,23 +101,55 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         {
             boardManager.RemovePiece(position);
             var pieces = isPlayer1 ? player1Pieces : player2Pieces;
-            if (pieces.ContainsKey(type))
-            {
-                pieces[type]++;
-                Debug.Log($"ManualPlacementManager: Removed {type} at {position} for Player {(isPlayer1 ? 1 : 2)}, remaining: {pieces[type]}");
-                return true;
-            }
-            else
-            {
-                Debug.LogWarning($"ManualPlacementManager: Type {type} not found in pieces dictionary for Player {(isPlayer1 ? 1 : 2)}");
-                return false;
-            }
+            pieces[type]++;
+            Destroy(piece.gameObject);
+            return true;
         }
-        else
+
+        Debug.LogWarning($"No piece {type} at {position}");
+        return false;
+    }
+
+    public bool RemovePiece(Piece piece)
+    {
+        if (!boardManager.IsWithinBounds(piece.Position))
         {
-            Debug.LogWarning($"ManualPlacementManager: No piece of type {type} found at {position} for Player {(isPlayer1 ? 1 : 2)}");
+            Debug.LogWarning($"Cannot remove piece at {piece.Position}");
             return false;
         }
+
+        var existingPiece = boardManager.GetPieceAt(piece.Position);
+        if (existingPiece == piece)
+        {
+            boardManager.RemovePiece(piece.Position);
+            var pieces = piece.IsPlayer1 ? player1Pieces : player2Pieces;
+            pieces[piece.Type]++;
+            Destroy(piece.gameObject);
+            return true;
+        }
+
+        Debug.LogWarning($"No piece {piece.Type} at {piece.Position}");
+        return false;
+    }
+
+    public bool MovePiece(Piece piece, Vector3Int from, Vector3Int to)
+    {
+        if (!boardManager.IsWithinBounds(from) || !boardManager.IsWithinBounds(to))
+            return false;
+
+        var existingPiece = boardManager.GetPieceAt(from);
+        if (existingPiece != piece || boardManager.IsOccupied(to))
+        {
+            Debug.LogWarning($"Cannot move {piece.Type} from {from} to {to}");
+            return false;
+        }
+
+        bool isPlayer1 = piece.IsPlayer1;
+        if (isPlayer1 && (to.z < 0 || to.z > 3)) return false;
+        if (!isPlayer1 && (to.z < 6 || to.z > 9)) return false;
+
+        boardManager.MovePiece(piece, from, to);
+        return true;
     }
 
     public int GetRemainingCount(bool isPlayer1, PieceType type, bool isMountain)
@@ -127,6 +171,6 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         return pieces.ContainsKey(PieceType.King) && pieces[PieceType.King] > 0;
     }
 
-    public void PlaceMountains(int mountainsPerSide) { /* Заглушка */ }
-    public void PlacePiecesForPlayer(bool isPlayer1) { /* Заглушка */ }
+    public void PlaceMountains(int mountainsPerSide) { }
+    public void PlacePiecesForPlayer(bool isPlayer1) { }
 }
