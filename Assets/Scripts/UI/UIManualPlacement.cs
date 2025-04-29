@@ -71,6 +71,7 @@ public class UIManualPlacement : MonoBehaviour
 
         CreatePieceButtons(player1Panel, true);
         CreatePieceButtons(player2Panel, false);
+        UpdateFinishButtons(); // Обновляем кнопки после создания панелей
     }
 
     /// <summary>
@@ -208,6 +209,7 @@ public class UIManualPlacement : MonoBehaviour
                 }
             }
             UpdatePlayerPanels();
+            UpdateFinishButtons(); // Обновляем кнопки после размещения
         }
         return success;
     }
@@ -225,8 +227,10 @@ public class UIManualPlacement : MonoBehaviour
     /// </summary>
     private void UpdateFinishButtons()
     {
-        player1FinishButton.interactable = isPlayer1Turn && placementManager.HasCompletedPlacement(true);
-        player2FinishButton.interactable = !isPlayer1Turn && placementManager.HasCompletedPlacement(false);
+        bool player1Completed = placementManager.HasCompletedPlacement(true);
+        bool player2Completed = placementManager.HasCompletedPlacement(false);
+        player1FinishButton.interactable = isPlayer1Turn && player1Completed;
+        player2FinishButton.interactable = !isPlayer1Turn && player2Completed;
     }
 
     /// <summary>
@@ -243,6 +247,7 @@ public class UIManualPlacement : MonoBehaviour
         isPlayer1Turn = false;
         player1FinishButton.interactable = false;
         player2FinishButton.interactable = placementManager.HasCompletedPlacement(false);
+        UpdateFinishButtons(); // Обновляем кнопки после переключения хода
     }
 
     /// <summary>

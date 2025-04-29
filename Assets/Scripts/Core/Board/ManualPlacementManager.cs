@@ -60,7 +60,13 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         return CanPlace(isPlayer1, position, isMountain ? PieceType.Mountain : PieceType.King, false);
     }
 
-    // Остальные методы остаются без изменений (для краткости не дублирую)
+    /// <summary>
+    /// Проверяет, можно ли переместить фигуру на новую позицию.
+    /// </summary>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <param name="type">Тип фигуры.</param>
+    /// <param name="newPosition">Новая позиция.</param>
+    /// <returns>true, если перемещение возможно.</returns>
     public bool CanMove(bool isPlayer1, PieceType type, Vector3Int newPosition)
     {
         if (!boardManager.IsWithinBounds(newPosition) || boardManager.IsOccupied(newPosition))
@@ -72,6 +78,14 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         return true;
     }
 
+    /// <summary>
+    /// Размещает фигуру или гору на доске.
+    /// </summary>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <param name="position">Координаты клетки.</param>
+    /// <param name="type">Тип фигуры (King, Mountain и т.д.).</param>
+    /// <param name="isMove">true, если это перемещение.</param>
+    /// <returns>true, если размещение успешно.</returns>
     public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMove = false)
     {
         if (!CanPlace(isPlayer1, position, type, isMove))
@@ -101,6 +115,13 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         return PlacePieceOrMountain(isPlayer1, position, type, false);
     }
 
+    /// <summary>
+    /// Удаляет фигуру или гору с доски.
+    /// </summary>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <param name="position">Координаты клетки.</param>
+    /// <param name="type">Тип фигуры.</param>
+    /// <returns>true, если удаление успешно.</returns>
     public bool RemovePiece(bool isPlayer1, Vector3Int position, PieceType type)
     {
         if (!boardManager.IsWithinBounds(position))
@@ -123,6 +144,11 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         return false;
     }
 
+    /// <summary>
+    /// Удаляет указанную фигуру с доски.
+    /// </summary>
+    /// <param name="piece">Фигура для удаления.</param>
+    /// <returns>true, если удаление успешно.</returns>
     public bool RemovePiece(Piece piece)
     {
         if (!boardManager.IsWithinBounds(piece.Position))
@@ -145,6 +171,13 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         return false;
     }
 
+    /// <summary>
+    /// Перемещает фигуру с одной позиции на другую.
+    /// </summary>
+    /// <param name="piece">Фигура для перемещения.</param>
+    /// <param name="from">Исходная позиция.</param>
+    /// <param name="to">Новая позиция.</param>
+    /// <returns>true, если перемещение успешно.</returns>
     public bool MovePiece(Piece piece, Vector3Int from, Vector3Int to)
     {
         if (!boardManager.IsWithinBounds(from) || !boardManager.IsWithinBounds(to))
@@ -165,18 +198,34 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         return true;
     }
 
+    /// <summary>
+    /// Возвращает количество оставшихся фигур указанного типа.
+    /// </summary>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <param name="type">Тип фигуры.</param>
+    /// <returns>Количество оставшихся фигур.</returns>
     public int GetRemainingCount(bool isPlayer1, PieceType type)
     {
         var pieces = isPlayer1 ? player1Pieces : player2Pieces;
         return pieces.ContainsKey(type) ? pieces[type] : 0;
     }
 
+    /// <summary>
+    /// Проверяет, завершена ли расстановка для игрока.
+    /// </summary>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <returns>true, если все фигуры размещены.</returns>
     public bool HasCompletedPlacement(bool isPlayer1)
     {
         var pieces = isPlayer1 ? player1Pieces : player2Pieces;
         return pieces.Values.All(count => count == 0);
     }
 
+    /// <summary>
+    /// Проверяет, размещён ли король.
+    /// </summary>
+    /// <param name="isPlayer1">true, если для игрока 1.</param>
+    /// <returns>true, если король не размещён.</returns>
     public bool IsKingNotPlaced(bool isPlayer1)
     {
         var pieces = isPlayer1 ? player1Pieces : player2Pieces;
