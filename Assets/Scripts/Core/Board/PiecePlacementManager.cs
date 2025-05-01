@@ -55,16 +55,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
         Debug.LogWarning("PiecePlacementManager: CanPlace not supported in automatic placement.");
         return false;
     }
-
-    /// <summary>
-    /// ѕровер€ет, можно ли разместить гору на указанной позиции (не поддерживаетс€ в автоматической расстановке).
-    /// </summary>
-    public bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain)
-    {
-        Debug.LogWarning("PiecePlacementManager: CanPlace with isMountain not supported in automatic placement.");
-        return false;
-    }
-
+    
     /// <summary>
     /// –азмещает фигуру или гору на доске (не поддерживаетс€ в автоматической расстановке).
     /// </summary>
@@ -73,16 +64,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
         Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain not supported in automatic placement.");
         return false;
     }
-
-    /// <summary>
-    /// ѕерегруженный метод дл€ размещени€ фигуры или горы (не поддерживаетс€ в автоматической расстановке).
-    /// </summary>
-    public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type)
-    {
-        Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain without isMove not supported in automatic placement.");
-        return false;
-    }
-
+    
     /// <summary>
     /// ”дал€ет фигуру с доски (не поддерживаетс€ в автоматической расстановке).
     /// </summary>

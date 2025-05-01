@@ -11,13 +11,9 @@ public interface IPiecePlacementManager
     bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMove = false);
     bool RemovePiece(bool isPlayer1, Vector3Int position, PieceType type);
     bool RemovePiece(Piece piece);
-    bool MovePiece(Piece piece, Vector3Int position, Vector3Int to);
+    bool MovePiece(Piece piece, Vector3Int from, Vector3Int to);
     int GetRemainingCount(bool isPlayer1, PieceType type);
     bool HasCompletedPlacement(bool isPlayer1);
-    bool IsKingNotPlaced(bool isPlayer1);    
+    bool IsKingNotPlaced(bool isPlayer1);
     void PlacePiecesForPlayer(bool isPlayer1, int selectedMountains);
-
-    // Устаревшие методы, сохранены для совместимости
-    bool CanPlace(bool isPlayer1, Vector3Int position, bool isMountain);
-    bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type);
 }

@@ -1,10 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using Zenject;
 using System.Collections.Generic;
-using System.Linq;
-using DG.Tweening;
 
 public class UIManualPlacement : MonoBehaviour
 {
@@ -16,19 +13,19 @@ public class UIManualPlacement : MonoBehaviour
     [Inject] private IPieceFactory pieceFactory; // Фабрика для создания фигур
     [Inject] private DiContainer container; // Контейнер Zenject для создания компонентов
 
-    // Ссылки на UI-элементы, которые задаются в инспекторе
-    [SerializeField] private GameObject placementPanel; // Панель расстановки
+    // Ссылки на UI-элементы, задаваемые в инспекторе
+    [SerializeField] private GameObject placementPanel; // Панель расстановки фигур
     [SerializeField] private GameObject mainMenuPanel; // Панель главного меню
-    [SerializeField] private RectTransform player1Panel; // Панель игрока 1 для кнопок фигур
-    [SerializeField] private RectTransform player2Panel; // Панель игрока 2 для кнопок фигур
-    [SerializeField] private Button player1FinishButton; // Кнопка "Завершить расстановку" для игрока 1
-    [SerializeField] private Button player2FinishButton; // Кнопка "Завершить расстановку" для игрока 2
+    [SerializeField] private RectTransform player1Panel; // Панель игрока 1 для списка фигур
+    [SerializeField] private RectTransform player2Panel; // Панель игрока 2 для списка фигур
+    [SerializeField] private Button player1FinishButton; // Кнопка "Завершить" для игрока 1
+    [SerializeField] private Button player2FinishButton; // Кнопка "Завершить" для игрока 2
     [SerializeField] private Button player1RandomButton; // Кнопка случайной генерации для игрока 1
     [SerializeField] private Button player2RandomButton; // Кнопка случайной генерации для игрока 2
     [SerializeField] private Button startGameButton; // Кнопка "Старт игры"
     [SerializeField] private Button backButton; // Кнопка "Назад"
     [SerializeField] private Slider mountainsSlider; // Слайдер для выбора количества гор
-    [SerializeField] private Text mountainsValueText; // Текст, показывающий количество гор
+    [SerializeField] private Text mountainsValueText; // Текст, отображающий количество гор
     [SerializeField] private Material highlightMaterial; // Материал для подсветки клеток
     [SerializeField] private Font buttonFont; // Шрифт для текста на кнопках
 
@@ -39,10 +36,6 @@ public class UIManualPlacement : MonoBehaviour
     private int selectedMountains = 4; // Выбранное количество гор
     private Vector3Int? highlightedTile; // Подсвеченная клетка (если есть)
     private Dictionary<Vector3Int, Material> originalTileMaterials = new Dictionary<Vector3Int, Material>(); // Исходные материалы клеток
-
-    // Переменные для управления проходами (аналог reservedPassages из PiecePlacementManager)
-    private List<int> reservedPassagesPlayer1 = new List<int>(); // Зарезервированные проходы для игрока 1
-    private List<int> reservedPassagesPlayer2 = new List<int>(); // Зарезервированные проходы для игрока 2
 
     private void Awake()
     {
@@ -66,12 +59,12 @@ public class UIManualPlacement : MonoBehaviour
         // Настраиваем слайдер для выбора количества гор
         mountainsSlider.minValue = 0;
         mountainsSlider.maxValue = 8;
-        mountainsSlider.value = selectedMountains;
         mountainsSlider.wholeNumbers = true;
         mountainsSlider.onValueChanged.AddListener(OnMountainsSliderChanged);
+        mountainsSlider.value = selectedMountains;
         mountainsValueText.text = selectedMountains.ToString();
 
-        // Изначально кнопки "Завершить расстановку" и "Старт игры" неактивны
+        // Изначально кнопки "Завершить" и "Старт игры" неактивны
         startGameButton.interactable = false;
         player2FinishButton.interactable = false;
     }
@@ -89,15 +82,18 @@ public class UIManualPlacement : MonoBehaviour
         ClearHighlight(); // Очищаем подсветку клеток
     }
 
-    // Инициализация панели расстановки
+    /// <summary>
+    /// Инициализирует панель расстановки.
+    /// </summary>
+    /// <param name="mountainsPerSide">Начальное количество гор на сторону.</param>
     public void Initialize(int mountainsPerSide)
     {
-        selectedMountains = mountainsPerSide; // Устанавливаем начальное количество гор
+        selectedMountains = mountainsPerSide; // Устанавливаем количество гор
         mountainsSlider.value = selectedMountains; // Обновляем слайдер
         mountainsValueText.text = selectedMountains.ToString(); // Обновляем текст
 
-        placementManager.Initialize(selectedMountains); // Инициализируем менеджер ручной расстановки
-        boardManager.InitializeBoard(10); // Создаём доску размером 10x10
+        placementManager.Initialize(selectedMountains); // Инициализируем менеджер расстановки
+        boardManager.InitializeBoard(10); // Создаём доску 10x10
         gameManager.IsInPlacementPhase = true; // Устанавливаем фазу расстановки
 
         SetupPlayerPanels(); // Создаём списки фигур для игроков
@@ -110,16 +106,14 @@ public class UIManualPlacement : MonoBehaviour
         player1FinishButton.interactable = false;
         player2FinishButton.interactable = false;
         startGameButton.interactable = false;
-
-        // Очищаем проходы
-        reservedPassagesPlayer1.Clear();
-        reservedPassagesPlayer2.Clear();
     }
 
-    // Создаём списки фигур для обоих игроков
+    /// <summary>
+    /// Создаёт списки фигур для обоих игроков в UI.
+    /// </summary>
     private void SetupPlayerPanels()
     {
-        // Удаляем все существующие кнопки фигур
+        // Удаляем существующие кнопки фигур
         foreach (Transform child in player1Panel) Destroy(child.gameObject);
         foreach (Transform child in player2Panel) Destroy(child.gameObject);
 
@@ -129,15 +123,19 @@ public class UIManualPlacement : MonoBehaviour
         UpdateFinishButtons(); // Обновляем состояние кнопок завершения
     }
 
-    // Создаём кнопки для фигур и гор на указанной панели
+    /// <summary>
+    /// Создаёт кнопки для фигур и гор на указанной панели.
+    /// </summary>
+    /// <param name="panel">Панель для размещения кнопок.</param>
+    /// <param name="isPlayer1">True, если для игрока 1.</param>
     private void CreatePieceButtons(RectTransform panel, bool isPlayer1)
     {
-        float yOffset = -20f; // Начальное смещение по Y для позиционирования кнопок
+        float yOffset = -20f; // Начальное смещение по Y для кнопок
 
-        // Сначала создаём кнопку для гор
+        // Создаём кнопку для гор
         CreatePieceButton(panel, isPlayer1, PieceType.Mountain, ref yOffset);
 
-        // Затем создаём кнопки для остальных типов фигур
+        // Создаём кнопки для остальных типов фигур
         foreach (PieceType type in System.Enum.GetValues(typeof(PieceType)))
         {
             if (type != PieceType.Mountain)
@@ -147,11 +145,17 @@ public class UIManualPlacement : MonoBehaviour
         }
     }
 
-    // Создаём кнопку для конкретного типа фигуры или горы
+    /// <summary>
+    /// Создаёт кнопку для конкретного типа фигуры или горы.
+    /// </summary>
+    /// <param name="panel">Панель для размещения кнопки.</param>
+    /// <param name="isPlayer1">True, если для игрока 1.</param>
+    /// <param name="type">Тип фигуры.</param>
+    /// <param name="yOffset">Смещение по Y (обновляется).</param>
     private void CreatePieceButton(RectTransform panel, bool isPlayer1, PieceType type, ref float yOffset)
     {
         int count = placementManager.GetRemainingCount(isPlayer1, type); // Получаем количество оставшихся фигур
-        if (count <= 0) return; // Если фигур нет, пропускаем
+        if (count <= 0) return; // Пропускаем, если фигур нет
 
         // Создаём объект кнопки
         GameObject buttonObj = new GameObject(type.ToString());
@@ -181,7 +185,12 @@ public class UIManualPlacement : MonoBehaviour
         dragHandler.Initialize(isPlayer1, type, this, pieceFactory);
     }
 
-    // Подсвечиваем клетку, если она доступна для размещения фигуры
+    /// <summary>
+    /// Подсвечивает клетку, если она доступна для размещения фигуры.
+    /// </summary>
+    /// <param name="position">Координаты клетки.</param>
+    /// <param name="isPlayer1">True, если для игрока 1.</param>
+    /// <param name="type">Тип фигуры.</param>
     public void HighlightTile(Vector3Int position, bool isPlayer1, PieceType type)
     {
         var piece = boardManager.GetPieceAt(position); // Проверяем, есть ли фигура на клетке
@@ -215,7 +224,9 @@ public class UIManualPlacement : MonoBehaviour
         }
     }
 
-    // Очищаем подсветку клетки
+    /// <summary>
+    /// Очищает подсветку клетки.
+    /// </summary>
     public void ClearHighlight()
     {
         if (highlightedTile.HasValue)
@@ -230,7 +241,13 @@ public class UIManualPlacement : MonoBehaviour
         }
     }
 
-    // Размещаем фигуру или гору на доске
+    /// <summary>
+    /// Размещает фигуру или гору на доске через UI.
+    /// </summary>
+    /// <param name="isPlayer1">True, если для игрока 1.</param>
+    /// <param name="position">Координаты клетки.</param>
+    /// <param name="type">Тип фигуры.</param>
+    /// <returns>True, если размещение успешно.</returns>
     public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type)
     {
         // Пытаемся разместить фигуру через placementManager
@@ -253,23 +270,30 @@ public class UIManualPlacement : MonoBehaviour
         return success;
     }
 
-    // Обновляем списки фигур игроков
+    /// <summary>
+    /// Обновляет списки фигур игроков в UI.
+    /// </summary>
     public void UpdatePlayerPanels()
     {
         SetupPlayerPanels();
     }
 
-    // Обновляем состояние кнопок завершения расстановки
+    /// <summary>
+    /// Обновляет состояние кнопок завершения расстановки.
+    /// Кнопка "Завершить" активируется для каждого игрока независимо, как только он разместит все свои фигуры.
+    /// </summary>
     private void UpdateFinishButtons()
     {
         bool player1Completed = placementManager.HasCompletedPlacement(true); // Проверяем, завершил ли игрок 1
         bool player2Completed = placementManager.HasCompletedPlacement(false); // Проверяем, завершил ли игрок 2
-        player1FinishButton.interactable = isPlayer1Turn && player1Completed && !player1Finished;
-        player2FinishButton.interactable = !isPlayer1Turn && player2Completed && !player2Finished;
+        player1FinishButton.interactable = player1Completed && !player1Finished; // Условие для игрока 1
+        player2FinishButton.interactable = player2Completed && !player2Finished; // Условие для игрока 2
         startGameButton.interactable = player1Finished && player2Finished; // Активируем "Старт игры" после обоих игроков
     }
 
-    // Обработчик нажатия кнопки "Завершить расстановку" для игрока 1
+    /// <summary>
+    /// Обработчик кнопки "Завершить расстановку" для игрока 1.
+    /// </summary>
     private void OnPlayer1Finish()
     {
         if (!placementManager.HasCompletedPlacement(true))
@@ -284,7 +308,9 @@ public class UIManualPlacement : MonoBehaviour
         UpdateFinishButtons();
     }
 
-    // Обработчик нажатия кнопки "Завершить расстановку" для игрока 2
+    /// <summary>
+    /// Обработчик кнопки "Завершить расстановку" для игрока 2.
+    /// </summary>
     private void OnPlayer2Finish()
     {
         if (!placementManager.HasCompletedPlacement(false))
@@ -298,7 +324,9 @@ public class UIManualPlacement : MonoBehaviour
         UpdateFinishButtons();
     }
 
-    // Обработчик нажатия кнопки случайной генерации для игрока 1
+    /// <summary>
+    /// Обработчик кнопки случайной генерации для игрока 1.
+    /// </summary>
     private void OnPlayer1Random()
     {
         // Очищаем текущие фигуры и горы игрока 1
@@ -311,19 +339,17 @@ public class UIManualPlacement : MonoBehaviour
             }
         }
 
-        // Сбрасываем проходы для игрока 1
-        reservedPassagesPlayer1.Clear();
-        
-        // Расставляем горы и фигуры для игрока 1
+        // Выполняем случайную генерацию фигур и гор для игрока 1
         randomPlacementManager.PlacePiecesForPlayer(true, selectedMountains);
 
-        // Добавляем drag handlers и обнуляем счётчики в placementManager
+        // Обновляем счётчики и добавляем drag handlers
         foreach (var piece in boardManager.GetAllPieces())
         {
             if (piece.Value.IsPlayer1)
             {
-                // Уменьшаем счётчик в placementManager, как если бы фигура была размещена вручную
-                (placementManager as ManualPlacementManager).PlacePieceOrMountain(true, piece.Key, piece.Value.Type, true);
+                // Уменьшаем счётчик в placementManager
+                (placementManager as ManualPlacementManager).DecreasePieceCount(true, piece.Value.Type);
+                // Добавляем drag handler, если его нет (нужно для перемещения фигур после генерации)
                 if (!piece.Value.gameObject.GetComponent<BoardPieceDragHandler>())
                 {
                     var dragHandler = container.InstantiateComponent<BoardPieceDragHandler>(piece.Value.gameObject);
@@ -332,12 +358,14 @@ public class UIManualPlacement : MonoBehaviour
             }
         }
 
-        // Очищаем список фигур игрока 1
+        // Обновляем список фигур игрока 1 в UI (должен стать пустым)
         foreach (Transform child in player1Panel) Destroy(child.gameObject);
         UpdateFinishButtons();
     }
 
-    // Обработчик нажатия кнопки случайной генерации для игрока 2
+    /// <summary>
+    /// Обработчик кнопки случайной генерации для игрока 2.
+    /// </summary>
     private void OnPlayer2Random()
     {
         // Очищаем текущие фигуры и горы игрока 2
@@ -350,19 +378,17 @@ public class UIManualPlacement : MonoBehaviour
             }
         }
 
-        // Сбрасываем проходы для игрока 2
-        reservedPassagesPlayer2.Clear();        
-
-        // Расставляем горы и фигуры для игрока 2
+        // Выполняем случайную генерацию фигур и гор для игрока 2
         randomPlacementManager.PlacePiecesForPlayer(false, selectedMountains);
 
-        // Добавляем drag handlers и обнуляем счётчики в placementManager
+        // Обновляем счётчики и добавляем drag handlers
         foreach (var piece in boardManager.GetAllPieces())
         {
             if (!piece.Value.IsPlayer1)
             {
-                // Уменьшаем счётчик в placementManager, как если бы фигура была размещена вручную
-                (placementManager as ManualPlacementManager).PlacePieceOrMountain(false, piece.Key, piece.Value.Type, true);
+                // Уменьшаем счётчик в placementManager
+                (placementManager as ManualPlacementManager).DecreasePieceCount(false, piece.Value.Type);
+                // Добавляем drag handler, если его нет (нужно для перемещения фигур после генерации)
                 if (!piece.Value.gameObject.GetComponent<BoardPieceDragHandler>())
                 {
                     var dragHandler = container.InstantiateComponent<BoardPieceDragHandler>(piece.Value.gameObject);
@@ -371,12 +397,14 @@ public class UIManualPlacement : MonoBehaviour
             }
         }
 
-        // Очищаем список фигур игрока 2
+        // Обновляем список фигур игрока 2 в UI (должен стать пустым)
         foreach (Transform child in player2Panel) Destroy(child.gameObject);
         UpdateFinishButtons();
-    }  
+    }
 
-    // Обработчик нажатия кнопки "Старт игры"
+    /// <summary>
+    /// Обработчик кнопки "Старт игры".
+    /// </summary>
     private void OnStartGame()
     {
         if (!player1Finished || !player2Finished)
@@ -389,7 +417,9 @@ public class UIManualPlacement : MonoBehaviour
         gameManager.StartGame(selectedMountains, false); // Запускаем игру
     }
 
-    // Обработчик нажатия кнопки "Назад"
+    /// <summary>
+    /// Обработчик кнопки "Назад".
+    /// </summary>
     private void OnBack()
     {
         // Очищаем доску и все фигуры
@@ -406,30 +436,32 @@ public class UIManualPlacement : MonoBehaviour
         player1Finished = false;
         player2Finished = false;
         isPlayer1Turn = true;
-        reservedPassagesPlayer1.Clear();
-        reservedPassagesPlayer2.Clear();
 
         placementPanel.SetActive(false); // Скрываем панель расстановки
         mainMenuPanel.SetActive(true); // Показываем главное меню
     }
 
-    // Обработчик изменения значения слайдера количества гор
+    /// <summary>
+    /// Обработчик изменения значения слайдера количества гор.
+    /// </summary>
+    /// <param name="value">Новое значение слайдера.</param>
     private void OnMountainsSliderChanged(float value)
     {
         selectedMountains = Mathf.FloorToInt(value); // Обновляем количество гор
         mountainsValueText.text = selectedMountains.ToString(); // Обновляем текст
         placementManager.Initialize(selectedMountains); // Переинициализируем placementManager
-        // Сбрасываем доску и списки
+
+        // Очищаем доску
         var pieces = boardManager.GetAllPieces();
         foreach (var piece in pieces)
         {
             boardManager.RemovePiece(piece.Key);
         }
+
+        // Сбрасываем состояние
         player1Finished = false;
         player2Finished = false;
         isPlayer1Turn = true;
-        reservedPassagesPlayer1.Clear();
-        reservedPassagesPlayer2.Clear();
         SetupPlayerPanels();
         UpdateFinishButtons();
     }
