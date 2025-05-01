@@ -156,6 +156,13 @@ public class BoardPieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHa
             if (success)
             {
                 originalPosition = lastHighlighted.Value;
+                // Устанавливаем поворот лицом к противнику (0° для игрока 1, 180° для игрока 2, горы не поворачиваются)
+                if (piece.Type != PieceType.Mountain)
+                {
+                    Quaternion targetRotation = piece.IsPlayer1 ? Quaternion.Euler(0, 0, 0) : Quaternion.Euler(0, 180, 0);
+                    transform.rotation = targetRotation;
+                    Debug.Log($"BoardPieceDragHandler: Rotated {piece.Type} at {lastHighlighted.Value} to {targetRotation.eulerAngles} for Player {(piece.IsPlayer1 ? 1 : 2)}");
+                }
             }
             else
             {

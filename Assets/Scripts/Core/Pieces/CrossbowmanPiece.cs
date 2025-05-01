@@ -68,14 +68,16 @@ public class CrossbowmanAttackStrategy : IAttackable
         {
             foreach (int dz in directions)
             {
-                if (dx == 0 && dz == 0) continue; // Пропускаем текущую позицию
+                if (dx == 0 && dz == 0) continue;
 
                 // Проверяем клетки на расстоянии 1
                 Vector3Int targetPos1 = pos + new Vector3Int(dx, 0, dz);
-                if (board.IsWithinBounds(targetPos1) && board.IsOccupied(targetPos1) &&
-                    board.GetPieceAt(targetPos1).IsPlayer1 != piece.IsPlayer1)
+                if (board.IsWithinBounds(targetPos1) &&
+                    board.IsOccupied(targetPos1) &&
+                    board.GetPieceAt(targetPos1).IsPlayer1 != piece.IsPlayer1 &&
+                    board.GetPieceAt(targetPos1).Type != PieceType.Mountain)
                 {
-                    attacks.Add(targetPos1); // Атака на 1 клетку не требует проверки видимости
+                    attacks.Add(targetPos1); // Атака на 1 клетку
                 }
 
                 // Проверяем клетки на расстоянии 2
@@ -84,10 +86,12 @@ public class CrossbowmanAttackStrategy : IAttackable
 
                 // Проверяем прямую видимость для атаки на 2 клетки
                 Vector3Int midPos = pos + new Vector3Int(dx, 0, dz);
-                if (board.IsBlocked(midPos)) continue; // Путь заблокирован
+                if (board.IsBlocked(midPos)) continue;
 
-                // Проверяем, есть ли вражеская фигура на целевой клетке
-                if (board.IsOccupied(targetPos2) && board.GetPieceAt(targetPos2).IsPlayer1 != piece.IsPlayer1)
+                // Проверяем, есть ли вражеская фигура на целевой клетке и это не гора
+                if (board.IsOccupied(targetPos2) &&
+                    board.GetPieceAt(targetPos2).IsPlayer1 != piece.IsPlayer1 &&
+                    board.GetPieceAt(targetPos2).Type != PieceType.Mountain)
                 {
                     attacks.Add(targetPos2);
                 }
@@ -97,36 +101,29 @@ public class CrossbowmanAttackStrategy : IAttackable
         return attacks;
     }
 
-    /// <summary>
-    /// Рассчитывает все потенциальные клетки, которые арбалетчики могут атаковать, включая пустые и свои фигуры, исключая горы.
-    /// Учитывает дальность 1-2 клетки по прямой или диагонали, с прямой видимостью для дальности 2.
-    /// </summary>
+    // CalculateAllAttacks остаётся без изменений, так как уже исключает горы
     public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
         Vector3Int pos = piece.Position;
 
-        // Направления: вверх, вниз, влево, вправо, диагонали
         int[] directions = { -1, 0, 1 };
 
         foreach (int dx in directions)
         {
             foreach (int dz in directions)
             {
-                if (dx == 0 && dz == 0) continue; // Пропускаем текущую позицию
+                if (dx == 0 && dz == 0) continue;
 
-                // Проверяем клетки на расстоянии 1
                 Vector3Int targetPos1 = pos + new Vector3Int(dx, 0, dz);
                 if (board.IsWithinBounds(targetPos1) && !board.IsMountain(targetPos1))
                 {
-                    attacks.Add(targetPos1); // Атака на 1 клетку не требует проверки видимости
+                    attacks.Add(targetPos1);
                 }
 
-                // Проверяем клетки на расстоянии 2
                 Vector3Int targetPos2 = pos + new Vector3Int(dx * 2, 0, dz * 2);
                 if (board.IsWithinBounds(targetPos2) && !board.IsMountain(targetPos2))
                 {
-                    // Проверяем прямую видимость для атаки на 2 клетки
                     Vector3Int midPos = pos + new Vector3Int(dx, 0, dz);
                     if (!board.IsBlocked(midPos))
                     {
@@ -145,6 +142,11 @@ public class CrossbowmanAttackStrategy : IAttackable
         Piece targetPiece = boardManager.GetPieceAt(target);
         if (targetPiece != null)
         {
+            if (targetPiece.Type == PieceType.Mountain)
+            {
+                Debug.LogWarning($"CrossbowmanAttackStrategy: Cannot attack mountain at {target}!");
+                return;
+            }
             boardManager.RemovePiece(target);
             Debug.Log($"CrossbowmanAttackStrategy: Removed piece {targetPiece.GetType().Name} at {target}");
         }
@@ -152,6 +154,5 @@ public class CrossbowmanAttackStrategy : IAttackable
         {
             Debug.LogWarning($"CrossbowmanAttackStrategy: No piece at {target} to attack!");
         }
-        // Арбалетчик остаётся на месте
     }
 }

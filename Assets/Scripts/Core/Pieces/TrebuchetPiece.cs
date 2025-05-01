@@ -96,8 +96,10 @@ public class TrebuchetAttackStrategy : IAttackable
                     continue;
                 }
 
-                // Если клетка занята противником, добавляем её как цель для атаки
-                if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1)
+                // Если клетка занята противником и это НЕ гора, добавляем её как цель для атаки
+                if (board.IsOccupied(newPos) &&
+                    board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1 &&
+                    board.GetPieceAt(newPos).Type != PieceType.Mountain)
                 {
                     attacks.Add(newPos);
                 }
@@ -107,21 +109,17 @@ public class TrebuchetAttackStrategy : IAttackable
         return attacks;
     }
 
-    /// <summary>
-    /// Рассчитывает все потенциальные клетки, которые требушет может атаковать, включая пустые и свои фигуры, исключая горы.
-    /// Учитывает прямую видимость (без фигур или гор на пути) и дальность 1-5 клеток по прямой.
-    /// </summary>
+    // CalculateAllAttacks остаётся без изменений, так как уже исключает горы
     public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
         Vector3Int pos = piece.Position;
 
-        // Возможные направления: вверх, вниз, влево, вправо
         Vector3Int[] directions = {
-            new Vector3Int(1, 0, 0),  // Вправо
-            new Vector3Int(-1, 0, 0), // Влево
-            new Vector3Int(0, 0, 1),  // Вверх
-            new Vector3Int(0, 0, -1)  // Вниз
+            new Vector3Int(1, 0, 0),
+            new Vector3Int(-1, 0, 0),
+            new Vector3Int(0, 0, 1),
+            new Vector3Int(0, 0, -1)
         };
 
         foreach (var dir in directions)
@@ -134,7 +132,6 @@ public class TrebuchetAttackStrategy : IAttackable
                     break;
                 }
 
-                // Проверяем, что путь свободен от фигур и гор
                 bool pathBlocked = false;
                 for (int j = 1; j < i; j++)
                 {
@@ -150,7 +147,6 @@ public class TrebuchetAttackStrategy : IAttackable
                     break;
                 }
 
-                // Добавляем клетку, если она не содержит гору
                 if (!board.IsMountain(newPos))
                 {
                     attacks.Add(newPos);
@@ -167,6 +163,11 @@ public class TrebuchetAttackStrategy : IAttackable
         Piece targetPiece = boardManager.GetPieceAt(target);
         if (targetPiece != null)
         {
+            if (targetPiece.Type == PieceType.Mountain)
+            {
+                Debug.LogWarning($"TrebuchetAttackStrategy: Cannot attack mountain at {target}!");
+                return;
+            }
             boardManager.RemovePiece(target);
             Debug.Log($"TrebuchetAttackStrategy: Removed piece {targetPiece.GetType().Name} at {target}");
         }
@@ -174,6 +175,5 @@ public class TrebuchetAttackStrategy : IAttackable
         {
             Debug.LogWarning($"TrebuchetAttackStrategy: No piece at {target} to attack!");
         }
-        // Требушет остаётся на месте, не двигается
     }
 }
