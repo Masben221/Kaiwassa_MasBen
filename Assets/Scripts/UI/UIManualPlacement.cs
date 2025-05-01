@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 public class UIManualPlacement : MonoBehaviour
 {
-    // Зависимости, инъектируемые через Zenject
+    // Зависимости, инъектируемые через Zenject (из GameInstaller)
     [Inject] private IGameManager gameManager; // Менеджер игры
     [Inject] private IBoardManager boardManager; // Менеджер доски
     [Inject(Id = "Manual")] private IPiecePlacementManager placementManager; // Менеджер ручной расстановки
@@ -13,7 +13,7 @@ public class UIManualPlacement : MonoBehaviour
     [Inject] private IPieceFactory pieceFactory; // Фабрика для создания фигур
     [Inject] private DiContainer container; // Контейнер Zenject для создания компонентов
 
-    // Ссылки на UI-элементы, задаваемые в инспекторе
+    // Сериализируемые поля для UI-компонентов, задаются в инспекторе
     [SerializeField] private GameObject placementPanel; // Панель расстановки фигур
     [SerializeField] private GameObject mainMenuPanel; // Панель главного меню
     [SerializeField] private RectTransform player1Panel; // Панель игрока 1 для списка фигур
@@ -29,6 +29,9 @@ public class UIManualPlacement : MonoBehaviour
     [SerializeField] private Material highlightMaterial; // Материал для подсветки клеток
     [SerializeField] private Font buttonFont; // Шрифт для текста на кнопках
 
+    // Сериализируемое поле для UIGameManager, задаётся в инспекторе
+    [SerializeField] private UIGameManager uiGameManager; // UI игрового процесса
+
     // Переменные состояния
     private bool isPlayer1Turn = true; // Чей ход сейчас (true — игрок 1, false — игрок 2)
     private bool player1Finished = false; // Завершил ли игрок 1 расстановку
@@ -40,9 +43,10 @@ public class UIManualPlacement : MonoBehaviour
     private void Awake()
     {
         // Проверяем, что все UI-элементы заданы в инспекторе
-        if (!placementPanel || !mainMenuPanel || !player1Panel || !player2Panel || !player1FinishButton ||
-            !player2FinishButton || !player1RandomButton || !player2RandomButton || !startGameButton ||
-            !backButton || !mountainsSlider || !mountainsValueText || !highlightMaterial)
+        if (placementPanel == null || mainMenuPanel == null || player1Panel == null || player2Panel == null ||
+            player1FinishButton == null || player2FinishButton == null || player1RandomButton == null ||
+            player2RandomButton == null || startGameButton == null || backButton == null ||
+            mountainsSlider == null || mountainsValueText == null || highlightMaterial == null)
         {
             Debug.LogError("UIManualPlacement: Missing UI elements!");
             return;
@@ -106,6 +110,15 @@ public class UIManualPlacement : MonoBehaviour
         player1FinishButton.interactable = false;
         player2FinishButton.interactable = false;
         startGameButton.interactable = false;
+    }
+
+    /// <summary>
+    /// Возвращает текущее значение selectedMountains.
+    /// </summary>
+    /// <returns>Количество гор, выбранное на слайдере.</returns>
+    public int GetSelectedMountains()
+    {
+        return selectedMountains;
     }
 
     /// <summary>
@@ -415,6 +428,9 @@ public class UIManualPlacement : MonoBehaviour
 
         placementPanel.SetActive(false); // Скрываем панель расстановки
         gameManager.StartGame(selectedMountains, false); // Запускаем игру
+
+        // Инициализируем UI игрового процесса
+        uiGameManager.Initialize();
     }
 
     /// <summary>

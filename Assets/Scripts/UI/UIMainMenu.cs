@@ -7,10 +7,11 @@ public class UIMainMenu : MonoBehaviour
     [SerializeField] private GameObject mainMenuPanel; // Панель главного меню
     [SerializeField] private GameObject settingsPanel; // Панель настроек
     [SerializeField] private GameObject placementPanel; // Панель расстановки фигур
+    [SerializeField] private GameObject gamePanel; // Панель игрового процесса
     [SerializeField] private Button startGameButton; // Кнопка "Старт игры"
     [SerializeField] private Button selectCharButton; // Кнопка "Выбор персонажа"
     [SerializeField] private Button settingsButton; // Кнопка "Настройки"
-    [SerializeField] private UIManualPlacement manualPlacement; // Ссылка на компонент UIManualPlacement
+    [SerializeField] private UIManualPlacement manualPlacement; // Ссылка на компонент UIManualPlacement    
 
     private void Awake()
     {
@@ -31,6 +32,7 @@ public class UIMainMenu : MonoBehaviour
         mainMenuPanel.SetActive(true);
         settingsPanel.SetActive(false);
         placementPanel.SetActive(false);
+        gamePanel.SetActive(false);
     }
 
     private void OnDestroy()
