@@ -39,12 +39,9 @@ public class GameManager : MonoBehaviour, IGameManager
 
         var placementManager = isRandomPlacement ? randomPlacementManager : manualPlacementManager;
 
-        Debug.Log("GameManager: Placing mountains...");
-        placementManager.PlaceMountains(mountainsPerSide);
-
         Debug.Log("GameManager: Placing pieces...");
-        placementManager.PlacePiecesForPlayer(true);
-        placementManager.PlacePiecesForPlayer(false);
+        placementManager.PlacePiecesForPlayer(true, placementManager.GetMountainsPerSide);
+        placementManager.PlacePiecesForPlayer(false, placementManager.GetMountainsPerSide);
 
         isInPlacementPhase = false;
         Debug.Log("GameManager: Game started successfully!");

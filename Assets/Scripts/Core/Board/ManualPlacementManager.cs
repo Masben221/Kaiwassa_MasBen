@@ -231,7 +231,6 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         var pieces = isPlayer1 ? player1Pieces : player2Pieces;
         return pieces.ContainsKey(PieceType.King) && pieces[PieceType.King] > 0;
     }
-
-    public void PlaceMountains(int mountainsPerSide) { }
-    public void PlacePiecesForPlayer(bool isPlayer1) { }
+       
+    public void PlacePiecesForPlayer(bool isPlayer1, int selectedMountains) { }
 }

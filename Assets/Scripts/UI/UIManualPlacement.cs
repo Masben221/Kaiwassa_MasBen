@@ -313,12 +313,9 @@ public class UIManualPlacement : MonoBehaviour
 
         // Сбрасываем проходы для игрока 1
         reservedPassagesPlayer1.Clear();
-
-        // Расставляем горы для игрока 1
-        PlaceMountainsForPlayer(true);
-
-        // Расставляем фигуры для игрока 1
-        randomPlacementManager.PlacePiecesForPlayer(true);
+        
+        // Расставляем горы и фигуры для игрока 1
+        randomPlacementManager.PlacePiecesForPlayer(true, selectedMountains);
 
         // Добавляем drag handlers и обнуляем счётчики в placementManager
         foreach (var piece in boardManager.GetAllPieces())
@@ -354,13 +351,10 @@ public class UIManualPlacement : MonoBehaviour
         }
 
         // Сбрасываем проходы для игрока 2
-        reservedPassagesPlayer2.Clear();
+        reservedPassagesPlayer2.Clear();        
 
-        // Расставляем горы для игрока 2
-        PlaceMountainsForPlayer(false);
-
-        // Расставляем фигуры для игрока 2
-        randomPlacementManager.PlacePiecesForPlayer(false);
+        // Расставляем горы и фигуры для игрока 2
+        randomPlacementManager.PlacePiecesForPlayer(false, selectedMountains);
 
         // Добавляем drag handlers и обнуляем счётчики в placementManager
         foreach (var piece in boardManager.GetAllPieces())
@@ -380,144 +374,7 @@ public class UIManualPlacement : MonoBehaviour
         // Очищаем список фигур игрока 2
         foreach (Transform child in player2Panel) Destroy(child.gameObject);
         UpdateFinishButtons();
-    }
-
-    // Расставляем горы для указанного игрока, сохраняя оригинальную логику из PiecePlacementManager
-    private void PlaceMountainsForPlayer(bool isPlayer1)
-    {
-        // Определяем линии для гор в зависимости от количества и игрока
-        int[] zLines;
-        if (selectedMountains <= 4)
-        {
-            zLines = isPlayer1 ? new[] { 3 } : new[] { 6 };
-        }
-        else
-        {
-            zLines = isPlayer1 ? new[] { 2, 3 } : new[] { 6, 7 };
-        }
-
-        // Определяем проходы для текущего игрока
-        List<int> reservedPassages = isPlayer1 ? reservedPassagesPlayer1 : reservedPassagesPlayer2;
-        List<int> otherReservedPassages = isPlayer1 ? reservedPassagesPlayer2 : reservedPassagesPlayer1;
-
-        // Выбираем два случайных прохода для Catapult и Trebuchet
-        List<int> availableX = Enumerable.Range(0, 10).ToList();
-        // Исключаем проходы, уже зарезервированные другим игроком
-        availableX = availableX.Except(otherReservedPassages).ToList();
-        for (int i = 0; i < 2 && availableX.Count > 0; i++)
-        {
-            int xPassage = availableX[UnityEngine.Random.Range(0, availableX.Count)];
-            reservedPassages.Add(xPassage);
-            availableX.Remove(xPassage);
-            Debug.Log($"UIManualPlacement: Reserved passage {i + 1} for Player {(isPlayer1 ? 1 : 2)} at x={xPassage} for {(i == 0 ? "catapult" : "trebuchet")}");
-        }
-
-        // Собираем позиции для гор
-        List<Vector3Int> positions = new List<Vector3Int>();
-        foreach (int z in zLines)
-        {
-            for (int x = 0; x < 10; x++)
-            {
-                // Пропускаем позиции, зарезервированные для проходов
-                if (reservedPassages.Contains(x) || otherReservedPassages.Contains(x)) continue;
-                Vector3Int pos = new Vector3Int(x, 0, z);
-                if (!boardManager.IsBlocked(pos)) // Проверяем, свободна ли позиция
-                {
-                    positions.Add(pos);
-                }
-            }
-        }
-
-        // Обеспечиваем минимум два прохода
-        EnsurePassages(positions, selectedMountains, zLines, isPlayer1);
-
-        // Размещаем горы
-        int mountainsToPlace = Mathf.Min(selectedMountains, positions.Count);
-        for (int i = 0; i < mountainsToPlace; i++)
-        {
-            if (positions.Count == 0) break;
-            int index = UnityEngine.Random.Range(0, positions.Count);
-            Vector3Int pos = positions[index];
-            if (reservedPassages.Contains(pos.x) || otherReservedPassages.Contains(pos.x))
-            {
-                Debug.LogWarning($"UIManualPlacement: Attempted to place mountain at {pos} in reserved passage! Skipping...");
-                positions.RemoveAt(index);
-                continue;
-            }
-            Piece mountain = pieceFactory.CreatePiece(PieceType.Mountain, isPlayer1, pos);
-            if (mountain != null)
-            {
-                boardManager.PlacePiece(mountain, pos);
-                // Обновляем счётчик в placementManager
-                (placementManager as ManualPlacementManager).PlacePieceOrMountain(isPlayer1, pos, PieceType.Mountain, true);
-                Debug.Log($"UIManualPlacement: Placed mountain for Player {(isPlayer1 ? 1 : 2)} at {pos}");
-            }
-            else
-            {
-                Debug.LogWarning($"UIManualPlacement: Failed to create mountain at {pos}");
-            }
-            positions.RemoveAt(index);
-        }
-
-        // Очищаем проходы от гор (аналог логики из PlaceMountains)
-        foreach (int x in reservedPassages)
-        {
-            foreach (int z in isPlayer1 ? new[] { 1, 2, 3 } : new[] { 6, 7, 8 })
-            {
-                Vector3Int pos = new Vector3Int(x, 0, z);
-                if (boardManager.IsMountain(pos))
-                {
-                    Debug.Log($"UIManualPlacement: Mountain found at {pos} in reserved passage! Removing...");
-                    boardManager.RemovePiece(pos);
-                }
-            }
-        }
-    }
-
-    // Обеспечиваем минимум два прохода между горами (аналог EnsurePassages из PiecePlacementManager)
-    private void EnsurePassages(List<Vector3Int> positions, int mountainsPerSide, int[] zLines, bool isPlayer1)
-    {
-        List<int> reservedPassages = isPlayer1 ? reservedPassagesPlayer1 : reservedPassagesPlayer2;
-        int[] passageZLines = isPlayer1 ? new[] { 1, 2, 3 } : new[] { 6, 7, 8 };
-
-        // Удаляем горы из зарезервированных проходов
-        foreach (int x in reservedPassages)
-        {
-            foreach (int z in passageZLines)
-            {
-                Vector3Int pos = new Vector3Int(x, 0, z);
-                if (boardManager.IsMountain(pos))
-                {
-                    boardManager.RemovePiece(pos);
-                    Debug.Log($"UIManualPlacement: Removed mountain at {pos} to ensure passage");
-                }
-                var passagePos = positions.FirstOrDefault(p => p.x == x && p.z == z);
-                if (passagePos != default)
-                {
-                    positions.Remove(passagePos);
-                    Debug.Log($"UIManualPlacement: Ensured no mountain at {passagePos} for passage");
-                }
-            }
-        }
-
-        // Ограничиваем количество гор, чтобы оставить минимум два прохода
-        foreach (int z in zLines)
-        {
-            var zPositions = positions.Where(p => p.z == z).ToList();
-            if (zPositions.Count <= 2) continue;
-
-            int maxMountains = zPositions.Count - 2; // Минимум два прохода
-            int remainingMountains = mountainsPerSide;
-            while (zPositions.Count > maxMountains && remainingMountains > 0)
-            {
-                int index = UnityEngine.Random.Range(0, zPositions.Count);
-                positions.Remove(zPositions[index]);
-                zPositions.RemoveAt(index);
-                remainingMountains--;
-            }
-        }
-        Debug.Log($"UIManualPlacement: Final reservedPassages for Player {(isPlayer1 ? 1 : 2)}={string.Join(", ", reservedPassages)}");
-    }
+    }  
 
     // Обработчик нажатия кнопки "Старт игры"
     private void OnStartGame()
