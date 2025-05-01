@@ -58,6 +58,7 @@ public class DragonMoveStrategy : IMovable
 /// <summary>
 /// —тратеги€ атаки дл€ дракона.
 /// –еализует дальний бой: атака на 1-3 клетки по пр€мой или диагонали, только по пр€мой видимости (без гор или фигур на пути).
+/// »сключает горы из возможных целей атаки, так как они €вл€ютс€ статическими преп€тстви€ми.
 /// </summary>
 public class DragonAttackStrategy : IAttackable
 {
@@ -98,8 +99,10 @@ public class DragonAttackStrategy : IAttackable
                         break; // ѕрерываем, если путь заблокирован
                     }
 
-                    // ѕровер€ем, есть ли вражеска€ фигура в конечной точке
-                    if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1)
+                    // ѕровер€ем, есть ли вражеска€ фигура в конечной точке, и что это не гора
+                    if (board.IsOccupied(newPos) &&
+                        board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1 &&
+                        board.GetPieceAt(newPos).Type != PieceType.Mountain)
                     {
                         attacks.Add(newPos);
                     }
@@ -113,14 +116,14 @@ public class DragonAttackStrategy : IAttackable
     {
         Debug.Log($"DragonAttackStrategy: Executing ranged attack from {piece.Position} to {target} (piece: {piece.GetType().Name})");
         Piece targetPiece = boardManager.GetPieceAt(target);
-        if (targetPiece != null)
+        if (targetPiece != null && targetPiece.Type != PieceType.Mountain)
         {
             boardManager.RemovePiece(target);
             Debug.Log($"DragonAttackStrategy: Removed piece {targetPiece.GetType().Name} at {target}");
         }
         else
         {
-            Debug.LogWarning($"DragonAttackStrategy: No piece at {target} to attack!");
+            Debug.LogWarning($"DragonAttackStrategy: No valid piece at {target} to attack or target is a mountain!");
         }
         // Ќ≈ вызываем MoveTo, чтобы дракон оставалс€ на месте
     }

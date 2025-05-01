@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
+using DG.Tweening; // Импортируем пространство имён для DOTween
 
 /// <summary>
 /// Управляет UI игрового процесса, включая панель игры, отображение текущего хода и кнопку "Назад".
@@ -47,7 +48,7 @@ public class UIGameManager : MonoBehaviour
         // Назначаем обработчик для кнопки "Назад"
         backButton.onClick.AddListener(OnBack);
 
-        // Инициализируем стиль текста для отображения текущего хода
+        // Настраиваем стиль текста для отображения текущего хода
         SetupTurnTextStyle();
     }
 
@@ -64,6 +65,9 @@ public class UIGameManager : MonoBehaviour
         {
             gameManager.OnTurnChanged -= UpdateTurnText;
         }
+
+        // Убиваем все активные анимации DOTween, связанные с этим объектом
+        DOTween.Kill(currentTurnText);
     }
 
     /// <summary>
@@ -84,20 +88,12 @@ public class UIGameManager : MonoBehaviour
 
     /// <summary>
     /// Настраивает стиль текста для отображения текущего хода.
+    /// Шрифт и размер шрифта задаются через инспектор.
     /// </summary>
     private void SetupTurnTextStyle()
     {
-        // Устанавливаем шрифт (если не задан, используем стандартный шрифт Unity)
-        currentTurnText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-
-        // Устанавливаем размер шрифта
-        currentTurnText.fontSize = 28;
-
         // Устанавливаем выравнивание текста по центру
         currentTurnText.alignment = TextAnchor.MiddleCenter;
-
-        // Устанавливаем начальный цвет текста (золотистый для красоты)
-        currentTurnText.color = new Color(1f, 0.84f, 0f); // Золотой цвет (#FFD700)
 
         // Добавляем обводку для лучшей читаемости
         var outline = currentTurnText.gameObject.GetComponent<Outline>();
@@ -119,18 +115,37 @@ public class UIGameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Обновляет текст текущего хода на основе того, чей ход.
+    /// Обновляет текст текущего хода с анимацией, используя DOTween.
     /// </summary>
     /// <param name="isPlayer1">True, если ход игрока 1, иначе игрока 2.</param>
     private void UpdateTurnText(bool isPlayer1)
     {
-        // Обновляем текст в зависимости от текущего игрока
-        currentTurnText.text = isPlayer1 ? "Ход игрока 1" : "Ход игрока 2";
+        // Убиваем предыдущие анимации, чтобы не было наложений
+        DOTween.Kill(currentTurnText);
 
-        // Меняем цвет текста для наглядности (синий для игрока 1, красный для игрока 2)
-        currentTurnText.color = isPlayer1 ? new Color(0.1f, 0.5f, 1f) : new Color(1f, 0.3f, 0.3f);
+        // Анимация исчезновения текста (плавное уменьшение прозрачности и масштаба)
+        currentTurnText.DOFade(0f, 0.3f).OnComplete(() =>
+        {
+            // Обновляем текст и цвет после завершения исчезновения
+            currentTurnText.text = isPlayer1 ? "Ход игрока 1" : "Ход игрока 2";
+            currentTurnText.color = isPlayer1 ? new Color(1f, 0.84f, 0f) : new Color(1f, 0.3f, 0.3f); // Золотой для игрока 1, красный для игрока 2
 
-        Debug.Log($"UIGameManager: Updated turn text to '{currentTurnText.text}'.");
+            // Сбрасываем масштаб текста перед новой анимацией
+            currentTurnText.transform.localScale = Vector3.one;
+
+            // Анимация появления текста
+            // Сначала текст становится видимым (прозрачность от 0 до 1)
+            currentTurnText.DOFade(1f, 0.3f);
+
+            // Одновременно с этим текст слегка увеличивается в размере для эффекта "появления"
+            currentTurnText.transform.DOScale(1.2f, 0.3f).SetEase(Ease.OutBack).OnComplete(() =>
+            {
+                // После увеличения текст возвращается к нормальному масштабу
+                currentTurnText.transform.DOScale(1f, 0.15f).SetEase(Ease.InOutQuad);
+            });
+        });
+
+        Debug.Log($"UIGameManager: Updated turn text to '{currentTurnText.text}' with animation.");
     }
 
     /// <summary>
