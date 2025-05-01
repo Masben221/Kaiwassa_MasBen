@@ -51,7 +51,8 @@ public class CrossbowmanMoveStrategy : IMovable
 
 /// <summary>
 /// Стратегия атаки для Арбалетчиков.
-/// Реализует дальний бой: атака на 1-2 клетки по прямой или диагонали, требует прямой видимости.
+/// Реализует дальний бой: атака на 1-2 клетки по прямой или диагонали, требует прямой видимости для дальности 2.
+/// Предоставляет список всех потенциальных клеток атаки для подсказок (включая пустые и свои фигуры, исключая горы).
 /// </summary>
 public class CrossbowmanAttackStrategy : IAttackable
 {
@@ -89,6 +90,48 @@ public class CrossbowmanAttackStrategy : IAttackable
                 if (board.IsOccupied(targetPos2) && board.GetPieceAt(targetPos2).IsPlayer1 != piece.IsPlayer1)
                 {
                     attacks.Add(targetPos2);
+                }
+            }
+        }
+
+        return attacks;
+    }
+
+    /// <summary>
+    /// Рассчитывает все потенциальные клетки, которые арбалетчики могут атаковать, включая пустые и свои фигуры, исключая горы.
+    /// Учитывает дальность 1-2 клетки по прямой или диагонали, с прямой видимостью для дальности 2.
+    /// </summary>
+    public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
+    {
+        List<Vector3Int> attacks = new List<Vector3Int>();
+        Vector3Int pos = piece.Position;
+
+        // Направления: вверх, вниз, влево, вправо, диагонали
+        int[] directions = { -1, 0, 1 };
+
+        foreach (int dx in directions)
+        {
+            foreach (int dz in directions)
+            {
+                if (dx == 0 && dz == 0) continue; // Пропускаем текущую позицию
+
+                // Проверяем клетки на расстоянии 1
+                Vector3Int targetPos1 = pos + new Vector3Int(dx, 0, dz);
+                if (board.IsWithinBounds(targetPos1) && !board.IsMountain(targetPos1))
+                {
+                    attacks.Add(targetPos1); // Атака на 1 клетку не требует проверки видимости
+                }
+
+                // Проверяем клетки на расстоянии 2
+                Vector3Int targetPos2 = pos + new Vector3Int(dx * 2, 0, dz * 2);
+                if (board.IsWithinBounds(targetPos2) && !board.IsMountain(targetPos2))
+                {
+                    // Проверяем прямую видимость для атаки на 2 клетки
+                    Vector3Int midPos = pos + new Vector3Int(dx, 0, dz);
+                    if (!board.IsBlocked(midPos))
+                    {
+                        attacks.Add(targetPos2);
+                    }
                 }
             }
         }

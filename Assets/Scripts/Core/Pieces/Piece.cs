@@ -101,6 +101,18 @@ public abstract class Piece : MonoBehaviour
     }
 
     /// <summary>
+    /// Возвращает список всех потенциальных клеток, которые фигура может атаковать.
+    /// Включает пустые клетки и клетки с фигурами текущего игрока, исключая горы.
+    /// Делегирует вычисление стратегии атаки.
+    /// </summary>
+    /// <param name="board">Интерфейс доски для проверки состояния.</param>
+    /// <returns>Список всех клеток, которые могут быть атакованы.</returns>
+    public List<Vector3Int> GetAllPotentialAttackMoves(IBoardManager board)
+    {
+        return attackStrategy?.CalculateAllAttacks(board, this) ?? new List<Vector3Int>();
+    }
+
+    /// <summary>
     /// Выполняет атаку на указанную клетку.
     /// Делегирует выполнение стратегии атаки.
     /// </summary>

@@ -12,9 +12,10 @@ GameObject:
   - component: {fileID: 2359529887561409800}
   - component: {fileID: 4753562505929948532}
   - component: {fileID: 3613377441036288842}
+  - component: {fileID: -782897538052307941}
   m_Layer: 0
-  m_Name: 'AttackMarkerPrefab  '
-  m_TagString: AttackMarker
+  m_Name: PulsatingAttackMarkerPrefab
+  m_TagString: PulsatingAttackMarker
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -62,7 +63,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ebbe6187091aa834f9bd7972419fd1b4, type: 2}
+  - {fileID: 2100000, guid: f9ca2fe977f19254aa25925f18736868, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -106,3 +107,18 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &-782897538052307941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4988813759299358279}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06e769b1dad6f0649a5c2ef23c2bb9a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  alphaMin: 0.2
+  alphaMax: 1
+  pulseDuration: 0.4

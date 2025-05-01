@@ -2,30 +2,63 @@ using UnityEngine;
 using Zenject;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
+using UnityEngine.Pool;
 
 /// <summary>
-/// Обрабатывает ввод игрока (мышь или тачскрин) для выбора фигур и ходов.
-/// Во время фазы расстановки позволяет перетаскивать размещённые фигуры/горы.
+/// Обрабатывает ввод игрока (мышь или тачскрин) для выбора фигур, ходов и подсказок.
+/// Поддерживает перетаскивание фигур в фазе расстановки и подсветку клеток атаки противника.
+/// Включает механику подсветки всех потенциальных клеток атаки противника (включая пустые и свои фигуры, исключая горы).
+/// Подсвечивает клетки с вражескими фигурами (GetAttackMoves) пульсирующими маркерами.
 /// </summary>
 public class InputHandler : MonoBehaviour
 {
     [Inject] private IGameManager gameManager;
     [Inject] private IBoardManager boardManager;
+    [Inject] private DiContainer container; // Для создания объектов через Zenject
 
     [SerializeField] private GameObject moveMarkerPrefab;
     [SerializeField] private GameObject attackMarkerPrefab;
+    [SerializeField] private GameObject pulsatingAttackMarkerPrefab; // Пульсирующий маркер для атак
 
     private Piece selectedPiece;
     private List<GameObject> currentMarkers = new List<GameObject>();
     [SerializeField] private Material highlightMaterial;
     private Material originalMaterial;
     private bool isInputBlocked;
-    private BoardPieceDragHandler activeDragHandler; // Для отслеживания текущего перетаскивания
+    private BoardPieceDragHandler activeDragHandler;
+    private bool isShowingHints;
+
+    // Пулы объектов для маркеров
+    private IObjectPool<GameObject> moveMarkerPool;
+    private IObjectPool<GameObject> attackMarkerPool;
+    private IObjectPool<GameObject> pulsatingAttackMarkerPool;
 
     private void Awake()
     {
         PieceAnimator.OnAnimationStarted += BlockInput;
         PieceAnimator.OnAnimationFinished += UnblockInput;
+
+        // Инициализация пулов объектов
+        moveMarkerPool = new ObjectPool<GameObject>(
+            () => container.InstantiatePrefab(moveMarkerPrefab),
+            marker => marker.SetActive(true),
+            marker => marker.SetActive(false),
+            marker => Object.Destroy(marker),
+            false, 10, 50);
+
+        attackMarkerPool = new ObjectPool<GameObject>(
+            () => container.InstantiatePrefab(attackMarkerPrefab),
+            marker => marker.SetActive(true),
+            marker => marker.SetActive(false),
+            marker => Object.Destroy(marker),
+            false, 10, 50);
+
+        pulsatingAttackMarkerPool = new ObjectPool<GameObject>(
+            () => container.InstantiatePrefab(pulsatingAttackMarkerPrefab),
+            marker => marker.SetActive(true),
+            marker => marker.SetActive(false),
+            marker => Object.Destroy(marker),
+            false, 10, 50);
     }
 
     private void OnDestroy()
@@ -33,6 +66,11 @@ public class InputHandler : MonoBehaviour
         PieceAnimator.OnAnimationStarted -= BlockInput;
         PieceAnimator.OnAnimationFinished -= UnblockInput;
         ClearSelection();
+        ClearHintMarkers();
+        // Очистка пулов
+        moveMarkerPool.Clear();
+        attackMarkerPool.Clear();
+        pulsatingAttackMarkerPool.Clear();
     }
 
     private void Update()
@@ -45,24 +83,23 @@ public class InputHandler : MonoBehaviour
             }
             else if (Input.GetMouseButton(0) && activeDragHandler != null)
             {
-                // Обрабатываем перетаскивание, если мышь зажата
                 HandleDrag();
             }
             else if (Input.GetMouseButtonUp(0) && activeDragHandler != null)
             {
-                // Обрабатываем отпускание мыши
                 HandlePointerUp();
             }
         }
     }
 
-    /// <summary>
-    /// Обрабатывает клик мыши:
-    /// - Во время расстановки: запускает drag-and-drop для фигур/гор.
-    /// - В игре: выбирает фигуры или выполняет ходы/атаки.
-    /// </summary>
     private void HandleClick()
     {
+        if (isShowingHints)
+        {
+            ClearHintMarkers();
+            return;
+        }
+
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
@@ -76,7 +113,6 @@ public class InputHandler : MonoBehaviour
 
             if (gameManager.IsInPlacementPhase)
             {
-                // Во время фазы расстановки обрабатываем клики по фигурам/горам
                 if (clickedPiece != null)
                 {
                     var dragHandler = clickedPiece.GetComponent<BoardPieceDragHandler>();
@@ -98,7 +134,6 @@ public class InputHandler : MonoBehaviour
                 return;
             }
 
-            // Логика для игровой фазы
             if (selectedPiece != null)
             {
                 var validMoves = selectedPiece.GetValidMoves(boardManager);
@@ -126,16 +161,11 @@ public class InputHandler : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Обрабатывает перетаскивание во время фазы расстановки.
-    /// Вызывается, пока мышь зажата и есть активный dragHandler.
-    /// </summary>
     private void HandleDrag()
     {
         if (activeDragHandler == null)
             return;
 
-        // Создаём событие для передачи в OnDrag
         PointerEventData eventData = new PointerEventData(UnityEngine.EventSystems.EventSystem.current)
         {
             position = Input.mousePosition
@@ -143,16 +173,11 @@ public class InputHandler : MonoBehaviour
         activeDragHandler.OnDrag(eventData);
     }
 
-    /// <summary>
-    /// Обрабатывает отпускание мыши во время фазы расстановки.
-    /// Вызывается, когда мышь отпущена и есть активный dragHandler.
-    /// </summary>
     private void HandlePointerUp()
     {
         if (activeDragHandler == null)
             return;
 
-        // Создаём событие для передачи в OnPointerUp
         PointerEventData eventData = new PointerEventData(UnityEngine.EventSystems.EventSystem.current)
         {
             position = Input.mousePosition
@@ -175,26 +200,119 @@ public class InputHandler : MonoBehaviour
         var validMoves = piece.GetValidMoves(boardManager);
         foreach (var move in validMoves)
         {
-            GameObject marker = Instantiate(
-                moveMarkerPrefab,
-                new Vector3(move.x, 0.1f, move.z),
-                Quaternion.Euler(90, 0, 0)
-            );
+            GameObject marker = moveMarkerPool.Get();
+            marker.transform.position = new Vector3(move.x, 0.1f, move.z);
+            marker.transform.rotation = Quaternion.Euler(90, 0, 0);
             currentMarkers.Add(marker);
         }
 
         var attackMoves = piece.GetAttackMoves(boardManager);
         foreach (var attack in attackMoves)
         {
-            GameObject marker = Instantiate(
-                attackMarkerPrefab,
-                new Vector3(attack.x, 0.1f, attack.z),
-                Quaternion.Euler(90, 0, 0)
-            );
+            GameObject marker = pulsatingAttackMarkerPool.Get();
+            marker.transform.position = new Vector3(attack.x, 0.1f, attack.z);
+            marker.transform.rotation = Quaternion.Euler(90, 0, 0);
             currentMarkers.Add(marker);
         }
 
         Debug.Log($"Selected piece at {piece.Position}");
+    }
+
+    public void ShowOpponentAttackTiles(bool isPlayer1)
+    {
+        ClearSelection();
+        ClearHintMarkers();
+
+        var pieces = boardManager.GetAllPieces();
+        HashSet<Vector3Int> attackTiles = new HashSet<Vector3Int>();
+
+        foreach (var pieceEntry in pieces)
+        {
+            Piece piece = pieceEntry.Value;
+            if (piece.IsPlayer1 == isPlayer1 && piece.Type != PieceType.Mountain)
+            {
+                var attackMoves = piece.GetAttackMoves(boardManager);
+                foreach (var attack in attackMoves)
+                {
+                    attackTiles.Add(attack);
+                }
+            }
+        }
+
+        foreach (var attack in attackTiles)
+        {
+            GameObject marker = pulsatingAttackMarkerPool.Get();
+            marker.transform.position = new Vector3(attack.x, 0.1f, attack.z);
+            marker.transform.rotation = Quaternion.Euler(90, 0, 0);
+            currentMarkers.Add(marker);
+        }
+
+        isShowingHints = true;
+        Debug.Log($"InputHandler: Showing attack tiles for Player {(isPlayer1 ? 1 : 2)}. Total tiles: {attackTiles.Count}");
+    }
+
+    public void ShowAllPotentialAttackTiles(bool isPlayer1)
+    {
+        ClearSelection();
+        ClearHintMarkers();
+
+        var pieces = boardManager.GetAllPieces();
+        HashSet<Vector3Int> potentialAttackTiles = new HashSet<Vector3Int>();
+        HashSet<Vector3Int> enemyAttackTiles = new HashSet<Vector3Int>();
+
+        foreach (var pieceEntry in pieces)
+        {
+            Piece piece = pieceEntry.Value;
+            if (piece.IsPlayer1 == isPlayer1 && piece.Type != PieceType.Mountain)
+            {
+                var potentialAttacks = piece.GetAllPotentialAttackMoves(boardManager);
+                foreach (var attack in potentialAttacks)
+                {
+                    potentialAttackTiles.Add(attack);
+                }
+
+                var enemyAttacks = piece.GetAttackMoves(boardManager);
+                foreach (var attack in enemyAttacks)
+                {
+                    enemyAttackTiles.Add(attack);
+                }
+            }
+        }
+
+        foreach (var attack in potentialAttackTiles)
+        {
+            GameObject marker;
+            if (enemyAttackTiles.Contains(attack))
+            {
+                marker = pulsatingAttackMarkerPool.Get();
+            }
+            else
+            {
+                marker = attackMarkerPool.Get();
+            }
+            marker.transform.position = new Vector3(attack.x, 0.1f, attack.z);
+            marker.transform.rotation = Quaternion.Euler(90, 0, 0);
+            currentMarkers.Add(marker);
+        }
+
+        isShowingHints = true;
+        Debug.Log($"InputHandler: Showing all potential attack tiles for Player {(isPlayer1 ? 1 : 2)}. Total tiles: {potentialAttackTiles.Count}, Enemy tiles: {enemyAttackTiles.Count}");
+    }
+
+    public void ClearHintMarkers()
+    {
+        foreach (var marker in currentMarkers)
+        {
+            if (marker.CompareTag("MoveMarker"))
+                moveMarkerPool.Release(marker);
+            else if (marker.CompareTag("AttackMarker"))
+                attackMarkerPool.Release(marker);
+            else if (marker.CompareTag("PulsatingAttackMarker"))
+                pulsatingAttackMarkerPool.Release(marker);
+        }
+        currentMarkers.Clear();
+        isShowingHints = false;
+        Debug.Log("InputHandler: Hint markers cleared.");
     }
 
     private void ClearSelection()
@@ -208,11 +326,19 @@ public class InputHandler : MonoBehaviour
             }
         }
 
-        foreach (var marker in currentMarkers)
+        if (!isShowingHints)
         {
-            Destroy(marker);
+            foreach (var marker in currentMarkers)
+            {
+                if (marker.CompareTag("MoveMarker"))
+                    moveMarkerPool.Release(marker);
+                else if (marker.CompareTag("AttackMarker"))
+                    attackMarkerPool.Release(marker);
+                else if (marker.CompareTag("PulsatingAttackMarker"))
+                    pulsatingAttackMarkerPool.Release(marker);
+            }
+            currentMarkers.Clear();
         }
-        currentMarkers.Clear();
 
         selectedPiece = null;
         Debug.Log("Selection cleared.");

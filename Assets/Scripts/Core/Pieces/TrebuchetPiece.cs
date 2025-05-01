@@ -53,6 +53,7 @@ public class TrebuchetMoveStrategy : IMovable
 /// <summary>
 /// Стратегия атаки для Требушета.
 /// Реализует дальний бой: атака на 1-5 клеток по прямой с проверкой прямой видимости.
+/// Предоставляет список всех потенциальных клеток атаки для подсказок (включая пустые и свои фигуры, исключая горы).
 /// </summary>
 public class TrebuchetAttackStrategy : IAttackable
 {
@@ -97,6 +98,60 @@ public class TrebuchetAttackStrategy : IAttackable
 
                 // Если клетка занята противником, добавляем её как цель для атаки
                 if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1)
+                {
+                    attacks.Add(newPos);
+                }
+            }
+        }
+
+        return attacks;
+    }
+
+    /// <summary>
+    /// Рассчитывает все потенциальные клетки, которые требушет может атаковать, включая пустые и свои фигуры, исключая горы.
+    /// Учитывает прямую видимость (без фигур или гор на пути) и дальность 1-5 клеток по прямой.
+    /// </summary>
+    public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
+    {
+        List<Vector3Int> attacks = new List<Vector3Int>();
+        Vector3Int pos = piece.Position;
+
+        // Возможные направления: вверх, вниз, влево, вправо
+        Vector3Int[] directions = {
+            new Vector3Int(1, 0, 0),  // Вправо
+            new Vector3Int(-1, 0, 0), // Влево
+            new Vector3Int(0, 0, 1),  // Вверх
+            new Vector3Int(0, 0, -1)  // Вниз
+        };
+
+        foreach (var dir in directions)
+        {
+            for (int i = 1; i <= 5; i++)
+            {
+                Vector3Int newPos = pos + dir * i;
+                if (!board.IsWithinBounds(newPos))
+                {
+                    break;
+                }
+
+                // Проверяем, что путь свободен от фигур и гор
+                bool pathBlocked = false;
+                for (int j = 1; j < i; j++)
+                {
+                    Vector3Int midPos = pos + dir * j;
+                    if (board.IsBlocked(midPos))
+                    {
+                        pathBlocked = true;
+                        break;
+                    }
+                }
+                if (pathBlocked)
+                {
+                    break;
+                }
+
+                // Добавляем клетку, если она не содержит гору
+                if (!board.IsMountain(newPos))
                 {
                     attacks.Add(newPos);
                 }

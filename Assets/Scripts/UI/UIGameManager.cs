@@ -4,19 +4,23 @@ using Zenject;
 using DG.Tweening; // Импортируем пространство имён для DOTween
 
 /// <summary>
-/// Управляет UI игрового процесса, включая панель игры, отображение текущего хода и кнопку "Назад".
+/// Управляет UI игрового процесса, включая панель игры, отображение текущего хода, кнопку "Назад" и кнопки подсказок.
+/// Кнопки подсказок показывают все потенциальные клетки атаки противника (включая пустые и свои фигуры, исключая горы).
 /// </summary>
 public class UIGameManager : MonoBehaviour
 {
     // Зависимости, инъектируемые через Zenject (из GameInstaller)
     [Inject] private IGameManager gameManager; // Менеджер игры для управления фазами и получения событий смены хода
     [Inject] private IBoardManager boardManager; // Менеджер доски для очистки фигур
+    [Inject] private InputHandler inputHandler; // Обработчик ввода для управления подсветкой подсказок
 
     // Сериализируемые поля для UI-компонентов, задаются в инспекторе
     [SerializeField] private GameObject gamePanel; // Панель игрового процесса
     [SerializeField] private Button backButton; // Кнопка "Назад"
     [SerializeField] private UIManualPlacement uiManualPlacement; // Панель расстановки для возврата в меню
     [SerializeField] private Text currentTurnText; // Текст для отображения текущего хода (например, "Ход игрока 1")
+    [SerializeField] private Button hintButtonPlayer1; // Кнопка подсказки для игрока 1 (показывает атаки игрока 2)
+    [SerializeField] private Button hintButtonPlayer2; // Кнопка подсказки для игрока 2 (показывает атаки игрока 1)
 
     private void Awake()
     {
@@ -45,8 +49,22 @@ public class UIGameManager : MonoBehaviour
             return;
         }
 
-        // Назначаем обработчик для кнопки "Назад"
+        if (hintButtonPlayer1 == null)
+        {
+            Debug.LogError("UIGameManager: HintButtonPlayer1 is not assigned in the inspector!");
+            return;
+        }
+
+        if (hintButtonPlayer2 == null)
+        {
+            Debug.LogError("UIGameManager: HintButtonPlayer2 is not assigned in the inspector!");
+            return;
+        }
+
+        // Назначаем обработчики для кнопок
         backButton.onClick.AddListener(OnBack);
+        hintButtonPlayer1.onClick.AddListener(() => OnHintButtonPressed(true));
+        hintButtonPlayer2.onClick.AddListener(() => OnHintButtonPressed(false));
 
         // Настраиваем стиль текста для отображения текущего хода
         SetupTurnTextStyle();
@@ -54,19 +72,29 @@ public class UIGameManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Очищаем обработчик кнопки при уничтожении объекта
+        // Очищаем обработчики кнопок при уничтожении объекта
         if (backButton != null)
         {
             backButton.onClick.RemoveListener(OnBack);
         }
 
-        // Отписываемся от события смены хода, чтобы избежать утечек памяти
+        if (hintButtonPlayer1 != null)
+        {
+            hintButtonPlayer1.onClick.RemoveListener(() => OnHintButtonPressed(true));
+        }
+
+        if (hintButtonPlayer2 != null)
+        {
+            hintButtonPlayer2.onClick.RemoveListener(() => OnHintButtonPressed(false));
+        }
+
+        // Отписываемся от события смены хода
         if (gameManager != null)
         {
             gameManager.OnTurnChanged -= UpdateTurnText;
         }
 
-        // Убиваем все активные анимации DOTween, связанные с этим объектом
+        // Убиваем все активные анимации DOTween
         DOTween.Kill(currentTurnText);
     }
 
@@ -82,6 +110,10 @@ public class UIGameManager : MonoBehaviour
 
         // Устанавливаем начальный текст для текущего хода
         UpdateTurnText(gameManager.IsPlayer1Turn);
+
+        // Устанавливаем начальное состояние кнопок подсказок
+        hintButtonPlayer1.interactable = !gameManager.IsInPlacementPhase;
+        hintButtonPlayer2.interactable = !gameManager.IsInPlacementPhase;
 
         Debug.Log("UIGameManager: Game UI initialized.");
     }
@@ -123,24 +155,20 @@ public class UIGameManager : MonoBehaviour
         // Убиваем предыдущие анимации, чтобы не было наложений
         DOTween.Kill(currentTurnText);
 
-        // Анимация исчезновения текста (плавное уменьшение прозрачности и масштаба)
+        // Анимация исчезновения текста
         currentTurnText.DOFade(0f, 0.3f).OnComplete(() =>
         {
-            // Обновляем текст и цвет после завершения исчезновения
+            // Обновляем текст и цвет
             currentTurnText.text = isPlayer1 ? "Ход игрока 1" : "Ход игрока 2";
-            currentTurnText.color = isPlayer1 ? new Color(1f, 0.84f, 0f) : new Color(1f, 0.3f, 0.3f); // Золотой для игрока 1, красный для игрока 2
+            currentTurnText.color = isPlayer1 ? new Color(1f, 0.84f, 0f) : new Color(1f, 0.3f, 0.3f);
 
-            // Сбрасываем масштаб текста перед новой анимацией
+            // Сбрасываем масштаб текста
             currentTurnText.transform.localScale = Vector3.one;
 
             // Анимация появления текста
-            // Сначала текст становится видимым (прозрачность от 0 до 1)
             currentTurnText.DOFade(1f, 0.3f);
-
-            // Одновременно с этим текст слегка увеличивается в размере для эффекта "появления"
             currentTurnText.transform.DOScale(1.2f, 0.3f).SetEase(Ease.OutBack).OnComplete(() =>
             {
-                // После увеличения текст возвращается к нормальному масштабу
                 currentTurnText.transform.DOScale(1f, 0.15f).SetEase(Ease.InOutQuad);
             });
         });
@@ -159,7 +187,7 @@ public class UIGameManager : MonoBehaviour
         foreach (var piece in pieces)
         {
             boardManager.RemovePiece(piece.Key);
-            Object.Destroy(piece.Value.gameObject); // Уничтожаем GameObject фигур
+            Object.Destroy(piece.Value.gameObject);
         }
 
         // Переключаем фазу на расстановку
@@ -171,5 +199,22 @@ public class UIGameManager : MonoBehaviour
         // Показываем панель расстановки и сбрасываем её состояние
         uiManualPlacement.Initialize(uiManualPlacement.GetSelectedMountains());
         Debug.Log("UIGameManager: Returned to placement menu, board reset.");
+    }
+
+    /// <summary>
+    /// Обработчик нажатия кнопки подсказки.
+    /// Показывает все потенциальные клетки атаки указанного игрока (включая пустые и свои фигуры, исключая горы).
+    /// </summary>
+    /// <param name="isPlayer1">True, если показываем атаки игрока 1, иначе игрока 2.</param>
+    private void OnHintButtonPressed(bool isPlayer1)
+    {
+        if (gameManager.IsInPlacementPhase)
+        {
+            Debug.LogWarning("UIGameManager: Hint buttons are disabled during placement phase.");
+            return;
+        }
+
+        inputHandler.ShowAllPotentialAttackTiles(isPlayer1);
+        Debug.Log($"UIGameManager: Hint button pressed for Player {(isPlayer1 ? 1 : 2)} to show all potential attack tiles.");
     }
 }

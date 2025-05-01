@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 367400985238691934}
   m_Layer: 0
   m_Name: 'MoveMarkerPrefab  '
-  m_TagString: Untagged
+  m_TagString: MoveMarker
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

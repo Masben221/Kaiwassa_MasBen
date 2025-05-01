@@ -47,6 +47,7 @@ public class KingMoveStrategy : IMovable
 
 /// <summary>
 /// —тратеги€ атаки дл€ корол€: на 1 клетку в любом направлении (только противники).
+/// ѕредоставл€ет список всех потенциальных клеток атаки дл€ подсказок (включа€ пустые и свои фигуры, исключа€ горы).
 /// </summary>
 public class KingAttackStrategy : IAttackable
 {
@@ -65,6 +66,32 @@ public class KingAttackStrategy : IAttackable
                 Vector3Int newPos = pos + new Vector3Int(dx, 0, dz);
                 if (board.IsWithinBounds(newPos) && board.IsOccupied(newPos) &&
                     board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1 && !board.IsMountain(newPos))
+                {
+                    attacks.Add(newPos);
+                }
+            }
+        }
+        return attacks;
+    }
+
+    /// <summary>
+    /// –ассчитывает все потенциальные клетки, которые король может атаковать, включа€ пустые и свои фигуры, исключа€ горы.
+    /// ”читывает дальность 1 клетку в любом направлении.
+    /// </summary>
+    public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
+    {
+        List<Vector3Int> attacks = new List<Vector3Int>();
+        Vector3Int pos = piece.Position;
+
+        int[] directions = { -1, 0, 1 };
+
+        foreach (int dx in directions)
+        {
+            foreach (int dz in directions)
+            {
+                if (dx == 0 && dz == 0) continue;
+                Vector3Int newPos = pos + new Vector3Int(dx, 0, dz);
+                if (board.IsWithinBounds(newPos) && !board.IsMountain(newPos))
                 {
                     attacks.Add(newPos);
                 }

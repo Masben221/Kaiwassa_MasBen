@@ -59,9 +59,17 @@ public class DragonMoveStrategy : IMovable
 /// —тратеги€ атаки дл€ дракона.
 /// –еализует дальний бой: атака на 1-3 клетки по пр€мой или диагонали, только по пр€мой видимости (без гор или фигур на пути).
 /// »сключает горы из возможных целей атаки, так как они €вл€ютс€ статическими преп€тстви€ми.
+/// ѕредоставл€ет список всех потенциальных клеток атаки дл€ подсказок (включа€ пустые и свои фигуры, исключа€ горы).
 /// </summary>
 public class DragonAttackStrategy : IAttackable
 {
+    /// <summary>
+    /// –ассчитывает клетки, которые дракон может атаковать в текущий момент (только с вражескими фигурами).
+    /// ѕровер€ет пр€мую видимость и исключает горы.
+    /// </summary>
+    /// <param name="board">»нтерфейс доски дл€ проверки состо€ни€.</param>
+    /// <param name="piece">‘игура дракона.</param>
+    /// <returns>—писок клеток с вражескими фигурами, которые можно атаковать.</returns>
     public List<Vector3Int> CalculateAttacks(IBoardManager board, Piece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
@@ -112,6 +120,68 @@ public class DragonAttackStrategy : IAttackable
         return attacks;
     }
 
+    /// <summary>
+    /// –ассчитывает все потенциальные клетки, которые дракон может атаковать, включа€ пустые и свои фигуры, исключа€ горы.
+    /// ”читывает пр€мую видимость (без гор или фигур на пути) и дальность 1-3 клетки.
+    /// </summary>
+    /// <param name="board">»нтерфейс доски дл€ проверки состо€ни€.</param>
+    /// <param name="piece">‘игура дракона.</param>
+    /// <returns>—писок всех потенциальных клеток атаки.</returns>
+    public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
+    {
+        List<Vector3Int> attacks = new List<Vector3Int>();
+        Vector3Int pos = piece.Position;
+
+        int[] directions = { -1, 0, 1 };
+
+        foreach (int dx in directions)
+        {
+            foreach (int dz in directions)
+            {
+                if (dx == 0 && dz == 0) continue;
+                for (int i = 1; i <= 3; i++)
+                {
+                    Vector3Int newPos = pos + new Vector3Int(dx * i, 0, dz * i);
+                    if (!board.IsWithinBounds(newPos))
+                    {
+                        break;
+                    }
+
+                    // ѕровер€ем пр€мую видимость: нет гор или фигур на пути
+                    bool isPathClear = true;
+                    for (int j = 1; j < i; j++)
+                    {
+                        Vector3Int intermediatePos = pos + new Vector3Int(dx * j, 0, dz * j);
+                        if (board.IsBlocked(intermediatePos) || board.IsOccupied(intermediatePos))
+                        {
+                            isPathClear = false;
+                            break;
+                        }
+                    }
+
+                    if (!isPathClear)
+                    {
+                        break; // ѕрерываем, если путь заблокирован
+                    }
+
+                    // ƒобавл€ем клетку, если она не содержит гору
+                    if (!board.IsMountain(newPos))
+                    {
+                        attacks.Add(newPos);
+                    }
+                }
+            }
+        }
+        return attacks;
+    }
+
+    /// <summary>
+    /// ¬ыполн€ет атаку дракона на указанную клетку.
+    /// ”дал€ет вражескую фигуру, если она есть и не €вл€етс€ горой.
+    /// </summary>
+    /// <param name="piece">‘игура дракона.</param>
+    /// <param name="target">÷елева€ клетка дл€ атаки.</param>
+    /// <param name="boardManager">»нтерфейс доски дл€ изменени€ состо€ни€.</param>
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
     {
         Debug.Log($"DragonAttackStrategy: Executing ranged attack from {piece.Position} to {target} (piece: {piece.GetType().Name})");

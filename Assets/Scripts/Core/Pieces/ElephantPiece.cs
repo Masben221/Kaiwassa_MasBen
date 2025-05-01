@@ -62,6 +62,7 @@ public class ElephantMoveStrategy : IMovable
 /// —тратеги€ атаки дл€ —лона.
 /// –еализует ближний бой: атака на 1-3 клетки по пр€мой, уничтожает до двух фигур противника подр€д.
 /// ѕровер€ет путь на наличие преп€тствий.
+/// ѕредоставл€ет список всех потенциальных клеток атаки дл€ подсказок (включа€ пустые и свои фигуры, исключа€ горы).
 /// </summary>
 public class ElephantAttackStrategy : IAttackable
 {
@@ -81,7 +82,6 @@ public class ElephantAttackStrategy : IAttackable
         foreach (var dir in directions)
         {
             int enemiesFound = 0;
-           
             for (int i = 1; i <= 3; i++)
             {
                 Vector3Int newPos = pos + dir * i;
@@ -91,35 +91,72 @@ public class ElephantAttackStrategy : IAttackable
                 {
                     break;
                 }
-                
+
                 // ≈сли на пути гора, прерываем направление
                 if (board.IsMountain(newPos))
                 {
                     break;
                 }
-                
+
                 // ≈сли на пути сво€ фигура, прерываем направление
                 if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 == piece.IsPlayer1)
                 {
                     break;
                 }
 
-                // ≈сли на пути фигура противника, то добавл€ем ее в список атак
+                // ≈сли на пути фигура противника, добавл€ем еЄ в список атак
                 if (board.IsOccupied(newPos) && board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1)
                 {
                     attacks.Add(newPos); // ƒобавл€ем вражескую фигуру в список атак
                     enemiesFound++;
-                    if (enemiesFound >= 2)// если это втора€ или более фигура дл€ атаки, то прерываем направление
+                    if (enemiesFound >= 2)
                     {
                         break; // ћаксимум две фигуры
                     }
                 }
-
-                // ≈сли была клетка с врагом и текуща€ позици€ пуста€, то прерываем направление ибо мы можем атаковать только подр€д две фигуры а не через пустой промежуток
+                // ≈сли была клетка с врагом и текуща€ позици€ пуста€, прерываем направление
                 else if (enemiesFound == 1 && !board.IsBlocked(newPos))
                 {
                     break;
                 }
+            }
+        }
+
+        return attacks;
+    }
+
+    /// <summary>
+    /// –ассчитывает все потенциальные клетки, которые слон может атаковать, включа€ пустые и свои фигуры, исключа€ горы.
+    /// ”читывает дальность 1-3 клетки по пр€мой, прерываетс€ при встрече с горой.
+    /// </summary>
+    public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
+    {
+        List<Vector3Int> attacks = new List<Vector3Int>();
+        Vector3Int pos = piece.Position;
+
+        // ¬озможные направлени€: вверх, вниз, влево, вправо
+        Vector3Int[] directions = {
+            new Vector3Int(1, 0, 0),  // ¬право
+            new Vector3Int(-1, 0, 0), // ¬лево
+            new Vector3Int(0, 0, 1),  // ¬верх
+            new Vector3Int(0, 0, -1)  // ¬низ
+        };
+
+        foreach (var dir in directions)
+        {
+            for (int i = 1; i <= 3; i++)
+            {
+                Vector3Int newPos = pos + dir * i;
+                if (!board.IsWithinBounds(newPos))
+                {
+                    break;
+                }
+                // ѕрерываем направление, если встретили гору
+                if (board.IsMountain(newPos))
+                {
+                    break;
+                }
+                attacks.Add(newPos); // ƒобавл€ем клетку (включа€ пустые и свои фигуры)
             }
         }
 

@@ -82,6 +82,7 @@
     <Compile Include="Assets\Scripts\Core\Pieces\Piece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\DragonPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\PieceFactory.cs" />
+    <Compile Include="Assets\Scripts\Animation\PulsatingMarker.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\MountainPiece.cs" />
     <Compile Include="Assets\Scripts\UI\UISettingsPanel.cs" />
     <Compile Include="Assets\Scripts\Services\CameraController.cs" />

@@ -54,6 +54,7 @@ public class RabbleMoveStrategy : IMovable
 /// <summary>
 /// Стратегия атаки для Раббл.
 /// Реализует ближний бой: атака на 1 клетку по горизонтали (x ± 1) или вертикали (z ± 1), занимает клетку противника.
+/// Предоставляет список всех потенциальных клеток атаки для подсказок (включая пустые и свои фигуры, исключая горы).
 /// </summary>
 public class RabbleAttackStrategy : IAttackable
 {
@@ -76,6 +77,36 @@ public class RabbleAttackStrategy : IAttackable
             Vector3Int targetPos = pos + dir;
             if (board.IsWithinBounds(targetPos) && board.IsOccupied(targetPos) &&
                 board.GetPieceAt(targetPos).IsPlayer1 != piece.IsPlayer1 && !board.IsMountain(targetPos))
+            {
+                attacks.Add(targetPos);
+            }
+        }
+
+        return attacks;
+    }
+
+    /// <summary>
+    /// Рассчитывает все потенциальные клетки, которые раbble может атаковать, включая пустые и свои фигуры, исключая горы.
+    /// Учитывает дальность 1 клетку по горизонтали или вертикали.
+    /// </summary>
+    public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
+    {
+        List<Vector3Int> attacks = new List<Vector3Int>();
+        Vector3Int pos = piece.Position;
+
+        // Возможные направления: влево, вправо, вверх, вниз
+        Vector3Int[] directions = new[]
+        {
+            new Vector3Int(1, 0, 0),  // вправо (x + 1)
+            new Vector3Int(-1, 0, 0), // влево (x - 1)
+            new Vector3Int(0, 0, 1),  // вверх (z + 1)
+            new Vector3Int(0, 0, -1)  // вниз (z - 1)
+        };
+
+        foreach (var dir in directions)
+        {
+            Vector3Int targetPos = pos + dir;
+            if (board.IsWithinBounds(targetPos) && !board.IsMountain(targetPos))
             {
                 attacks.Add(targetPos);
             }
