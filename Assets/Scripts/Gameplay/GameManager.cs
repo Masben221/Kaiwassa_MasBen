@@ -9,43 +9,39 @@ public interface IGameManager
     bool IsPlayer1Turn { get; }
     bool IsInPlacementPhase { get; set; }
     event Action<bool> OnTurnChanged;
+    event Action<bool> OnGameEnded; // Новое событие: true, если победил игрок 1; false, если игрок 2
 }
 
 public class GameManager : MonoBehaviour, IGameManager
 {
-    [Inject(Id = "Random")] private IPiecePlacementManager randomPlacementManager; // Менеджер случайной расстановки
-    [Inject(Id = "Manual")] private IPiecePlacementManager manualPlacementManager; // Менеджер ручной расстановки
-    [Inject] private IBoardManager boardManager; // Менеджер доски
+    [Inject(Id = "Random")] private IPiecePlacementManager randomPlacementManager;
+    [Inject(Id = "Manual")] private IPiecePlacementManager manualPlacementManager;
+    [Inject] private IBoardManager boardManager;
 
-    private bool isPlayer1Turn = true; // Чей ход: true — игрок 1, false — игрок 2
-    private bool isInPlacementPhase = false; // Флаг фазы расстановки
-    public bool IsPlayer1Turn => isPlayer1Turn; // Свойство для проверки текущего хода
+    private bool isPlayer1Turn = true;
+    private bool isInPlacementPhase = false;
+    private bool isGameOver = false;
+
+    public bool IsPlayer1Turn => isPlayer1Turn;
     public bool IsInPlacementPhase
     {
-        get => isInPlacementPhase; // Возвращает, находится ли игра в фазе расстановки
-        set => isInPlacementPhase = value; // Устанавливает фазу расстановки
+        get => isInPlacementPhase;
+        set => isInPlacementPhase = value;
     }
-    public event Action<bool> OnTurnChanged; // Событие смены хода
+    public event Action<bool> OnTurnChanged;
+    public event Action<bool> OnGameEnded;
 
     private void Start()
     {
         Debug.Log("GameManager: Waiting for UI to start game.");
     }
 
-    /// <summary>
-    /// Запускает игру, завершая фазу расстановки.
-    /// </summary>
-    /// <param name="mountainsPerSide">Количество гор на сторону.</param>
-    /// <param name="isRandomPlacement">True, если используется случайная расстановка.</param>
     public void StartGame(int mountainsPerSide, bool isRandomPlacement)
     {
         Debug.Log($"GameManager: StartGame called with {mountainsPerSide} mountains per side, RandomPlacement: {isRandomPlacement}");
-        boardManager.InitializeBoard(10); // Инициализируем доску размером 10x10
+        boardManager.InitializeBoard(10);
 
-        // Используем соответствующий менеджер расстановки
         var placementManager = isRandomPlacement ? randomPlacementManager : manualPlacementManager;
-
-        // Если это случайная расстановка, размещаем фигуры
         if (isRandomPlacement)
         {
             Debug.Log("GameManager: Placing pieces...");
@@ -53,36 +49,38 @@ public class GameManager : MonoBehaviour, IGameManager
             placementManager.PlacePiecesForPlayer(false, mountainsPerSide);
         }
 
-        isInPlacementPhase = false; // Завершаем фазу расстановки
+        isInPlacementPhase = false;
+        isGameOver = false;
         Debug.Log("GameManager: Game started successfully!");
-        OnTurnChanged?.Invoke(isPlayer1Turn); // Уведомляем о текущем ходе
+        OnTurnChanged?.Invoke(isPlayer1Turn);
     }
 
-    /// <summary>
-    /// Выполняет ход или атаку для указанной фигуры.
-    /// </summary>
-    /// <param name="piece">Фигура, которая делает ход.</param>
-    /// <param name="target">Целевая позиция для хода или атаки.</param>
     public void MakeMove(Piece piece, Vector3Int target)
     {
-        Debug.Log($"GameManager: Attempting move for piece {piece.GetType().Name} at {piece.Position} to {target}");
+        if (isGameOver)
+        {
+            Debug.LogWarning("GameManager: Game is over, no moves allowed!");
+            return;
+        }
+
         if (piece.IsPlayer1 != isPlayer1Turn)
         {
             Debug.LogWarning("GameManager: Not your turn!");
             return;
         }
 
-        var validMoves = piece.GetValidMoves(boardManager); // Получаем возможные ходы
-        var attackMoves = piece.GetAttackMoves(boardManager); // Получаем возможные атаки
+        var validMoves = piece.GetValidMoves(boardManager);
+        var attackMoves = piece.GetAttackMoves(boardManager);
 
         if (attackMoves.Contains(target))
         {
             Piece targetPiece = boardManager.GetPieceAt(target);
             if (targetPiece != null && targetPiece.IsPlayer1 != piece.IsPlayer1)
             {
-                Debug.Log($"GameManager: Valid attack on piece {targetPiece.GetType().Name} at {target}");
-                piece.Attack(target, boardManager); // Выполняем атаку
-                SwitchTurn(); // Переключаем ход
+                Debug.Log($"GameManager: Valid attack on piece {targetPiece.Type} at {target}");
+                piece.Attack(target, boardManager);
+                SwitchTurn();
+                CheckWinCondition();
             }
             else
             {
@@ -94,8 +92,8 @@ public class GameManager : MonoBehaviour, IGameManager
             Debug.Log($"GameManager: Valid move to {target}");
             piece.GetComponent<PieceAnimator>().MoveTo(target, () =>
             {
-                boardManager.MovePiece(piece, piece.Position, target); // Перемещаем фигуру
-                SwitchTurn(); // Переключаем ход
+                boardManager.MovePiece(piece, piece.Position, target);
+                SwitchTurn();
             });
         }
         else
@@ -104,13 +102,42 @@ public class GameManager : MonoBehaviour, IGameManager
         }
     }
 
-    /// <summary>
-    /// Переключает ход на другого игрока.
-    /// </summary>
     private void SwitchTurn()
     {
+        if (isGameOver) return;
         isPlayer1Turn = !isPlayer1Turn;
         OnTurnChanged?.Invoke(isPlayer1Turn);
         Debug.Log($"GameManager: Turn switched to Player {(isPlayer1Turn ? 1 : 2)}");
+    }
+
+    private void CheckWinCondition()
+    {
+        bool player1KingAlive = false;
+        bool player2KingAlive = false;
+
+        var pieces = boardManager.GetAllPieces();
+        foreach (var piece in pieces.Values)
+        {
+            if (piece.Type == PieceType.King)
+            {
+                if (piece.IsPlayer1)
+                    player1KingAlive = true;
+                else
+                    player2KingAlive = true;
+            }
+        }
+
+        if (!player1KingAlive)
+        {
+            isGameOver = true;
+            Debug.Log("GameManager: Player 2 wins! Player 1's King is destroyed.");
+            OnGameEnded?.Invoke(false); // Игрок 2 победил
+        }
+        else if (!player2KingAlive)
+        {
+            isGameOver = true;
+            Debug.Log("GameManager: Player 1 wins! Player 2's King is destroyed.");
+            OnGameEnded?.Invoke(true); // Игрок 1 победил
+        }
     }
 }
