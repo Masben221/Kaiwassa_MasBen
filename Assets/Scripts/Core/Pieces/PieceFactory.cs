@@ -26,8 +26,10 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
     [SerializeField] private GameObject catapultPrefab;
     [SerializeField] private GameObject trebuchetPrefab;
     [SerializeField] private GameObject mountainPrefab;
-    [SerializeField] private Material player1Material;
-    [SerializeField] private Material player2Material;
+    [SerializeField] private GameObject swordsmanPrefab; // Префаб для Мечника
+    [SerializeField] private GameObject archerPrefab;   // Префаб для Лучника
+    [SerializeField] private Material player1Material;  // Слоновая кость (игрок 1)
+    [SerializeField] private Material player2Material;  // Чёрный обсидиан (игрок 2)
 
     private DiContainer container;
 
@@ -39,9 +41,11 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
 
     private void Awake()
     {
-        if (kingPrefab == null || dragonPrefab == null || heavyCavalryPrefab == null || mountainPrefab == null)
+        // Проверяем наличие всех префабов
+        if (kingPrefab == null || dragonPrefab == null || heavyCavalryPrefab == null || mountainPrefab == null ||
+            swordsmanPrefab == null || archerPrefab == null)
         {
-            Debug.LogError("PieceFactory: Required prefabs (King, Dragon, HeavyCavalry, Mountain) not assigned!");
+            Debug.LogError("PieceFactory: Required prefabs (King, Dragon, HeavyCavalry, Mountain, Swordsman, Archer) not assigned!");
         }
     }
 
@@ -49,7 +53,7 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
     /// Создаёт фигуру или гору указанного типа на заданной позиции.
     /// Поворачивает фигуры второго игрока на 180 градусов (кроме гор).
     /// </summary>
-    /// <param name="type">Тип фигуры (King, Dragon, Mountain и т.д.).</param>
+    /// <param name="type">Тип фигуры (King, Dragon, Mountain, Swordsman, Archer и т.д.).</param>
     /// <param name="isPlayer1">true, если фигура для игрока 1.</param>
     /// <param name="position">Позиция в клеточных координатах.</param>
     /// <returns>Созданная фигура или null, если создание не удалось.</returns>
@@ -90,6 +94,12 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
                 break;
             case PieceType.Mountain:
                 prefab = mountainPrefab;
+                break;
+            case PieceType.Swordsman:
+                prefab = swordsmanPrefab;
+                break;
+            case PieceType.Archer:
+                prefab = archerPrefab;
                 break;
             default:
                 Debug.LogError($"PieceFactory: Unknown piece type {type}");

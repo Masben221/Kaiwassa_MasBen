@@ -16,8 +16,12 @@ public enum PieceType
     Rabble,
     Catapult,
     Trebuchet,
-    Mountain // Добавлено для гор
+    Mountain,
+    Swordsman, // Новая фигура: Мечник
+    Archer     // Новая фигура: Лучник
 }
+
+
 
 /// <summary>
 /// Абстрактный базовый класс для всех игровых фигур и гор.

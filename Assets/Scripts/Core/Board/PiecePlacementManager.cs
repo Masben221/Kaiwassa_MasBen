@@ -15,20 +15,22 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     [Inject] private IPieceFactory pieceFactory; // Фабрика для создания фигур
 
     // Количество фигур каждого типа для одного игрока (настраивается в инспекторе)
-    [SerializeField] private int kingsPerSide = 1; // Количество королей
-    [SerializeField] private int dragonsPerSide = 1; // Количество драконов
-    [SerializeField] private int heavyCavalryPerSide = 2; // Количество тяжёлой кавалерии
-    [SerializeField] private int elephantsPerSide = 2; // Количество слонов
-    [SerializeField] private int lightHorsesPerSide = 3; // Количество лёгкой кавалерии
-    [SerializeField] private int spearmenPerSide = 3; // Количество копейщиков
-    [SerializeField] private int crossbowmenPerSide = 3; // Количество арбалетчиков
-    [SerializeField] private int rabblePerSide = 3; // Количество ополчения
-    [SerializeField] private int catapultsPerSide = 1; // Количество катапульт
-    [SerializeField] private int trebuchetsPerSide = 1; // Количество требушетов
+    [SerializeField] private int kingsPerSide = 1;         // Количество королей
+    [SerializeField] private int dragonsPerSide = 1;       // Количество драконов
+    [SerializeField] private int heavyCavalryPerSide = 2;  // Количество тяжёлой кавалерии
+    [SerializeField] private int elephantsPerSide = 2;     // Количество слонов
+    [SerializeField] private int lightHorsesPerSide = 2;   // Количество лёгкой кавалерии
+    [SerializeField] private int spearmenPerSide = 2;      // Количество копейщиков
+    [SerializeField] private int crossbowmenPerSide = 2;   // Количество арбалетчиков
+    [SerializeField] private int rabblePerSide = 2;        // Количество ополчения
+    [SerializeField] private int catapultsPerSide = 1;     // Количество катапульт
+    [SerializeField] private int trebuchetsPerSide = 1;    // Количество требушетов
+    [SerializeField] private int swordsmenPerSide = 2;     // Количество мечников
+    [SerializeField] private int archersPerSide = 2;       // Количество лучников
 
     // Списки для отслеживания занятых и заблокированных позиций
     private readonly List<Vector3Int> occupiedPositions = new List<Vector3Int>(); // Позиции, занятые фигурами
-    private readonly List<Vector3Int> blockedPositions = new List<Vector3Int>(); // Позиции, заблокированные для размещения (например, линия обстрела)
+    private readonly List<Vector3Int> blockedPositions = new List<Vector3Int>();  // Позиции, заблокированные для размещения (например, линия обстрела)
 
     private int mountainsPerSide; // Количество гор на сторону
 
@@ -55,7 +57,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
         Debug.LogWarning("PiecePlacementManager: CanPlace not supported in automatic placement.");
         return false;
     }
-    
+
     /// <summary>
     /// Размещает фигуру или гору на доске (не поддерживается в автоматической расстановке).
     /// </summary>
@@ -64,7 +66,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
         Debug.LogWarning("PiecePlacementManager: PlacePieceOrMountain not supported in automatic placement.");
         return false;
     }
-    
+
     /// <summary>
     /// Удаляет фигуру с доски (не поддерживается в автоматической расстановке).
     /// </summary>
@@ -122,9 +124,6 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     /// <summary>
     /// Получает список позиций для размещения гор на указанных линиях Z, исключая зарезервированные проходы.
     /// </summary>
-    /// <param name="zLines">Линии Z для размещения гор.</param>
-    /// <param name="reservedPassages">Список зарезервированных проходов (X координаты).</param>
-    /// <returns>Список доступных позиций для гор.</returns>
     private List<Vector3Int> GetMountainPositions(int[] zLines, List<int> reservedPassages)
     {
         List<Vector3Int> positions = new List<Vector3Int>();
@@ -147,10 +146,6 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     /// <summary>
     /// Размещает горы для указанного игрока на заданных позициях.
     /// </summary>
-    /// <param name="positions">Список доступных позиций для гор.</param>
-    /// <param name="mountainsPerSide">Количество гор для размещения.</param>
-    /// <param name="isPlayer1">Игрок 1 (true) или игрок 2 (false).</param>
-    /// <param name="reservedPassages">Список зарезервированных проходов (X координаты).</param>
     private void PlaceMountainsForPlayer(List<Vector3Int> positions, int mountainsPerSide, bool isPlayer1, List<int> reservedPassages)
     {
         Debug.Log($"PiecePlacementManager: Starting to place {mountainsPerSide} mountains for Player {(isPlayer1 ? 1 : 2)}");
@@ -161,11 +156,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
             int index = UnityEngine.Random.Range(0, positions.Count);
             Vector3Int pos = positions[index];
             if (reservedPassages.Contains(pos.x))
-            {
-                Debug.LogWarning($"PiecePlacementManager: Attempted to place mountain at {pos} in reserved passage! Skipping...");
-                positions.RemoveAt(index);
                 continue;
-            }
             Piece mountain = pieceFactory.CreatePiece(PieceType.Mountain, isPlayer1, pos);
             if (mountain != null)
             {
@@ -184,8 +175,6 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     /// <summary>
     /// Генерирует зарезервированные проходы (X координаты) для катапульты и требушета.
     /// </summary>
-    /// <param name="isPlayer1">Игрок 1 (true) или игрок 2 (false).</param>
-    /// <returns>Список зарезервированных X координат.</returns>
     private List<int> GetReservedPassages(bool isPlayer1)
     {
         List<int> availableX = Enumerable.Range(0, 10).ToList();
@@ -203,8 +192,6 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     /// <summary>
     /// Размещает все фигуры и горы для указанного игрока.
     /// </summary>
-    /// <param name="isPlayer1">Игрок 1 (true) или игрок 2 (false).</param>
-    /// <param name="selectedMountains">Выбранное количество гор.</param>
     public void PlacePiecesForPlayer(bool isPlayer1, int selectedMountains)
     {
         if (boardManager == null)
@@ -214,14 +201,12 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
         }
 
         mountainsPerSide = Mathf.Min(selectedMountains, 8); // Ограничиваем количество гор
-
-        // Очищаем занятые позиции перед началом расстановки
-        occupiedPositions.Clear();
+        occupiedPositions.Clear(); // Очищаем занятые позиции
 
         // Генерируем зарезервированные проходы для катапульты и требушета
         List<int> reservedPassages = GetReservedPassages(isPlayer1);
 
-        // Определяем линии Z для гор в зависимости от количества гор и игрока
+        // Определяем линии Z для гор
         int[] zLines;
         if (mountainsPerSide <= 4)
         {
@@ -232,19 +217,17 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
             zLines = isPlayer1 ? new[] { 2, 3 } : new[] { 6, 7 };
         }
 
-        // Получаем позиции для гор и размещаем их
+        // Размещаем горы
         List<Vector3Int> mountainPositions = GetMountainPositions(zLines, reservedPassages);
-        Debug.Log($"PiecePlacementManager: Starting to place {mountainsPerSide} mountains for Player {(isPlayer1 ? 1 : 2)}");
         PlaceMountainsForPlayer(mountainPositions, mountainsPerSide, isPlayer1, reservedPassages);
 
-        // Очищаем заблокированные позиции перед размещением фигур
-        blockedPositions.Clear();
+        blockedPositions.Clear(); // Очищаем заблокированные позиции
 
-        // Определяем линии Z для размещения фигур
-        int zLine1 = isPlayer1 ? 0 : 9; // Самая дальняя линия от центра
+        // Определяем линии Z для фигур
+        int zLine1 = isPlayer1 ? 0 : 9; // Самая дальняя линия
         int zLine2 = isPlayer1 ? 1 : 8;
         int zLine3 = isPlayer1 ? 2 : 7;
-        int zLine4 = isPlayer1 ? 3 : 6; // Линия, ближайшая к центру
+        int zLine4 = isPlayer1 ? 3 : 6;
         int[] passageZLines = isPlayer1 ? new[] { 1, 2, 3 } : new[] { 6, 7, 8 }; // Линии для проверки линии обстрела
 
         // Размещаем катапульту с учётом зарезервированного прохода
@@ -262,10 +245,14 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
             blockLineOfSight: true);
 
         // Размещаем короля на центральных позициях дальней линии
-        PlacePieceInZoneWithFallback(PieceType.King, isPlayer1, x => x >= 3 && x <= 6, new[] { zLine1 }, kingsPerSide);
+        Vector3Int? kingPosition = PlacePieceInZoneWithFallback(PieceType.King, isPlayer1, x => x >= 3 && x <= 6, new[] { zLine1 }, kingsPerSide);
+        if (!kingPosition.HasValue)
+        {
+            Debug.LogError($"PiecePlacementManager: Failed to place King for Player {(isPlayer1 ? 1 : 2)}!");
+            return;
+        }
 
         // Размещаем тяжёлую кавалерию с учётом наличия или отсутствия гор
-        // Если горы есть, размещаем за горами; если нет, просто на линиях zLine4 и zLine3
         Func<Vector3Int, bool> heavyCavalryCondition = mountainsPerSide > 0
             ? (Func<Vector3Int, bool>)(pos => boardManager.IsMountain(new Vector3Int(pos.x, 0, isPlayer1 ? 3 : 6)))
             : null;
@@ -295,32 +282,122 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
 
         // Размещаем ополчение на передних линиях
         PlacePieceInZoneWithFallback(PieceType.Rabble, isPlayer1, x => true, new[] { zLine4, zLine3 }, rabblePerSide);
+
+        // Размещаем мечников рядом с королём
+        PlaceSwordsmenNearKing(isPlayer1, kingPosition.Value, swordsmenPerSide);
+
+        // Размещаем лучников на всех доступных линиях, избегая линий атаки
+        PlacePieceInZoneWithFallback(PieceType.Archer, isPlayer1, x => !reservedPassages.Contains(x),
+            isPlayer1 ? new[] { zLine1, zLine2, zLine3, zLine4 } : new[] { zLine4, zLine3, zLine2, zLine1 }, archersPerSide,
+            prioritizeLineOfSight: true);
+    }
+
+    /// <summary>
+    /// Размещает мечников рядом с королём, предпочтительно справа и слева, избегая заблокированных позиций.
+    /// </summary>
+    private void PlaceSwordsmenNearKing(bool isPlayer1, Vector3Int kingPosition, int count)
+    {
+        List<Vector3Int> preferredPositions = new List<Vector3Int>();
+        int kingX = kingPosition.x;
+        int kingZ = kingPosition.z;
+
+        // Предпочтительные позиции: справа и слева от короля (x ± 1, тот же z)
+        preferredPositions.Add(new Vector3Int(kingX - 1, 0, kingZ));
+        preferredPositions.Add(new Vector3Int(kingX + 1, 0, kingZ));
+
+        // Дополнительные позиции: соседние клетки на той же линии или следующей
+        for (int dx = -2; dx <= 2; dx++)
+        {
+            if (dx == 0 || dx == -1 || dx == 1) continue; // Пропускаем короля и уже добавленные позиции
+            preferredPositions.Add(new Vector3Int(kingX + dx, 0, kingZ));
+        }
+        for (int dx = -2; dx <= 2; dx++)
+        {
+            int nextZ = isPlayer1 ? kingZ + 1 : kingZ - 1; // z=1 для игрока 1, z=8 для игрока 2
+            preferredPositions.Add(new Vector3Int(kingX + dx, 0, nextZ));
+        }
+
+        // Фильтруем позиции: в пределах доски, не заняты, не заблокированы
+        List<Vector3Int> availablePositions = preferredPositions
+            .Where(pos => boardManager.IsWithinBounds(pos) &&
+                          !boardManager.IsBlocked(pos) &&
+                          !occupiedPositions.Contains(pos) &&
+                          !blockedPositions.Contains(pos))
+            .ToList();
+
+        Debug.Log($"PiecePlacementManager: Available positions for Swordsmen near King at {kingPosition}: {string.Join(", ", availablePositions)}");
+
+        // Размещаем мечников
+        int placedCount = PlacePieces(PieceType.Swordsman, isPlayer1, availablePositions, Mathf.Min(count, availablePositions.Count), blockLineOfSight: false);
+        count -= placedCount;
+
+        // Если не удалось разместить всех мечников, используем запасные зоны
+        if (count > 0)
+        {
+            int[] fallbackZLines = isPlayer1 ? new[] { 1, 0 } : new[] { 8, 9 };
+            availablePositions = GetAvailablePositions(x => x >= 2 && x <= 7, fallbackZLines, null, prioritizeLineOfSight: true);
+            placedCount = PlacePieces(PieceType.Swordsman, isPlayer1, availablePositions, Mathf.Min(count, availablePositions.Count), blockLineOfSight: false);
+            count -= placedCount;
+        }
+
+        // Если всё ещё остались мечники, размещаем принудительно
+        if (count > 0)
+        {
+            foreach (int z in isPlayer1 ? new[] { 0, 1 } : new[] { 9, 8 })
+            {
+                for (int x = 0; x < 10; x++)
+                {
+                    Vector3Int pos = new Vector3Int(x, 0, z);
+                    if (!boardManager.IsWithinBounds(pos) || blockedPositions.Contains(pos)) continue;
+
+                    if (boardManager.IsBlocked(pos))
+                    {
+                        if (boardManager.IsMountain(pos))
+                        {
+                            boardManager.RemovePiece(pos);
+                            Debug.Log($"PiecePlacementManager: Cleared mountain at {pos} to place Swordsman");
+                        }
+                        else if (occupiedPositions.Contains(pos))
+                        {
+                            var piece = boardManager.GetPieceAt(pos);
+                            if (piece != null)
+                            {
+                                boardManager.RemovePiece(pos);
+                                occupiedPositions.Remove(pos);
+                                Debug.Log($"PiecePlacementManager: Cleared {piece.Type} at {pos} to place Swordsman");
+                            }
+                        }
+                    }
+                    PlacePiece(PieceType.Swordsman, isPlayer1, pos);
+                    occupiedPositions.Add(pos);
+                    placedCount++;
+                    count--;
+                    Debug.Log($"PiecePlacementManager: Force-placed Swordsman for Player {(isPlayer1 ? 1 : 2)} at {pos}");
+                    if (count == 0) break;
+                }
+                if (count == 0) break;
+            }
+        }
+
+        if (count > 0)
+        {
+            Debug.LogError($"PiecePlacementManager: Failed to place all Swordsmen for Player {(isPlayer1 ? 1 : 2)}, remaining {count}");
+        }
     }
 
     /// <summary>
     /// Размещает фигуры с гарантированным размещением, если обычное размещение не удалось.
     /// Используется для фигур, которые должны быть размещены строго на определённых позициях (например, катапульта, требушет).
     /// </summary>
-    /// <param name="type">Тип фигуры.</param>
-    /// <param name="isPlayer1">Игрок 1 (true) или игрок 2 (false).</param>
-    /// <param name="xCondition">Условие для X координаты.</param>
-    /// <param name="preferredZLines">Предпочитаемые линии Z.</param>
-    /// <param name="count">Количество фигур для размещения.</param>
-    /// <param name="extraCondition">Дополнительное условие для позиции.</param>
-    /// <param name="prioritizeLineOfSight">Приоритизировать ли линию обстрела.</param>
-    /// <param name="blockLineOfSight">Блокировать ли линию обстрела после размещения.</param>
     private void PlacePieceWithGuarantee(PieceType type, bool isPlayer1, Func<int, bool> xCondition, int[] preferredZLines,
         int count, Func<Vector3Int, bool> extraCondition = null, bool prioritizeLineOfSight = false, bool blockLineOfSight = false)
     {
-        // Получаем доступные позиции для размещения
         List<Vector3Int> availablePositions = GetAvailablePositions(xCondition, preferredZLines, extraCondition, prioritizeLineOfSight);
         Debug.Log($"PiecePlacementManager: Available positions for {type}: {string.Join(", ", availablePositions)}");
 
-        // Пытаемся разместить фигуры на доступных позициях
         int placedCount = PlacePieces(type, isPlayer1, availablePositions, Mathf.Min(count, availablePositions.Count), blockLineOfSight);
         count -= placedCount;
 
-        // Если не удалось разместить все фигуры, принудительно размещаем их, очищая позиции
         if (count > 0)
         {
             foreach (int z in preferredZLines)
@@ -364,7 +441,6 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
             }
         }
 
-        // Если всё ещё остались неразмещённые фигуры, логируем ошибку
         if (count > 0)
         {
             Debug.LogError($"PiecePlacementManager: Failed to place all {type} for Player {(isPlayer1 ? 1 : 2)}, remaining {count}");
@@ -372,34 +448,25 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     }
 
     /// <summary>
-    /// Размещает фигуры на указанных линиях Z с возможностью перехода на запасные линии, если не удалось разместить.
+    /// Размещает фигуры на указанных линиях Z с возможностью перехода на запасные линии.
+    /// Возвращает позицию размещённой фигуры, если count == 1.
     /// </summary>
-    /// <param name="type">Тип фигуры.</param>
-    /// <param name="isPlayer1">Игрок 1 (true) или игрок 2 (false).</param>
-    /// <param name="xCondition">Условие для X координаты.</param>
-    /// <param name="preferredZLines">Предпочитаемые линии Z.</param>
-    /// <param name="count">Количество фигур для размещения.</param>
-    /// <param name="extraCondition">Дополнительное условие для позиции.</param>
-    /// <param name="prioritizeLineOfSight">Приоритизировать ли линию обстрела.</param>
-    /// <param name="blockLineOfSight">Блокировать ли линию обстрела после размещения.</param>
-    private void PlacePieceInZoneWithFallback(PieceType type, bool isPlayer1, Func<int, bool> xCondition, int[] preferredZLines,
+    private Vector3Int? PlacePieceInZoneWithFallback(PieceType type, bool isPlayer1, Func<int, bool> xCondition, int[] preferredZLines,
         int count, Func<Vector3Int, bool> extraCondition = null, bool prioritizeLineOfSight = false, bool blockLineOfSight = false)
     {
-        // Получаем доступные позиции на предпочитаемых линиях
+        Vector3Int? lastPlacedPosition = null;
         List<Vector3Int> availablePositions = GetAvailablePositions(xCondition, preferredZLines, extraCondition, prioritizeLineOfSight);
-        int placedCount = PlacePieces(type, isPlayer1, availablePositions, Mathf.Min(count, availablePositions.Count), blockLineOfSight);
+        int placedCount = PlacePieces(type, isPlayer1, availablePositions, Mathf.Min(count, availablePositions.Count), blockLineOfSight, pos => lastPlacedPosition = pos);
         count -= placedCount;
 
-        // Если не удалось разместить все фигуры, переходим на запасные линии
         if (count > 0)
         {
             int[] fallbackZLines = isPlayer1 ? new[] { 1, 0 } : new[] { 8, 9 };
             availablePositions = GetAvailablePositions(xCondition, fallbackZLines, extraCondition, prioritizeLineOfSight);
-            placedCount = PlacePieces(type, isPlayer1, availablePositions, Mathf.Min(count, availablePositions.Count), blockLineOfSight);
+            placedCount = PlacePieces(type, isPlayer1, availablePositions, Mathf.Min(count, availablePositions.Count), blockLineOfSight, pos => lastPlacedPosition = pos);
             count -= placedCount;
         }
 
-        // Если всё ещё остались неразмещённые фигуры, принудительно размещаем их, очищая позиции
         if (count > 0)
         {
             foreach (int z in isPlayer1 ? new[] { 3, 2, 1, 0 } : new[] { 6, 7, 8, 9 })
@@ -434,6 +501,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
                         BlockLineOfSight(pos, isPlayer1);
                     }
                     occupiedPositions.Add(pos);
+                    lastPlacedPosition = pos;
                     placedCount++;
                     count--;
                     Debug.Log($"PiecePlacementManager: Force-placed {type} for Player {(isPlayer1 ? 1 : 2)} at {pos}");
@@ -443,21 +511,17 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
             }
         }
 
-        // Если не удалось разместить все фигуры, логируем ошибку
         if (count > 0)
         {
             Debug.LogError($"PiecePlacementManager: Failed to place all {type} for Player {(isPlayer1 ? 1 : 2)}, remaining {count}");
         }
+
+        return lastPlacedPosition;
     }
 
     /// <summary>
     /// Получает список доступных позиций для размещения фигур с учётом условий.
     /// </summary>
-    /// <param name="xCondition">Условие для X координаты.</param>
-    /// <param name="zLines">Линии Z для размещения.</param>
-    /// <param name="extraCondition">Дополнительное условие для позиции.</param>
-    /// <param name="prioritizeLineOfSight">Приоритизировать ли линию обстрела.</param>
-    /// <returns>Список доступных позиций.</returns>
     private List<Vector3Int> GetAvailablePositions(Func<int, bool> xCondition, int[] zLines, Func<Vector3Int, bool> extraCondition, bool prioritizeLineOfSight)
     {
         List<Vector3Int> availablePositions = new List<Vector3Int>();
@@ -484,13 +548,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     /// <summary>
     /// Размещает указанное количество фигур на доступных позициях.
     /// </summary>
-    /// <param name="type">Тип фигуры.</param>
-    /// <param name="isPlayer1">Игрок 1 (true) или игрок 2 (false).</param>
-    /// <param name="availablePositions">Список доступных позиций.</param>
-    /// <param name="count">Количество фигур для размещения.</param>
-    /// <param name="blockLineOfSight">Блокировать ли линию обстрела после размещения.</param>
-    /// <returns>Количество размещённых фигур.</returns>
-    private int PlacePieces(PieceType type, bool isPlayer1, List<Vector3Int> availablePositions, int count, bool blockLineOfSight)
+    private int PlacePieces(PieceType type, bool isPlayer1, List<Vector3Int> availablePositions, int count, bool blockLineOfSight, Action<Vector3Int> onPlace = null)
     {
         int placedCount = 0;
         for (int i = 0; i < count; i++)
@@ -507,6 +565,7 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
             {
                 BlockLineOfSight(pos, isPlayer1);
             }
+            onPlace?.Invoke(pos);
             availablePositions.RemoveAt(index);
             placedCount++;
         }
@@ -516,8 +575,6 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     /// <summary>
     /// Проверяет, блокирует ли указанная позиция линию обстрела.
     /// </summary>
-    /// <param name="pos">Позиция для проверки.</param>
-    /// <returns>True, если позиция блокирует линию обстрела.</returns>
     private bool BlocksLineOfSight(Vector3Int pos)
     {
         return blockedPositions.Any(blocked => blocked.x == pos.x);
@@ -526,8 +583,6 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
     /// <summary>
     /// Блокирует линию обстрела для указанной позиции.
     /// </summary>
-    /// <param name="pos">Позиция, для которой нужно заблокировать линию.</param>
-    /// <param name="isPlayer1">Игрок 1 (true) или игрок 2 (false).</param>
     private void BlockLineOfSight(Vector3Int pos, bool isPlayer1)
     {
         int zStart = isPlayer1 ? 1 : 6;
@@ -540,14 +595,12 @@ public class PiecePlacementManager : MonoBehaviour, IPiecePlacementManager
                 blockedPositions.Add(blockPos);
             }
         }
+        Debug.Log($"PiecePlacementManager: Blocked line of sight for x={pos.x}, z={zStart} to {zEnd} for Player {(isPlayer1 ? 1 : 2)}");
     }
 
     /// <summary>
     /// Размещает одну фигуру на указанной позиции.
     /// </summary>
-    /// <param name="type">Тип фигуры.</param>
-    /// <param name="isPlayer1">Игрок 1 (true) или игрок 2 (false).</param>
-    /// <param name="position">Позиция для размещения.</param>
     private void PlacePiece(PieceType type, bool isPlayer1, Vector3Int position)
     {
         Piece piece = pieceFactory.CreatePiece(type, isPlayer1, position);

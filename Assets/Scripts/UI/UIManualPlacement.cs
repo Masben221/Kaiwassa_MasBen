@@ -72,7 +72,7 @@ public class UIManualPlacement : MonoBehaviour
         player2RandomButton.onClick.RemoveListener(OnPlayer2Random);
         startGameButton.onClick.RemoveListener(OnStartGame);
         backButton.onClick.RemoveListener(OnBack);
-        mountainsSlider.onValueChanged.AddListener(OnMountainsSliderChanged);
+        mountainsSlider.onValueChanged.RemoveListener(OnMountainsSliderChanged);
         ClearHighlight();
     }
 
@@ -114,14 +114,29 @@ public class UIManualPlacement : MonoBehaviour
     {
         float yOffset = -20f;
 
+        // —оздаЄм кнопку дл€ гор
         CreatePieceButton(panel, isPlayer1, PieceType.Mountain, ref yOffset);
 
-        foreach (PieceType type in System.Enum.GetValues(typeof(PieceType)))
+        // —оздаЄм кнопки дл€ всех фигур
+        PieceType[] pieceTypes = new[]
         {
-            if (type != PieceType.Mountain)
-            {
-                CreatePieceButton(panel, isPlayer1, type, ref yOffset);
-            }
+            PieceType.King,
+            PieceType.Dragon,
+            PieceType.Elephant,
+            PieceType.HeavyCavalry,
+            PieceType.LightHorse,
+            PieceType.Spearman,
+            PieceType.Crossbowman,
+            PieceType.Rabble,
+            PieceType.Catapult,
+            PieceType.Trebuchet,
+            PieceType.Swordsman,
+            PieceType.Archer
+        };
+
+        foreach (PieceType type in pieceTypes)
+        {
+            CreatePieceButton(panel, isPlayer1, type, ref yOffset);
         }
     }
 
@@ -228,11 +243,9 @@ public class UIManualPlacement : MonoBehaviour
         bool player1Completed = placementManager.HasCompletedPlacement(true);
         bool player2Completed = placementManager.HasCompletedPlacement(false);
 
-        // ”правление видимостью панелей в зависимости от хода
         player1Panel.gameObject.SetActive(isPlayer1Turn && !player1Finished);
         player2Panel.gameObject.SetActive(!isPlayer1Turn && !player2Finished);
 
-        // ”правление кнопками
         player1FinishButton.interactable = isPlayer1Turn && player1Completed && !player1Finished;
         player2FinishButton.interactable = !isPlayer1Turn && player2Completed && !player2Finished;
         player1RandomButton.interactable = isPlayer1Turn && !player1Finished;
@@ -262,7 +275,7 @@ public class UIManualPlacement : MonoBehaviour
         }
 
         player2Finished = true;
-        isPlayer1Turn = true; // —брасываем на игрока 1 дл€ следующей фазы
+        isPlayer1Turn = true;
         UpdatePlayerPanelsAndButtons();
     }
 

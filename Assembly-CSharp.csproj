@@ -87,7 +87,9 @@
     <Compile Include="Assets\Scripts\UI\UISettingsPanel.cs" />
     <Compile Include="Assets\Scripts\Services\CameraController.cs" />
     <Compile Include="Assets\Scripts\UI\UIGameManager.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\SwordsmanPiece.cs" />
     <Compile Include="Assets\Scripts\Services\PieceDragHandler.cs" />
+    <Compile Include="Assets\Scripts\Core\Pieces\ArcherPiece.cs" />
     <Compile Include="Assets\Scripts\Services\LightController.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\CrossbowmanPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\RabblePiece.cs" />

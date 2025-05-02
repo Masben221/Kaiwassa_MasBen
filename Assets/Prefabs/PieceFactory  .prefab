@@ -55,5 +55,7 @@ MonoBehaviour:
   catapultPrefab: {fileID: 5717480514354363987, guid: 1dfcae21910afd746848c6653d317539, type: 3}
   trebuchetPrefab: {fileID: 5717480514354363987, guid: 06b5a062cbd6b074fb9f9495df628b37, type: 3}
   mountainPrefab: {fileID: 7114801639385481286, guid: 14d364a8053fac04aae36f88625f2e36, type: 3}
+  swordsmanPrefab: {fileID: 5797166320786525573, guid: 7e231b676360d1746bcc133a2bd791bc, type: 3}
+  archerPrefab: {fileID: 5717480514354363987, guid: e878474e98110e94e99bdda08b57f53e, type: 3}
   player1Material: {fileID: 2100000, guid: bf59a829c1be22c40945a3d6973cc7ed, type: 2}
   player2Material: {fileID: 2100000, guid: 6ebdab1f54851044ca7babfed9e13671, type: 2}

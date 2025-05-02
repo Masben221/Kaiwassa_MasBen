@@ -32,10 +32,19 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
         // Инициализируем счётчики фигур для игрока 1
         player1Pieces = new Dictionary<PieceType, int>
         {
-            { PieceType.King, 1 }, { PieceType.Dragon, 1 }, { PieceType.Elephant, 2 },
-            { PieceType.HeavyCavalry, 2 }, { PieceType.LightHorse, 3 }, { PieceType.Spearman, 3 },
-            { PieceType.Crossbowman, 3 }, { PieceType.Rabble, 3 }, { PieceType.Catapult, 1 },
-            { PieceType.Trebuchet, 1 }, { PieceType.Mountain, mountainsPerSide }
+            { PieceType.King, 1 },
+            { PieceType.Dragon, 1 },
+            { PieceType.Elephant, 2 },
+            { PieceType.HeavyCavalry, 2 },
+            { PieceType.LightHorse, 2 }, // Уменьшено до 2
+            { PieceType.Spearman, 2 },   // Уменьшено до 2
+            { PieceType.Crossbowman, 2 }, // Уменьшено до 2
+            { PieceType.Rabble, 2 },     // Уменьшено до 2
+            { PieceType.Catapult, 1 },
+            { PieceType.Trebuchet, 1 },
+            { PieceType.Swordsman, 2 },  // Новая фигура: Мечник
+            { PieceType.Archer, 2 },     // Новая фигура: Лучник
+            { PieceType.Mountain, mountainsPerSide }
         };
         // Копируем счётчики для игрока 2
         player2Pieces = new Dictionary<PieceType, int>(player1Pieces);
@@ -47,7 +56,7 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
     /// </summary>
     /// <param name="isPlayer1">True, если размещает игрок 1.</param>
     /// <param name="position">Координаты клетки на доске.</param>
-    /// <param name="type">Тип фигуры (например, King, Mountain).</param>
+    /// <param name="type">Тип фигуры (например, King, Mountain, Swordsman, Archer).</param>
     /// <param name="isMove">True, если это перемещение (не влияет на счётчик).</param>
     /// <returns>True, если размещение возможно.</returns>
     public bool CanPlace(bool isPlayer1, Vector3Int position, PieceType type, bool isMove = false)
@@ -119,7 +128,7 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
     /// </summary>
     /// <param name="isPlayer1">True, если размещает игрок 1.</param>
     /// <param name="position">Координаты клетки на доске.</param>
-    /// <param name="type">Тип фигуры (например, King, Mountain).</param>
+    /// <param name="type">Тип фигуры (например, King, Mountain, Swordsman, Archer).</param>
     /// <param name="isMove">True, если это перемещение (не уменьшает счётчик).</param>
     /// <returns>True, если размещение успешно.</returns>
     public bool PlacePieceOrMountain(bool isPlayer1, Vector3Int position, PieceType type, bool isMove = false)
@@ -312,6 +321,6 @@ public class ManualPlacementManager : MonoBehaviour, IPiecePlacementManager
     /// </summary>
     public void PlacePiecesForPlayer(bool isPlayer1, int selectedMountains)
     {
-        //Debug.LogWarning("ManualPlacementManager: PlacePiecesForPlayer not supported in manual placement.");
+        Debug.LogWarning("ManualPlacementManager: PlacePiecesForPlayer not supported in manual placement.");
     }
 }

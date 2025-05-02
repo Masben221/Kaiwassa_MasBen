@@ -13,11 +13,8 @@ public interface IBoardManager
     void MovePiece(Piece piece, Vector3Int from, Vector3Int to);
     bool IsWithinBounds(Vector3Int position);
     bool IsOccupied(Vector3Int position);
-    bool IsMountain(Vector3Int position); // Оставлено для совместимости
-    void PlaceMountains(int mountainsPerSide); // Оставлено для совместимости
-    bool IsBlocked(Vector3Int position);
-    void PlaceMountain(Vector3Int position, GameObject mountain); // Оставлено для совместимости
-    void RemoveMountain(Vector3Int position); // Оставлено для совместимости
+    bool IsMountain(Vector3Int position); // Оставлено для совместимости   
+    bool IsBlocked(Vector3Int position);    
     Dictionary<Vector3Int, Piece> GetAllPieces();
     GameObject GetTileAt(Vector3Int position);
 }
@@ -67,28 +64,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
 
         Debug.Log($"Board initialized with size {size}x{size}");
-    }
-
-    public void PlaceMountains(int mountainsPerSide)
-    {
-        Debug.LogWarning("BoardManager.PlaceMountains is deprecated. Use PiecePlacementManager.PlaceMountains instead.");
-    }
-
-    public void PlaceMountain(Vector3Int position, GameObject mountain)
-    {
-        Piece piece = mountain.GetComponent<Piece>();
-        if (piece == null || piece.Type != PieceType.Mountain)
-        {
-            Debug.LogWarning($"BoardManager: Invalid mountain at {position}, must have Piece component with Type=Mountain");
-            return;
-        }
-        PlacePiece(piece, position);
-    }
-
-    public void RemoveMountain(Vector3Int position)
-    {
-        RemovePiece(position); // Горы теперь в pieces
-    }
+    }  
 
     public void PlacePiece(Piece piece, Vector3Int position)
     {
