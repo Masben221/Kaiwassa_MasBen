@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
 using System.Collections.Generic;
+using DG.Tweening; // НОВОЕ: Для анимации подсветки
 
 public class UIManualPlacement : MonoBehaviour
 {
@@ -27,7 +28,7 @@ public class UIManualPlacement : MonoBehaviour
     [SerializeField] private Material highlightMaterial;
     [SerializeField] private Font buttonFont;
     [SerializeField] private UIGameManager uiGameManager;
-    [SerializeField] private GameObject pieceIconPrefab; // НОВОЕ: Префаб для UI-иконки
+    [SerializeField] private GameObject pieceIconPrefab;
 
     private bool isPlayer1Turn = true;
     private bool player1Finished = false;
@@ -35,6 +36,8 @@ public class UIManualPlacement : MonoBehaviour
     private int selectedMountains = 4;
     private Vector3Int? highlightedTile;
     private Dictionary<Vector3Int, Material> originalTileMaterials = new Dictionary<Vector3Int, Material>();
+    private Button currentHighlightedButton; // НОВОЕ: Отслеживаем текущую подсвеченную кнопку
+    private Tweener highlightTween; // НОВОЕ: Анимация подсветки
 
     public bool IsPlayer1Finished => player1Finished;
     public bool IsPlayer2Finished => player2Finished;
@@ -45,7 +48,7 @@ public class UIManualPlacement : MonoBehaviour
             player1FinishButton == null || player2FinishButton == null || player1RandomButton == null ||
             player2RandomButton == null || startGameButton == null || backButton == null ||
             mountainsSlider == null || mountainsValueText == null || highlightMaterial == null ||
-            pieceIconPrefab == null) // НОВОЕ: Проверка префаба
+            pieceIconPrefab == null)
         {
             Debug.LogError("UIManualPlacement: Missing UI elements!");
             return;
@@ -67,6 +70,9 @@ public class UIManualPlacement : MonoBehaviour
 
         startGameButton.interactable = false;
         UpdatePlayerPanelsAndButtons();
+
+        // НОВОЕ: Начинаем с подсветки player1RandomButton
+        HighlightButton(player1RandomButton);
     }
 
     private void OnDestroy()
@@ -79,6 +85,53 @@ public class UIManualPlacement : MonoBehaviour
         backButton.onClick.RemoveListener(OnBack);
         mountainsSlider.onValueChanged.RemoveListener(OnMountainsSliderChanged);
         ClearHighlight();
+        // НОВОЕ: Очищаем анимацию подсветки
+        ClearButtonHighlight();
+    }
+
+    // НОВОЕ: Запускает мерцающую анимацию для указанной кнопки
+    private void HighlightButton(Button button)
+    {
+        if (button == null || button == currentHighlightedButton) return;
+
+        // Останавливаем предыдущую анимацию
+        ClearButtonHighlight();
+
+        // Получаем компонент Image кнопки
+        Image buttonImage = button.GetComponent<Image>();
+        if (buttonImage == null)
+        {
+            Debug.LogWarning($"UIManualPlacement: No Image component on button {button.name}");
+            return;
+        }
+
+        // Запускаем анимацию альфа-канала
+        currentHighlightedButton = button;
+        Color startColor = buttonImage.color;
+        highlightTween = buttonImage.DOFade(0.5f, 0.5f)
+            .SetLoops(-1, LoopType.Yoyo) // Бесконечное мерцание
+            .SetEase(Ease.InOutSine); // Плавная анимация
+    }
+
+    // НОВОЕ: Останавливает текущую анимацию подсветки
+    private void ClearButtonHighlight()
+    {
+        if (highlightTween != null)
+        {
+            highlightTween.Kill();
+            highlightTween = null;
+        }
+        if (currentHighlightedButton != null)
+        {
+            Image buttonImage = currentHighlightedButton.GetComponent<Image>();
+            if (buttonImage != null)
+            {
+                Color color = buttonImage.color;
+                color.a = 1f;
+                buttonImage.color = color;
+            }
+            currentHighlightedButton = null;
+        }
     }
 
     public void Initialize(int mountainsPerSide)
@@ -98,6 +151,10 @@ public class UIManualPlacement : MonoBehaviour
         player1Finished = false;
         player2Finished = false;
         UpdatePlayerPanelsAndButtons();
+
+        // НОВОЕ: Сбрасываем подсветку и начинаем с player1RandomButton
+        ClearButtonHighlight();
+        HighlightButton(player1RandomButton);
     }
 
     public int GetSelectedMountains()
@@ -118,18 +175,13 @@ public class UIManualPlacement : MonoBehaviour
     private void CreatePieceButtons(RectTransform panel, bool isPlayer1)
     {
         float yOffset = -20f;
-
-        // Создаём кнопку для гор
         CreatePieceButton(panel, isPlayer1, PieceType.Mountain, ref yOffset);
-
-        // Создаём кнопки для всех фигур
         PieceType[] pieceTypes = new[]
         {
             PieceType.King, PieceType.Dragon, PieceType.Elephant, PieceType.HeavyCavalry,
             PieceType.LightHorse, PieceType.Spearman, PieceType.Crossbowman, PieceType.Rabble,
             PieceType.Catapult, PieceType.Trebuchet, PieceType.Swordsman, PieceType.Archer
         };
-
         foreach (PieceType type in pieceTypes)
         {
             CreatePieceButton(panel, isPlayer1, type, ref yOffset);
@@ -141,15 +193,13 @@ public class UIManualPlacement : MonoBehaviour
         int count = placementManager.GetRemainingCount(isPlayer1, type);
         if (count <= 0) return;
 
-        // НОВОЕ: Инстанцируем префаб иконки
         GameObject buttonObj = Instantiate(pieceIconPrefab, panel);
         buttonObj.name = type.ToString();
         RectTransform rt = buttonObj.GetComponent<RectTransform>();
         rt.anchoredPosition = new Vector2(0, yOffset);
-        rt.sizeDelta = new Vector2(200, 60); // Размер для иконки и текста
-        yOffset -= 70f; // Увеличен отступ для читаемости
+        rt.sizeDelta = new Vector2(200, 60);
+        yOffset -= 70f;
 
-        // Настраиваем иконку
         Image iconImage = buttonObj.transform.Find("Icon")?.GetComponent<Image>();
         if (iconImage != null)
         {
@@ -160,13 +210,12 @@ public class UIManualPlacement : MonoBehaviour
             Debug.LogError($"UIManualPlacement: Icon Image not found in {type} button prefab!");
         }
 
-        // Настраиваем текст
         Text text = buttonObj.transform.Find("Text")?.GetComponent<Text>();
         if (text != null)
         {
             text.text = $"{type} x{count}";
             text.font = buttonFont != null ? buttonFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 14; // Установлен шрифт размера 14
+            text.fontSize = 14;
             text.color = Color.black;
             text.alignment = TextAnchor.MiddleCenter;
         }
@@ -175,7 +224,6 @@ public class UIManualPlacement : MonoBehaviour
             Debug.LogError($"UIManualPlacement: Text component not found in {type} button prefab!");
         }
 
-        // Настраиваем перетаскивание
         PieceDragHandler dragHandler = buttonObj.GetComponent<PieceDragHandler>();
         if (dragHandler != null)
         {
@@ -269,6 +317,34 @@ public class UIManualPlacement : MonoBehaviour
         player1RandomButton.interactable = isPlayer1Turn && !player1Finished;
         player2RandomButton.interactable = !isPlayer1Turn && !player2Finished;
         startGameButton.interactable = player1Finished && player2Finished;
+
+        // НОВОЕ: Обновляем подсветку в зависимости от состояния
+        if (!player1Finished)
+        {
+            if (player1Completed)
+            {
+                HighlightButton(player1FinishButton);
+            }
+            else
+            {
+                HighlightButton(player1RandomButton);
+            }
+        }
+        else if (!player2Finished)
+        {
+            if (player2Completed)
+            {
+                HighlightButton(player2FinishButton);
+            }
+            else
+            {
+                HighlightButton(player2RandomButton);
+            }
+        }
+        else
+        {
+            HighlightButton(startGameButton);
+        }
     }
 
     private void OnPlayer1Finish()
@@ -365,6 +441,8 @@ public class UIManualPlacement : MonoBehaviour
             return;
         }
 
+        // НОВОЕ: Очищаем подсветку перед началом игры
+        ClearButtonHighlight();
         placementPanel.SetActive(false);
         gameManager.StartGame(selectedMountains, false);
         uiGameManager.Initialize();
@@ -388,6 +466,10 @@ public class UIManualPlacement : MonoBehaviour
         placementPanel.SetActive(false);
         mainMenuPanel.SetActive(true);
         UpdatePlayerPanelsAndButtons();
+
+        // НОВОЕ: Сбрасываем подсветку на player1RandomButton
+        ClearButtonHighlight();
+        HighlightButton(player1RandomButton);
     }
 
     private void OnMountainsSliderChanged(float value)
@@ -407,5 +489,9 @@ public class UIManualPlacement : MonoBehaviour
         isPlayer1Turn = true;
         SetupPlayerPanels();
         UpdatePlayerPanelsAndButtons();
+
+        // НОВОЕ: Сбрасываем подсветку на player1RandomButton
+        ClearButtonHighlight();
+        HighlightButton(player1RandomButton);
     }
 }
