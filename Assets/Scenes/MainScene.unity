@@ -3110,7 +3110,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.2, g: 0.2, b: 0.2, a: 0}
+  m_BackGroundColor: {r: 0.6901961, g: 0.64705884, b: 0.5176471, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -3179,7 +3179,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraPosition: {x: 7, y: 2.8, z: 4.5}
-  cameraRotation: {x: 45, y: -90, z: 0}
+  cameraRotation: {x: 43, y: -90, z: 0}
   orthographicSize: 3.8
   nearClippingPlane: -3
 --- !u!1001 &972237570

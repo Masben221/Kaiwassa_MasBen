@@ -49,10 +49,23 @@ public class BoardPieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHa
     /// </summary>
     public void StartDragging()
     {
+        // ѕровер€ем, находитс€ ли игра в фазе расстановки
         if (gameManager == null || !gameManager.IsInPlacementPhase)
         {
             Debug.LogWarning($"BoardPieceDragHandler: Cannot drag {piece?.Type}, not in placement phase");
             return;
+        }
+
+        // ѕровер€ем, завершил ли игрок расстановку
+        if (uiManager != null)
+        {
+            bool isPlayer1 = piece.IsPlayer1;
+            bool isFinished = isPlayer1 ? uiManager.IsPlayer1Finished : uiManager.IsPlayer2Finished;
+            if (isFinished)
+            {
+                Debug.LogWarning($"BoardPieceDragHandler: Cannot drag {piece.Type} for Player {(isPlayer1 ? 1 : 2)} - placement finished.");
+                return;
+            }
         }
 
         isDragging = true;

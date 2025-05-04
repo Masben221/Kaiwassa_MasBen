@@ -35,6 +35,10 @@ public class UIManualPlacement : MonoBehaviour
     private Vector3Int? highlightedTile;
     private Dictionary<Vector3Int, Material> originalTileMaterials = new Dictionary<Vector3Int, Material>();
 
+    // НОВОЕ: Публичные свойства для доступа к состоянию завершения расстановки
+    public bool IsPlayer1Finished => player1Finished;
+    public bool IsPlayer2Finished => player2Finished;
+
     private void Awake()
     {
         if (placementPanel == null || mainMenuPanel == null || player1Panel == null || player2Panel == null ||
