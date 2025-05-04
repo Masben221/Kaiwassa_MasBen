@@ -59,3 +59,4 @@ MonoBehaviour:
   archerPrefab: {fileID: 5717480514354363987, guid: e878474e98110e94e99bdda08b57f53e, type: 3}
   player1Material: {fileID: 2100000, guid: bf59a829c1be22c40945a3d6973cc7ed, type: 2}
   player2Material: {fileID: 2100000, guid: 6ebdab1f54851044ca7babfed9e13671, type: 2}
+  defaultSprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}

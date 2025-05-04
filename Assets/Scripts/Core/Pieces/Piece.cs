@@ -34,10 +34,12 @@ public abstract class Piece : MonoBehaviour
     private Vector3Int position; // Позиция фигуры на доске (в клетках)
     private bool isPlayer1; // Принадлежность игроку (true = Игрок 1, false = Игрок 2)
     [SerializeField] private PieceType type; // Тип фигуры
+    [SerializeField] private Sprite iconSprite; // НОВОЕ: Спрайт для UI-иконки фигуры
 
     public Vector3Int Position => position; // Геттер для позиции
     public bool IsPlayer1 => isPlayer1; // Геттер для принадлежности игроку
     public PieceType Type => type; // Геттер для типа фигуры
+    public Sprite IconSprite => iconSprite; // НОВОЕ: Геттер для спрайта иконки
 
     private void Awake()
     {

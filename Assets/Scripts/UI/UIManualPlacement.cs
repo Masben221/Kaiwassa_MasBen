@@ -27,6 +27,7 @@ public class UIManualPlacement : MonoBehaviour
     [SerializeField] private Material highlightMaterial;
     [SerializeField] private Font buttonFont;
     [SerializeField] private UIGameManager uiGameManager;
+    [SerializeField] private GameObject pieceIconPrefab; // НОВОЕ: Префаб для UI-иконки
 
     private bool isPlayer1Turn = true;
     private bool player1Finished = false;
@@ -35,7 +36,6 @@ public class UIManualPlacement : MonoBehaviour
     private Vector3Int? highlightedTile;
     private Dictionary<Vector3Int, Material> originalTileMaterials = new Dictionary<Vector3Int, Material>();
 
-    // НОВОЕ: Публичные свойства для доступа к состоянию завершения расстановки
     public bool IsPlayer1Finished => player1Finished;
     public bool IsPlayer2Finished => player2Finished;
 
@@ -44,7 +44,8 @@ public class UIManualPlacement : MonoBehaviour
         if (placementPanel == null || mainMenuPanel == null || player1Panel == null || player2Panel == null ||
             player1FinishButton == null || player2FinishButton == null || player1RandomButton == null ||
             player2RandomButton == null || startGameButton == null || backButton == null ||
-            mountainsSlider == null || mountainsValueText == null || highlightMaterial == null)
+            mountainsSlider == null || mountainsValueText == null || highlightMaterial == null ||
+            pieceIconPrefab == null) // НОВОЕ: Проверка префаба
         {
             Debug.LogError("UIManualPlacement: Missing UI elements!");
             return;
@@ -124,18 +125,9 @@ public class UIManualPlacement : MonoBehaviour
         // Создаём кнопки для всех фигур
         PieceType[] pieceTypes = new[]
         {
-            PieceType.King,
-            PieceType.Dragon,
-            PieceType.Elephant,
-            PieceType.HeavyCavalry,
-            PieceType.LightHorse,
-            PieceType.Spearman,
-            PieceType.Crossbowman,
-            PieceType.Rabble,
-            PieceType.Catapult,
-            PieceType.Trebuchet,
-            PieceType.Swordsman,
-            PieceType.Archer
+            PieceType.King, PieceType.Dragon, PieceType.Elephant, PieceType.HeavyCavalry,
+            PieceType.LightHorse, PieceType.Spearman, PieceType.Crossbowman, PieceType.Rabble,
+            PieceType.Catapult, PieceType.Trebuchet, PieceType.Swordsman, PieceType.Archer
         };
 
         foreach (PieceType type in pieceTypes)
@@ -149,28 +141,50 @@ public class UIManualPlacement : MonoBehaviour
         int count = placementManager.GetRemainingCount(isPlayer1, type);
         if (count <= 0) return;
 
-        GameObject buttonObj = new GameObject(type.ToString());
-        buttonObj.transform.SetParent(panel, false);
-        RectTransform rt = buttonObj.AddComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(100, 50);
+        // НОВОЕ: Инстанцируем префаб иконки
+        GameObject buttonObj = Instantiate(pieceIconPrefab, panel);
+        buttonObj.name = type.ToString();
+        RectTransform rt = buttonObj.GetComponent<RectTransform>();
         rt.anchoredPosition = new Vector2(0, yOffset);
-        yOffset -= 60f;
+        rt.sizeDelta = new Vector2(200, 60); // Размер для иконки и текста
+        yOffset -= 70f; // Увеличен отступ для читаемости
 
-        Image image = buttonObj.AddComponent<Image>();
-        image.color = type == PieceType.Mountain ? Color.gray : Random.ColorHSV(0f, 1f, 0.5f, 1f, 0.5f, 1f);
+        // Настраиваем иконку
+        Image iconImage = buttonObj.transform.Find("Icon")?.GetComponent<Image>();
+        if (iconImage != null)
+        {
+            iconImage.sprite = pieceFactory.GetIconForPiece(type);
+        }
+        else
+        {
+            Debug.LogError($"UIManualPlacement: Icon Image not found in {type} button prefab!");
+        }
 
-        GameObject textObj = new GameObject("Text");
-        textObj.transform.SetParent(buttonObj.transform, false);
-        Text text = textObj.AddComponent<Text>();
-        text.text = $"{type} x{count}";
-        text.font = buttonFont != null ? buttonFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        text.color = Color.black;
-        text.alignment = TextAnchor.MiddleCenter;
-        RectTransform textRt = text.GetComponent<RectTransform>();
-        textRt.sizeDelta = new Vector2(90, 40);
+        // Настраиваем текст
+        Text text = buttonObj.transform.Find("Text")?.GetComponent<Text>();
+        if (text != null)
+        {
+            text.text = $"{type} x{count}";
+            text.font = buttonFont != null ? buttonFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 14; // Установлен шрифт размера 14
+            text.color = Color.black;
+            text.alignment = TextAnchor.MiddleCenter;
+        }
+        else
+        {
+            Debug.LogError($"UIManualPlacement: Text component not found in {type} button prefab!");
+        }
 
-        PieceDragHandler dragHandler = buttonObj.AddComponent<PieceDragHandler>();
-        dragHandler.Initialize(isPlayer1, type, this, pieceFactory);
+        // Настраиваем перетаскивание
+        PieceDragHandler dragHandler = buttonObj.GetComponent<PieceDragHandler>();
+        if (dragHandler != null)
+        {
+            dragHandler.Initialize(isPlayer1, type, this, pieceFactory);
+        }
+        else
+        {
+            Debug.LogError($"UIManualPlacement: PieceDragHandler not found in {type} button prefab!");
+        }
     }
 
     public void HighlightTile(Vector3Int position, bool isPlayer1, PieceType type)
