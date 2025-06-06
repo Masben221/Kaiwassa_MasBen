@@ -82,6 +82,7 @@ public class HeavyHorseAttackStrategy : IAttackable
             Vector3Int targetPos = pos + dir;
             if (board.IsWithinBounds(targetPos) &&
                 board.IsOccupied(targetPos) &&
+                !board.IsMountain(targetPos) && // Добавлено: исключаем горы из целей атаки
                 board.GetPieceAt(targetPos).IsPlayer1 != piece.IsPlayer1)
             {
                 if (IsAttackPossible(board, pos, dir, targetPos))
@@ -131,7 +132,7 @@ public class HeavyHorseAttackStrategy : IAttackable
             }
         }
 
-        // Проверяем второй путь
+        // Проверяем второй путь}}; path2Clear = true;
         bool path2Clear = true;
         foreach (var pos in intermediatePositions2)
         {
@@ -182,6 +183,13 @@ public class HeavyHorseAttackStrategy : IAttackable
 
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
     {
+        // Добавлено: Проверка, что цель не является горой
+        if (boardManager.IsMountain(target))
+        {
+            Debug.LogWarning($"HeavyHorseAttackStrategy: Cannot attack mountain at {target}!");
+            return;
+        }
+
         Debug.Log($"HeavyHorseAttackStrategy: Executing melee attack on {target}");
         // Ближний бой: уничтожаем фигуру и перемещаемся
         boardManager.RemovePiece(target);

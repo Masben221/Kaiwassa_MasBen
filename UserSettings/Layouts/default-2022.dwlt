@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 2560
     height: 997
   m_ShowMode: 4
-  m_Title: Inspector
+  m_Title: Game
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 371}
   m_MaxSize: {x: 10000, y: 10000}
@@ -120,7 +120,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 99
+  controlID: 108
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -256,7 +256,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 114
+  controlID: 109
   draggingID: 0
 --- !u!114 &11
 MonoBehaviour:
@@ -447,9 +447,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: ba600000
-      m_LastClickedID: 24762
-      m_ExpandedIDs: 2cfbffffaa600000
+      m_SelectedIDs: 8a500000
+      m_LastClickedID: 0
+      m_ExpandedIDs: 2cfbffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -518,23 +518,23 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Prefabs
+    - Assets/Scripts/Core/Pieces
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
     m_FilterByTypeIntersection: 0
   m_ViewMode: 1
-  m_StartGridSize: 75
+  m_StartGridSize: 82
   m_LastFolders:
-  - Assets/Prefabs
-  m_LastFoldersGridSize: 75
+  - Assets/Scripts/Core/Pieces
+  m_LastFoldersGridSize: 82
   m_LastProjectPath: A:\CODE\MASBENGAMES\Kaiwassa_MasBen
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: d6620000
-    m_LastClickedID: 25302
+    m_SelectedIDs: e2620000
+    m_LastClickedID: 25314
     m_ExpandedIDs: 0000000066620000686200006a620000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -590,7 +590,7 @@ MonoBehaviour:
   m_ListAreaState:
     m_SelectedInstanceIDs: 
     m_LastClickedInstanceID: 0
-    m_HadKeyboardFocusLastEvent: 0
+    m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: c62300000cd30000ba600000047b0000bc630000c8630000fccc00007e680000226a0000206a0000006a0000fe690000c8cb060078cd0600726f0000647400006c6900001e6f000032690000b4760000ba760000be700000c6700000c8700000fe0a0100c6790000c8790000d079000008760000a27f00007a690000d0700000307600004a770000a26b0000a06b0000d6700000d4700000b2720000386e0000926a00008076000012710000e4720000ac6b0000a86b00003e7100001c730000ca6b0000c86b000086690000cc6b0000d00c0700ec0c070066710000067300009a130c00ea7500002a770000cc2d0200ac7400001e7b00003e7a0000de770000aa69000060760000fe8600002a000100dc390200167b00003c78000062690000c4760000986f0000ee6c0000f26c0000f06c00004c7e0000d06c0000d26c0000087b0000d4760000388c0000ba88000042740000428b00003c890000ec880000628b000044880000d6790000da760000fcb80000806b0000926b0000906b00008e6b00008c6b00008a6b0000886b0000866b0000846b0000227d0000267d0000387d0000d66c00009c6f0000386d0000407d0000d86c0000d46c00005e7500000a8000000680000002800000ce7900008a750000b4700000f070000002710000a8810000e8170c00149000001690000050930000b2a00000cc870000069000004490000018900000ce490c00f88515004cce1500ca87000084a000001a7800008c35020026a5000020330200fa37020092390200a21e0100d82101002e9500003e78000086a6000096a30000c6fb0000f4a60000f2a60000f6980000be79000066bc0000da770000a8ca000094d70000b0ca00008e6e0000dc77000004680000566e0000247a0000b67b0000b0870000ac830000c6830000d66800005e690000e6790000de6800004ac70000e2680000e0680000c09d00003e6c00004c710000de71000090ac0000fc680000fa9d00001e7c000020920000f89d0000928a00008c8f0000aebd01003ea60000e66b0000246f00000cac0000acac000038c000000aac00005a7d0000dae70000e8e70000ec7c0000646600008095000020a30000e06e0000b4660000c6b500000e8e0000446b0000a28b0000ec6f0000f666000016f60000f87e0000ee6e0000f46e00002c6800008a6e00005a7000003e700000f6b100007e700000946800005674000048a00000aa700000106f0000609c0000309d00000e970000f4a1000000690000fe68000070740000e46c0000887d0000627d0000806c0000da7b0000207c0000227c00003a7d0000aea10000c69d0000566800009a7e0000ba710000c2710000787300001acd03009a71000088710000d2730000b4730000cc730000a48b0000867800004e7500000e99000010740000268f000040920000187400001a9100005a970000587500006c7300008e750000f47c0000b87c0000be7c0000c07800009678000080780000d2790000d47900009e7c0000b4dcffff9ac600004aa600007676000062ad0000a8ad000010800000708200006e82000064a000007ea20000bc980000ae8d00005cb20000f28700009c7a0000ac9a00009c8100007ea700005e7300009e6700004864000000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -616,7 +616,7 @@ MonoBehaviour:
       m_ResourceFile: 
     m_NewAssetIndexInList: -1
     m_ScrollPosition: {x: 0, y: 0}
-    m_GridSize: 75
+    m_GridSize: 82
   m_SkipHiddenPackages: 0
   m_DirectoriesAreaWidth: 239
 --- !u!114 &16
@@ -1170,9 +1170,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 407.39856, y: 429.05502, z: 4699.074}
+    m_Target: {x: 1262.27, y: 510.46133, z: 4747.147}
     speed: 2
-    m_Value: {x: 407.39856, y: 429.05502, z: 4699.074}
+    m_Value: {x: 1262.27, y: 510.46133, z: 4747.147}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1222,9 +1222,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0.042872593, y: -0.023975248, z: 0.001029197, w: 0.99879235}
   m_Size:
-    m_Target: 3378.7249
+    m_Target: 2703.6106
     speed: 2
-    m_Value: 3378.7249
+    m_Value: 2703.6106
   m_Ortho:
     m_Target: 0
     speed: 2
