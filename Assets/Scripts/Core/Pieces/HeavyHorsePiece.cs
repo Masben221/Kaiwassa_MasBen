@@ -3,18 +3,23 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Класс для фигуры "Тяжёлая кавалерия".
-/// Реализует L-образное движение с перепрыгиванием препятствий и L-образную атаку без перепрыгивания.
+/// Реализует L-образное движение с перепрыгиванием препятствий и L-образную атаку в ближнем бою.
+/// Поддерживает два режима атаки: с проверкой свободного пути (по умолчанию) и без проверки (усиленный режим).
 /// </summary>
 public class HeavyHorsePiece : Piece
 {
+    [SerializeField]
+    private bool usePathCheck = true; // Переключатель в инспекторе: true - проверять путь, false - атаковать через препятствия
+
     /// <summary>
     /// Настраивает стратегии движения и атаки для Тяжёлой кавалерии.
+    /// Передаёт параметр usePathCheck в стратегию атаки.
     /// </summary>
     protected override void SetupStrategies()
     {
         movementStrategy = new HeavyHorseMoveStrategy();
-        attackStrategy = new HeavyHorseAttackStrategy();
-        Debug.Log("HeavyHorsePiece: Strategies set up.");
+        attackStrategy = new HeavyHorseAttackStrategy(usePathCheck);
+        Debug.Log($"HeavyHorsePiece: Strategies set up. UsePathCheck: {usePathCheck}");
     }
 }
 
@@ -56,11 +61,22 @@ public class HeavyHorseMoveStrategy : IMovable
 
 /// <summary>
 /// Стратегия атаки для Тяжёлой кавалерии.
-/// Реализует ближний бой: L-образная атака, требует свободный путь до цели (не перепрыгивает фигуры или горы).
+/// Реализует ближний бой: L-образная атака, с возможностью игнорировать препятствия в зависимости от настройки.
 /// Предоставляет список всех потенциальных клеток атаки для подсказок (включая пустые и свои фигуры, исключая горы).
 /// </summary>
 public class HeavyHorseAttackStrategy : IAttackable
 {
+    private readonly bool usePathCheck; // Определяет, требуется ли проверка свободного пути для атаки
+
+    /// <summary>
+    /// Конструктор, принимающий параметр режима атаки.
+    /// </summary>
+    /// <param name="usePathCheck">true - проверять путь, false - атаковать через препятствия.</param>
+    public HeavyHorseAttackStrategy(bool usePathCheck)
+    {
+        this.usePathCheck = usePathCheck;
+    }
+
     public List<Vector3Int> CalculateAttacks(IBoardManager board, Piece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
@@ -82,10 +98,10 @@ public class HeavyHorseAttackStrategy : IAttackable
             Vector3Int targetPos = pos + dir;
             if (board.IsWithinBounds(targetPos) &&
                 board.IsOccupied(targetPos) &&
-                !board.IsMountain(targetPos) && // Добавлено: исключаем горы из целей атаки
+                !board.IsMountain(targetPos) && // Исключаем горы из целей атаки
                 board.GetPieceAt(targetPos).IsPlayer1 != piece.IsPlayer1)
             {
-                if (IsAttackPossible(board, pos, dir, targetPos))
+                if (!usePathCheck || IsAttackPossible(board, pos, dir, targetPos)) // Проверяем путь только если usePathCheck = true
                 {
                     attacks.Add(targetPos);
                 }
@@ -98,6 +114,7 @@ public class HeavyHorseAttackStrategy : IAttackable
     /// <summary>
     /// Проверяет, возможна ли атака на целевую клетку.
     /// Атака возможна, если хотя бы один из L-образных путей к цели свободен.
+    /// Используется только если usePathCheck = true.
     /// </summary>
     private bool IsAttackPossible(IBoardManager board, Vector3Int startPos, Vector3Int dir, Vector3Int targetPos)
     {
@@ -132,7 +149,7 @@ public class HeavyHorseAttackStrategy : IAttackable
             }
         }
 
-        // Проверяем второй путь}}; path2Clear = true;
+        // Проверяем второй путь
         bool path2Clear = true;
         foreach (var pos in intermediatePositions2)
         {
@@ -148,7 +165,7 @@ public class HeavyHorseAttackStrategy : IAttackable
 
     /// <summary>
     /// Рассчитывает все потенциальные клетки, которые тяжёлая кавалерия может атаковать, включая пустые и свои фигуры, исключая горы.
-    /// Учитывает L-образную атаку с проверкой свободного пути.
+    /// Учитывает L-образную атаку с проверкой свободного пути, если usePathCheck = true.
     /// </summary>
     public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
     {
@@ -171,7 +188,7 @@ public class HeavyHorseAttackStrategy : IAttackable
             Vector3Int targetPos = pos + dir;
             if (board.IsWithinBounds(targetPos) && !board.IsMountain(targetPos))
             {
-                if (IsAttackPossible(board, pos, dir, targetPos))
+                if (!usePathCheck || IsAttackPossible(board, pos, dir, targetPos)) // Проверяем путь только если usePathCheck = true
                 {
                     attacks.Add(targetPos);
                 }
@@ -183,7 +200,7 @@ public class HeavyHorseAttackStrategy : IAttackable
 
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
     {
-        // Добавлено: Проверка, что цель не является горой
+        // Проверка, что цель не является горой
         if (boardManager.IsMountain(target))
         {
             Debug.LogWarning($"HeavyHorseAttackStrategy: Cannot attack mountain at {target}!");
