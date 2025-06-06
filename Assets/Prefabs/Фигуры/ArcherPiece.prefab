@@ -58,6 +58,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 12
   iconSprite: {fileID: 21300000, guid: 329beb1991f9777488d71e22d769815d, type: 3}
+  requireClearPath: 1
 --- !u!114 &-7644067084004683095
 MonoBehaviour:
   m_ObjectHideFlags: 0

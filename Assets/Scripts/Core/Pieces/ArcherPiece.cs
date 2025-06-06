@@ -4,17 +4,22 @@ using System.Collections.Generic;
 /// <summary>
 /// Класс для фигуры "Лучник".
 /// Реализует движение на 1 клетку в любом направлении и дальнюю атаку на 3 клетки по прямой или диагонали.
+/// Поддерживает два режима атаки: с проверкой прямой видимости и без неё (через препятствия).
 /// </summary>
 public class ArcherPiece : Piece
 {
+    [SerializeField]
+    private bool requireClearPath = true; // Переключатель в инспекторе: true - требует прямую видимость, false - атакует через препятствия
+
     /// <summary>
     /// Настраивает стратегии движения и атаки для Лучника.
+    /// Передаёт параметр requireClearPath в стратегию атаки.
     /// </summary>
     protected override void SetupStrategies()
     {
         movementStrategy = new ArcherMoveStrategy();
-        attackStrategy = new ArcherAttackStrategy();
-        Debug.Log("ArcherPiece: Strategies set up.");
+        attackStrategy = new ArcherAttackStrategy(requireClearPath);
+        Debug.Log($"ArcherPiece: Strategies set up (RequireClearPath: {requireClearPath})");
     }
 }
 
@@ -58,17 +63,29 @@ public class ArcherMoveStrategy : IMovable
 
 /// <summary>
 /// Стратегия атаки для Лучника.
-/// Реализует дальний бой: атака на 1–3 клетки по прямой или диагонали, требует прямой видимости для дальности 2 и 3.
-/// Предоставляет список всех потенциальных клеток атаки для подсказок (включая пустые и свои фигуры, исключая горы).
+/// Реализует дальний бой: атака на 1–3 клетки по прямой или диагонали.
+/// Поддерживает два режима:
+/// - С проверкой прямой видимости (для дистанции 2 и 3).
+/// - Без проверки видимости (атака через препятствия).
+/// Исключает горы из целей атаки.
 /// </summary>
 public class ArcherAttackStrategy : IAttackable
 {
+    private readonly bool requireClearPath; // Определяет, требуется ли прямая видимость для атаки
+
+    /// <summary>
+    /// Конструктор, принимающий параметр режима атаки.
+    /// </summary>
+    /// <param name="requireClearPath">true - требует прямую видимость, false - атакует через препятствия.</param>
+    public ArcherAttackStrategy(bool requireClearPath)
+    {
+        this.requireClearPath = requireClearPath;
+    }
+
     /// <summary>
     /// Рассчитывает клетки, которые Лучник может атаковать (только с вражескими фигурами).
+    /// Проверяет прямую видимость, если requireClearPath = true.
     /// </summary>
-    /// <param name="board">Интерфейс доски для проверки состояния.</param>
-    /// <param name="piece">Фигура, для которой рассчитываются атаки.</param>
-    /// <returns>Список клеток с вражескими фигурами, которые можно атаковать.</returns>
     public List<Vector3Int> CalculateAttacks(IBoardManager board, Piece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
@@ -89,9 +106,9 @@ public class ArcherAttackStrategy : IAttackable
                     Vector3Int targetPos = pos + new Vector3Int(dx * distance, 0, dz * distance);
                     if (!board.IsWithinBounds(targetPos)) continue;
 
-                    // Проверяем прямую видимость для дистанции 2 и 3
+                    // Проверяем прямую видимость для дистанции 2 и 3, если требуется
                     bool hasClearPath = true;
-                    if (distance > 1)
+                    if (requireClearPath && distance > 1)
                     {
                         for (int i = 1; i < distance; i++)
                         {
@@ -109,7 +126,7 @@ public class ArcherAttackStrategy : IAttackable
                     // Проверяем, есть ли вражеская фигура на целевой клетке и это не гора
                     if (board.IsOccupied(targetPos) &&
                         board.GetPieceAt(targetPos).IsPlayer1 != piece.IsPlayer1 &&
-                        board.GetPieceAt(targetPos).Type != PieceType.Mountain)
+                        !board.IsMountain(targetPos))
                     {
                         attacks.Add(targetPos);
                     }
@@ -123,11 +140,8 @@ public class ArcherAttackStrategy : IAttackable
 
     /// <summary>
     /// Рассчитывает все потенциальные клетки атаки, включая пустые и свои фигуры, исключая горы.
-    /// Учитывает дальность до 3 клеток в любом направлении.
+    /// Учитывает прямую видимость, если requireClearPath = true.
     /// </summary>
-    /// <param name="board">Интерфейс доски для проверки состояния.</param>
-    /// <param name="piece">Фигура, для которой рассчитываются атаки.</param>
-    /// <returns>Список всех потенциальных клеток атаки.</returns>
     public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
@@ -147,9 +161,9 @@ public class ArcherAttackStrategy : IAttackable
                     Vector3Int targetPos = pos + new Vector3Int(dx * distance, 0, dz * distance);
                     if (!board.IsWithinBounds(targetPos) || board.IsMountain(targetPos)) continue;
 
-                    // Проверяем прямую видимость для дистанции 2 и 3
+                    // Проверяем прямую видимость для дистанции 2 и 3, если требуется
                     bool hasClearPath = true;
-                    if (distance > 1)
+                    if (requireClearPath && distance > 1)
                     {
                         for (int i = 1; i < distance; i++)
                         {
@@ -178,9 +192,6 @@ public class ArcherAttackStrategy : IAttackable
     /// Выполняет дальнюю атаку на указанную клетку.
     /// Уничтожает вражескую фигуру, оставаясь на месте.
     /// </summary>
-    /// <param name="piece">Фигура, выполняющая атаку.</param>
-    /// <param name="target">Целевая клетка для атаки.</param>
-    /// <param name="boardManager">Интерфейс доски для изменения состояния.</param>
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
     {
         Debug.Log($"ArcherAttackStrategy: Executing ranged attack from {piece.Position} to {target}");
