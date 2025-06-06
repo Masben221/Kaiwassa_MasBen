@@ -3,18 +3,24 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Класс для фигуры "Дракон".
-/// Реализует движение (до 3 клеток, перепрыгивая препятствия) и дальнюю атаку.
+/// Реализует движение (до 3 клеток, перепрыгивая препятствия) и атаку с переключением между дальним и ближним боем.
+/// Дальний бой: атака на 1-3 клетки с прямой видимостью, без перемещения.
+/// Ближний бой: прыжок на клетку с вражеской фигурой, уничтожение и перемещение.
 /// </summary>
 public class DragonPiece : Piece
 {
+    [SerializeField]
+    private bool useRangedAttack = true; // Переключатель в инспекторе: true - дальний бой, false - ближний бой
+
     /// <summary>
     /// Настраивает стратегии движения и атаки для дракона.
+    /// Передаёт параметр useRangedAttack в стратегию атаки.
     /// </summary>
     protected override void SetupStrategies()
     {
         movementStrategy = new DragonMoveStrategy();
-        attackStrategy = new DragonAttackStrategy();
-        Debug.Log($"DragonPiece: Strategies set up (attackStrategy: {attackStrategy.GetType().Name})");
+        attackStrategy = new DragonAttackStrategy(useRangedAttack);
+        Debug.Log($"DragonPiece: Strategies set up (attackStrategy: {attackStrategy.GetType().Name}, UseRangedAttack: {useRangedAttack})");
     }
 }
 
@@ -57,19 +63,29 @@ public class DragonMoveStrategy : IMovable
 
 /// <summary>
 /// Стратегия атаки для дракона.
-/// Реализует дальний бой: атака на 1-3 клетки по прямой или диагонали, только по прямой видимости (без гор или фигур на пути).
-/// Исключает горы из возможных целей атаки, так как они являются статическими препятствиями.
-/// Предоставляет список всех потенциальных клеток атаки для подсказок (включая пустые и свои фигуры, исключая горы).
+/// Поддерживает два режима:
+/// - Дальний бой: атака на 1-3 клетки по прямой или диагонали, требует прямую видимость, остаётся на месте.
+/// - Ближний бой: прыжок на клетку с вражеской фигурой (1-3 клетки), игнорирует препятствия, перемещается на цель.
+/// Исключает горы из возможных целей атаки в обоих режимах.
 /// </summary>
 public class DragonAttackStrategy : IAttackable
 {
+    private readonly bool useRangedAttack; // Определяет режим атаки: true - дальний бой, false - ближний бой
+
+    /// <summary>
+    /// Конструктор, принимающий параметр режима атаки.
+    /// </summary>
+    /// <param name="useRangedAttack">true - дальний бой, false - ближний бой.</param>
+    public DragonAttackStrategy(bool useRangedAttack)
+    {
+        this.useRangedAttack = useRangedAttack;
+    }
+
     /// <summary>
     /// Рассчитывает клетки, которые дракон может атаковать в текущий момент (только с вражескими фигурами).
-    /// Проверяет прямую видимость и исключает горы.
+    /// Для дальнего боя требует прямую видимость, для ближнего боя игнорирует препятствия.
+    /// Исключает горы в обоих режимах.
     /// </summary>
-    /// <param name="board">Интерфейс доски для проверки состояния.</param>
-    /// <param name="piece">Фигура дракона.</param>
-    /// <returns>Список клеток с вражескими фигурами, которые можно атаковать.</returns>
     public List<Vector3Int> CalculateAttacks(IBoardManager board, Piece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
@@ -90,29 +106,34 @@ public class DragonAttackStrategy : IAttackable
                         break;
                     }
 
-                    // Проверяем прямую видимость: нет гор или фигур на пути
-                    bool isPathClear = true;
-                    for (int j = 1; j < i; j++)
-                    {
-                        Vector3Int intermediatePos = pos + new Vector3Int(dx * j, 0, dz * j);
-                        if (board.IsBlocked(intermediatePos) || board.IsOccupied(intermediatePos))
-                        {
-                            isPathClear = false;
-                            break;
-                        }
-                    }
-
-                    if (!isPathClear)
-                    {
-                        break; // Прерываем, если путь заблокирован
-                    }
-
-                    // Проверяем, есть ли вражеская фигура в конечной точке, и что это не гора
+                    // Проверяем наличие вражеской фигуры и исключаем горы
                     if (board.IsOccupied(newPos) &&
                         board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1 &&
-                        board.GetPieceAt(newPos).Type != PieceType.Mountain)
+                        !board.IsMountain(newPos))
                     {
-                        attacks.Add(newPos);
+                        if (useRangedAttack)
+                        {
+                            // Дальний бой: проверяем прямую видимость
+                            bool isPathClear = true;
+                            for (int j = 1; j < i; j++)
+                            {
+                                Vector3Int intermediatePos = pos + new Vector3Int(dx * j, 0, dz * j);
+                                if (board.IsBlocked(intermediatePos) || board.IsOccupied(intermediatePos))
+                                {
+                                    isPathClear = false;
+                                    break;
+                                }
+                            }
+                            if (isPathClear)
+                            {
+                                attacks.Add(newPos);
+                            }
+                        }
+                        else
+                        {
+                            // Ближний бой: добавляем цель без проверки пути
+                            attacks.Add(newPos);
+                        }
                     }
                 }
             }
@@ -122,11 +143,8 @@ public class DragonAttackStrategy : IAttackable
 
     /// <summary>
     /// Рассчитывает все потенциальные клетки, которые дракон может атаковать, включая пустые и свои фигуры, исключая горы.
-    /// Учитывает прямую видимость (без гор или фигур на пути) и дальность 1-3 клетки.
+    /// Для дальнего боя требует прямую видимость, для ближнего боя игнорирует препятствия.
     /// </summary>
-    /// <param name="board">Интерфейс доски для проверки состояния.</param>
-    /// <param name="piece">Фигура дракона.</param>
-    /// <returns>Список всех потенциальных клеток атаки.</returns>
     public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
@@ -147,27 +165,31 @@ public class DragonAttackStrategy : IAttackable
                         break;
                     }
 
-                    // Проверяем прямую видимость: нет гор или фигур на пути
-                    bool isPathClear = true;
-                    for (int j = 1; j < i; j++)
-                    {
-                        Vector3Int intermediatePos = pos + new Vector3Int(dx * j, 0, dz * j);
-                        if (board.IsBlocked(intermediatePos) || board.IsOccupied(intermediatePos))
-                        {
-                            isPathClear = false;
-                            break;
-                        }
-                    }
-
-                    if (!isPathClear)
-                    {
-                        break; // Прерываем, если путь заблокирован
-                    }
-
-                    // Добавляем клетку, если она не содержит гору
                     if (!board.IsMountain(newPos))
                     {
-                        attacks.Add(newPos);
+                        if (useRangedAttack)
+                        {
+                            // Дальний бой: проверяем прямую видимость
+                            bool isPathClear = true;
+                            for (int j = 1; j < i; j++)
+                            {
+                                Vector3Int intermediatePos = pos + new Vector3Int(dx * j, 0, dz * j);
+                                if (board.IsBlocked(intermediatePos) || board.IsOccupied(intermediatePos))
+                                {
+                                    isPathClear = false;
+                                    break;
+                                }
+                            }
+                            if (isPathClear)
+                            {
+                                attacks.Add(newPos);
+                            }
+                        }
+                        else
+                        {
+                            // Ближний бой: добавляем клетку без проверки пути
+                            attacks.Add(newPos);
+                        }
                     }
                 }
             }
@@ -177,24 +199,41 @@ public class DragonAttackStrategy : IAttackable
 
     /// <summary>
     /// Выполняет атаку дракона на указанную клетку.
-    /// Удаляет вражескую фигуру, если она есть и не является горой.
+    /// - Дальний бой: уничтожает фигуру, остаётся на месте.
+    /// - Ближний бой: уничтожает фигуру и перемещается на её место.
+    /// Горы не атакуются.
     /// </summary>
-    /// <param name="piece">Фигура дракона.</param>
-    /// <param name="target">Целевая клетка для атаки.</param>
-    /// <param name="boardManager">Интерфейс доски для изменения состояния.</param>
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
     {
-        Debug.Log($"DragonAttackStrategy: Executing ranged attack from {piece.Position} to {target} (piece: {piece.GetType().Name})");
-        Piece targetPiece = boardManager.GetPieceAt(target);
-        if (targetPiece != null && targetPiece.Type != PieceType.Mountain)
+        // Проверка, что цель не является горой
+        if (boardManager.IsMountain(target))
         {
+            Debug.LogWarning($"DragonAttackStrategy: Cannot attack mountain at {target}!");
+            return;
+        }
+
+        Piece targetPiece = boardManager.GetPieceAt(target);
+        if (targetPiece == null)
+        {
+            Debug.LogWarning($"DragonAttackStrategy: No piece at {target} to attack!");
+            return;
+        }
+
+        if (useRangedAttack)
+        {
+            // Дальний бой: уничтожаем фигуру, остаёмся на месте
+            Debug.Log($"DragonAttackStrategy: Executing ranged attack from {piece.Position} to {target} (piece: {piece.GetType().Name})");
             boardManager.RemovePiece(target);
-            Debug.Log($"DragonAttackStrategy: Removed piece {targetPiece.GetType().Name} at {target}");
         }
         else
         {
-            Debug.LogWarning($"DragonAttackStrategy: No valid piece at {target} to attack or target is a mountain!");
+            // Ближний бой: уничтожаем фигуру и перемещаемся
+            Debug.Log($"DragonAttackStrategy: Executing melee attack from {piece.Position} to {target} (piece: {piece.GetType().Name})");
+            boardManager.RemovePiece(target);
+            piece.GetComponent<PieceAnimator>().MoveTo(target, () =>
+            {
+                boardManager.MovePiece(piece, piece.Position, target);
+            });
         }
-        // НЕ вызываем MoveTo, чтобы дракон оставался на месте
     }
 }
