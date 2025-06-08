@@ -192,7 +192,7 @@ public class ElephantAttackStrategy : IAttackable
         }
 
         // Перемещаемся на конечную клетку
-        piece.GetComponent<PieceAnimator>().MoveTo(target, () =>
+        piece.GetComponent<PieceAnimator>().MoveTo(target, null, () =>
         {
             boardManager.MovePiece(piece, piece.Position, target);
         });

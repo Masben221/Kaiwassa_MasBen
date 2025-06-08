@@ -72,7 +72,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveDuration: 1
-  jumpHeight: 0
+  jumpHeight: 1
 --- !u!65 &2393685384707432591
 BoxCollider:
   m_ObjectHideFlags: 0

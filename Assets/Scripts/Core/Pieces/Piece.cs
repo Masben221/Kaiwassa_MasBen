@@ -1,9 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
-/// <summary>
-/// Перечисление типов фигур.
-/// </summary>
 public enum PieceType
 {
     King,
@@ -17,46 +15,34 @@ public enum PieceType
     Catapult,
     Trebuchet,
     Mountain,
-    Swordsman, // Новая фигура: Мечник
-    Archer     // Новая фигура: Лучник
+    Swordsman,
+    Archer
 }
 
-
-
-/// <summary>
-/// Абстрактный базовый класс для всех игровых фигур и гор.
-/// Отвечает за позиционирование, инициализацию и делегирование движения/атаки через стратегии.
-/// </summary>
 public abstract class Piece : MonoBehaviour
 {
-    protected IMovable movementStrategy; // Стратегия движения фигуры
-    protected IAttackable attackStrategy; // Стратегия атаки фигуры
-    private Vector3Int position; // Позиция фигуры на доске (в клетках)
-    private bool isPlayer1; // Принадлежность игроку (true = Игрок 1, false = Игрок 2)
+    protected IMovable movementStrategy; // Стратегия движения
+    protected IAttackable attackStrategy; // Стратегия атаки
+    private Vector3Int position; // Позиция на доске
+    private bool isPlayer1; // Принадлежность игроку
     [SerializeField] private PieceType type; // Тип фигуры
-    [SerializeField] private Sprite iconSprite; // НОВОЕ: Спрайт для UI-иконки фигуры
+    [SerializeField] private Sprite iconSprite; // Иконка для UI
 
-    public Vector3Int Position => position; // Геттер для позиции
-    public bool IsPlayer1 => isPlayer1; // Геттер для принадлежности игроку
-    public PieceType Type => type; // Геттер для типа фигуры
-    public Sprite IconSprite => iconSprite; // НОВОЕ: Геттер для спрайта иконки
+    public Vector3Int Position => position;
+    public bool IsPlayer1 => isPlayer1;
+    public PieceType Type => type;
+    public Sprite IconSprite => iconSprite;
+    public IAttackable AttackStrategy => attackStrategy; // Для доступа к стратегии атаки
 
     private void Awake()
     {
-        SetupStrategies();
+        SetupStrategies(); // Инициализация стратегий
     }
 
-    /// <summary>
-    /// Абстрактный метод для настройки стратегий движения и атаки.
-    /// Реализуется в дочерних классах (KingPiece, DragonPiece, MountainPiece и т.д.).
-    /// </summary>
+    // Реализуется в дочерних классах для установки стратегий
     protected abstract void SetupStrategies();
 
-    /// <summary>
-    /// Инициализирует фигуру: задаёт принадлежность игроку и материал.
-    /// </summary>
-    /// <param name="isPlayer1">true, если фигура принадлежит Игроку 1.</param>
-    /// <param name="material">Материал для рендеринга (зелёный/красный).</param>
+    // Инициализация фигуры
     public void Initialize(bool isPlayer1, Material material)
     {
         this.isPlayer1 = isPlayer1;
@@ -69,71 +55,86 @@ public abstract class Piece : MonoBehaviour
         {
             Debug.LogWarning($"Piece {GetType().Name}: No Renderer found");
         }
-        Debug.Log($"Piece {GetType().Name} initialized for Player {(isPlayer1 ? 1 : 2)} with material {material?.name}");
+        Debug.Log($"Piece {GetType().Name} initialized for Player {(isPlayer1 ? 1 : 2)}");
     }
 
-    /// <summary>
-    /// Устанавливает позицию фигуры на доске.
-    /// Преобразует клеточные координаты в мировые (y=0.5f для высоты над доской).
-    /// </summary>
-    /// <param name="newPosition">Новая позиция в клеточных координатах.</param>
+    // Установка позиции
     public void SetPosition(Vector3Int newPosition)
     {
         position = newPosition;
-        transform.position = new Vector3(newPosition.x, 0.5f, newPosition.z); // y=0.5f для корректной высоты
-        Debug.Log($"Piece {GetType().Name} set to position {newPosition} (world: {transform.position})");
+        transform.position = new Vector3(newPosition.x, 0.5f, newPosition.z);
+        // Обновление коллайдера (если есть)
+        Collider collider = GetComponent<Collider>();
+        if (collider != null)
+        {
+            collider.enabled = false;
+            collider.enabled = true; // Перезапускаем коллайдер для синхронизации
+        }
+        Debug.Log($"Piece {GetType().Name} set to position {newPosition}");
     }
 
-    /// <summary>
-    /// Возвращает список допустимых ходов для фигуры.
-    /// Делегирует вычисление стратегии движения.
-    /// </summary>
-    /// <param name="board">Интерфейс доски для проверки состояния.</param>
-    /// <returns>Список клеток, куда фигура может пойти.</returns>
+    // Получение допустимых ходов
     public List<Vector3Int> GetValidMoves(IBoardManager board)
     {
         return movementStrategy?.CalculateMoves(board, this) ?? new List<Vector3Int>();
     }
 
-    /// <summary>
-    /// Возвращает список допустимых клеток для атаки.
-    /// Делегирует вычисление стратегии атаки.
-    /// </summary>
-    /// <param name="board">Интерфейс доски для проверки состояния.</param>
-    /// <returns>Список клеток, которые фигура может атаковать.</returns>
+    // Получение целей атаки
     public List<Vector3Int> GetAttackMoves(IBoardManager board)
     {
         return attackStrategy?.CalculateAttacks(board, this) ?? new List<Vector3Int>();
     }
 
-    /// <summary>
-    /// Возвращает список всех потенциальных клеток, которые фигура может атаковать.
-    /// Включает пустые клетки и клетки с фигурами текущего игрока, исключая горы.
-    /// Делегирует вычисление стратегии атаки.
-    /// </summary>
-    /// <param name="board">Интерфейс доски для проверки состояния.</param>
-    /// <returns>Список всех клеток, которые могут быть атакованы.</returns>
+    // Получение всех возможных целей атаки
     public List<Vector3Int> GetAllPotentialAttackMoves(IBoardManager board)
     {
         return attackStrategy?.CalculateAllAttacks(board, this) ?? new List<Vector3Int>();
     }
 
-    /// <summary>
-    /// Выполняет атаку на указанную клетку.
-    /// Делегирует выполнение стратегии атаки.
-    /// </summary>
-    /// <param name="target">Клетка для атаки.</param>
-    /// <param name="boardManager">Интерфейс доски для изменения состояния.</param>
+    // Запуск атаки (пустой, так как атака обрабатывается в PerformAction)
     public void Attack(Vector3Int target, IBoardManager boardManager)
     {
-        if (attackStrategy != null)
+        Debug.Log($"Piece {GetType().Name}: Attack called for {target}");
+    }
+
+    // Выполняет действие (движение или атака) с анимацией
+    public void PerformAction(Vector3Int target, bool isMove, bool isRangedAttack, IBoardManager boardManager, Action onComplete)
+    {
+        PieceAnimator animator = GetComponent<PieceAnimator>();
+        if (animator == null)
         {
-            Debug.Log($"Piece {GetType().Name} initiating attack on {target}");
-            attackStrategy.ExecuteAttack(this, target, boardManager);
+            Debug.LogError($"Piece {GetType().Name}: No PieceAnimator found");
+            onComplete?.Invoke();
+            return;
         }
-        else
+
+        // Для дальней атаки остаёмся на месте
+        Vector3Int animationTarget = isRangedAttack ? position : target;
+        Debug.Log($"Piece {GetType().Name}: Performing {(isMove ? "move" : isRangedAttack ? "ranged attack" : "melee attack")} to {target}");
+
+        animator.MoveTo(animationTarget, null, () =>
         {
-            Debug.LogWarning($"Piece {GetType().Name}: No attack strategy assigned");
-        }
+            if (isMove)
+            {
+                boardManager.MovePiece(this, position, target);
+            }
+            else
+            {
+                if (attackStrategy != null)
+                {
+                    attackStrategy.ExecuteAttack(this, target, boardManager);
+                    // Для ближней атаки перемещаем фигуру на клетку цели
+                    if (!isRangedAttack)
+                    {
+                        boardManager.MovePiece(this, position, target);
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"Piece {GetType().Name}: No attack strategy assigned");
+                }
+            }
+            onComplete?.Invoke();
+        });
     }
 }

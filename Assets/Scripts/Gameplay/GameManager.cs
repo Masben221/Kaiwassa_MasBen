@@ -2,6 +2,12 @@ using UnityEngine;
 using Zenject;
 using System;
 
+// Интерфейс для дальних атак
+public interface IRangedAttackable
+{
+    bool IsRangedAttack();
+}
+
 public interface IGameManager
 {
     void StartGame(int mountainsPerSide, bool isRandomPlacement);
@@ -9,7 +15,7 @@ public interface IGameManager
     bool IsPlayer1Turn { get; }
     bool IsInPlacementPhase { get; set; }
     event Action<bool> OnTurnChanged;
-    event Action<bool> OnGameEnded; // Новое событие: true, если победил игрок 1; false, если игрок 2
+    event Action<bool> OnGameEnded;
 }
 
 public class GameManager : MonoBehaviour, IGameManager
@@ -17,6 +23,7 @@ public class GameManager : MonoBehaviour, IGameManager
     [Inject(Id = "Random")] private IPiecePlacementManager randomPlacementManager;
     [Inject(Id = "Manual")] private IPiecePlacementManager manualPlacementManager;
     [Inject] private IBoardManager boardManager;
+    private CameraController cameraController;
 
     private bool isPlayer1Turn = true;
     private bool isInPlacementPhase = false;
@@ -31,35 +38,45 @@ public class GameManager : MonoBehaviour, IGameManager
     public event Action<bool> OnTurnChanged;
     public event Action<bool> OnGameEnded;
 
+    private void Awake()
+    {
+        cameraController = FindObjectOfType<CameraController>();
+        if (cameraController == null)
+        {
+            Debug.LogError("GameManager: CameraController not found!");
+        }
+    }
+
     private void Start()
     {
         Debug.Log("GameManager: Waiting for UI to start game.");
     }
 
+    // Запуск игры
     public void StartGame(int mountainsPerSide, bool isRandomPlacement)
     {
-        Debug.Log($"GameManager: StartGame called with {mountainsPerSide} mountains per side, RandomPlacement: {isRandomPlacement}");
+        Debug.Log($"GameManager: Starting game with {mountainsPerSide} mountains, Random: {isRandomPlacement}");
         boardManager.InitializeBoard(10);
 
         var placementManager = isRandomPlacement ? randomPlacementManager : manualPlacementManager;
         if (isRandomPlacement)
         {
-            Debug.Log("GameManager: Placing pieces...");
             placementManager.PlacePiecesForPlayer(true, mountainsPerSide);
             placementManager.PlacePiecesForPlayer(false, mountainsPerSide);
         }
 
         isInPlacementPhase = false;
         isGameOver = false;
-        Debug.Log("GameManager: Game started successfully!");
+        Debug.Log("GameManager: Game started!");
         OnTurnChanged?.Invoke(isPlayer1Turn);
     }
 
+    // Обработка хода
     public void MakeMove(Piece piece, Vector3Int target)
     {
         if (isGameOver)
         {
-            Debug.LogWarning("GameManager: Game is over, no moves allowed!");
+            Debug.LogWarning("GameManager: Game is over!");
             return;
         }
 
@@ -72,44 +89,84 @@ public class GameManager : MonoBehaviour, IGameManager
         var validMoves = piece.GetValidMoves(boardManager);
         var attackMoves = piece.GetAttackMoves(boardManager);
 
-        if (attackMoves.Contains(target))
+        bool isMove = validMoves.Contains(target) && !attackMoves.Contains(target);
+        bool isAttack = attackMoves.Contains(target);
+        bool isRangedAttack = isAttack && IsRangedAttack(piece);
+
+        if (!isMove && !isAttack)
+        {
+            Debug.LogError($"GameManager: {target} is invalid for {piece.Type}");
+            return;
+        }
+
+        if (isAttack)
         {
             Piece targetPiece = boardManager.GetPieceAt(target);
-            if (targetPiece != null && targetPiece.IsPlayer1 != piece.IsPlayer1)
+            if (targetPiece == null && targetPiece.IsPlayer1 == piece.IsPlayer1)
             {
-                Debug.Log($"GameManager: Valid attack on piece {targetPiece.Type} at {target}");
-                piece.Attack(target, boardManager);
-                SwitchTurn();
-                CheckWinCondition();
-            }
-            else
-            {
-                Debug.LogWarning($"GameManager: No valid enemy piece at {target} to attack!");
+                Debug.LogError($"GameManager: Cannot attack own piece at {target}!");
+                return;
             }
         }
-        else if (validMoves.Contains(target))
+
+        Debug.Log($"GameManager: Processing {(isMove ? "move" : isRangedAttack ? "ranged attack" : "melee attack")} to {target} by {piece.Type}");
+
+        if (cameraController != null)
         {
-            Debug.Log($"GameManager: Valid move to {target}");
-            piece.GetComponent<PieceAnimator>().MoveTo(target, () =>
+            cameraController.PrepareToFollowPiece(piece, target, isMove, isRangedAttack, () =>
             {
-                boardManager.MovePiece(piece, piece.Position, target);
-                SwitchTurn();
+                piece.PerformAction(target, isMove, isRangedAttack, boardManager, () =>
+                {
+                    SwitchTurn();
+                    CheckWinCondition();
+                });
             });
         }
         else
         {
-            Debug.LogWarning($"GameManager: Invalid move or attack to {target}");
+            Debug.LogError("GameManager: CameraController missing!");
+            piece.PerformAction(target, isMove, isRangedAttack, boardManager, () =>
+            {
+                SwitchTurn();
+                CheckWinCondition();
+            });
         }
     }
 
-    private void SwitchTurn()
+    // Проверяет, является ли атака дальней
+    private bool IsRangedAttack(Piece piece)
     {
-        if (isGameOver) return;
-        isPlayer1Turn = !isPlayer1Turn;
-        OnTurnChanged?.Invoke(isPlayer1Turn);
-        Debug.Log($"GameManager: Turn switched to Player {(isPlayer1Turn ? 1 : 2)}");
+        switch (piece.Type)
+        {
+            case PieceType.Archer:
+            case PieceType.Crossbowman:
+            case PieceType.Catapult:
+            case PieceType.Trebuchet:
+                return true;
+            case PieceType.Dragon:
+                if (piece.AttackStrategy is IRangedAttackable ranged)
+                {
+                    return ranged.IsRangedAttack();
+                }
+                Debug.LogWarning("GameManager: Dragon has no ranged attack strategy!");
+                return false;
+            default:
+                return false;
+        }
     }
 
+    // Смена хода
+    private void SwitchTurn()
+    {
+        if (isGameOver)
+            return;
+
+        isPlayer1Turn = !isPlayer1Turn;
+        Debug.Log($"GameManager: Turn switched to Player {(isPlayer1Turn ? 1 : 2)}");
+        OnTurnChanged?.Invoke(isPlayer1Turn);
+    }
+
+    // Проверка условий победы
     private void CheckWinCondition()
     {
         bool player1KingAlive = false;
@@ -130,14 +187,14 @@ public class GameManager : MonoBehaviour, IGameManager
         if (!player1KingAlive)
         {
             isGameOver = true;
-            Debug.Log("GameManager: Player 2 wins! Player 1's King is destroyed.");
-            OnGameEnded?.Invoke(false); // Игрок 2 победил
+            Debug.Log("GameManager: Player 2 wins!");
+            OnGameEnded?.Invoke(false);
         }
         else if (!player2KingAlive)
         {
             isGameOver = true;
-            Debug.Log("GameManager: Player 1 wins! Player 2's King is destroyed.");
-            OnGameEnded?.Invoke(true); // Игрок 1 победил
+            Debug.Log("GameManager: Player 1 wins!");
+            OnGameEnded?.Invoke(true);
         }
     }
 }

@@ -119,7 +119,7 @@ public class RabbleAttackStrategy : IAttackable
     {
         Debug.Log($"RabbleAttackStrategy: Executing melee attack on {target}");
         boardManager.RemovePiece(target);
-        piece.GetComponent<PieceAnimator>().MoveTo(target, () =>
+        piece.GetComponent<PieceAnimator>().MoveTo(target, null, () =>
         {
             boardManager.MovePiece(piece, piece.Position, target);
         });

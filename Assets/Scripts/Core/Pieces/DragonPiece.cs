@@ -68,144 +68,102 @@ public class DragonMoveStrategy : IMovable
 /// - Ближний бой: прыжок на клетку с вражеской фигурой (1-3 клетки), игнорирует препятствия, перемещается на цель.
 /// Исключает горы из возможных целей атаки в обоих режимах.
 /// </summary>
-public class DragonAttackStrategy : IAttackable
+public class DragonAttackStrategy : IAttackable, IRangedAttackable
 {
-    private readonly bool useRangedAttack; // Определяет режим атаки: true - дальний бой, false - ближний бой
+    private readonly bool useRangedAttack; // Режим атаки
 
-    /// <summary>
-    /// Конструктор, принимающий параметр режима атаки.
-    /// </summary>
-    /// <param name="useRangedAttack">true - дальний бой, false - ближний бой.</param>
     public DragonAttackStrategy(bool useRangedAttack)
     {
         this.useRangedAttack = useRangedAttack;
     }
 
-    /// <summary>
-    /// Рассчитывает клетки, которые дракон может атаковать в текущий момент (только с вражескими фигурами).
-    /// Для дальнего боя требует прямую видимость, для ближнего боя игнорирует препятствия.
-    /// Исключает горы в обоих режимах.
-    /// </summary>
+    // Возвращает, является ли атака дальней
+    public bool IsRangedAttack()
+    {
+        return useRangedAttack;
+    }
+
+    // Расчёт целей атаки
     public List<Vector3Int> CalculateAttacks(IBoardManager board, Piece piece)
     {
         List<Vector3Int> attacks = new List<Vector3Int>();
         Vector3Int pos = piece.Position;
+        int maxRange = 3; // Дальность атаки
 
-        int[] directions = { -1, 0, 1 };
+        Vector3Int[] directions = {
+            new Vector3Int(1, 0, 0), new Vector3Int(-1, 0, 0),
+            new Vector3Int(0, 0, 1), new Vector3Int(0, 0, -1),
+            new Vector3Int(1, 0, 1), new Vector3Int(1, 0, -1),
+            new Vector3Int(-1, 0, 1), new Vector3Int(-1, 0, -1)
+        };
 
-        foreach (int dx in directions)
+        foreach (var dir in directions)
         {
-            foreach (int dz in directions)
+            for (int i = 1; i <= maxRange; i++)
             {
-                if (dx == 0 && dz == 0) continue;
-                for (int i = 1; i <= 3; i++)
-                {
-                    Vector3Int newPos = pos + new Vector3Int(dx * i, 0, dz * i);
-                    if (!board.IsWithinBounds(newPos))
-                    {
-                        break;
-                    }
+                Vector3Int targetPos = pos + dir * i;
+                if (!board.IsWithinBounds(targetPos))
+                    break;
 
-                    // Проверяем наличие вражеской фигуры и исключаем горы
-                    if (board.IsOccupied(newPos) &&
-                        board.GetPieceAt(newPos).IsPlayer1 != piece.IsPlayer1 &&
-                        !board.IsMountain(newPos))
+                if (board.IsMountain(targetPos))
+                    break;
+
+                Piece targetPiece = board.GetPieceAt(targetPos);
+                if (targetPiece != null)
+                {
+                    if (targetPiece.IsPlayer1 != piece.IsPlayer1)
                     {
-                        if (useRangedAttack)
-                        {
-                            // Дальний бой: проверяем прямую видимость
-                            bool isPathClear = true;
-                            for (int j = 1; j < i; j++)
-                            {
-                                Vector3Int intermediatePos = pos + new Vector3Int(dx * j, 0, dz * j);
-                                if (board.IsBlocked(intermediatePos) || board.IsOccupied(intermediatePos))
-                                {
-                                    isPathClear = false;
-                                    break;
-                                }
-                            }
-                            if (isPathClear)
-                            {
-                                attacks.Add(newPos);
-                            }
-                        }
-                        else
-                        {
-                            // Ближний бой: добавляем цель без проверки пути
-                            attacks.Add(newPos);
-                        }
+                        attacks.Add(targetPos);
                     }
+                    break;
                 }
+
+                if (useRangedAttack && board.IsOccupied(targetPos))
+                    break;
             }
         }
+
         return attacks;
     }
 
-    /// <summary>
-    /// Рассчитывает все потенциальные клетки, которые дракон может атаковать, включая пустые и свои фигуры, исключая горы.
-    /// Для дальнего боя требует прямую видимость, для ближнего боя игнорирует препятствия.
-    /// </summary>
+    // Расчёт всех возможных целей атаки
     public List<Vector3Int> CalculateAllAttacks(IBoardManager board, Piece piece)
     {
-        List<Vector3Int> attacks = new List<Vector3Int>();
+        List<Vector3Int> allAttacks = new List<Vector3Int>();
         Vector3Int pos = piece.Position;
+        int maxRange = 3;
 
-        int[] directions = { -1, 0, 1 };
+        Vector3Int[] directions = {
+            new Vector3Int(1, 0, 0), new Vector3Int(-1, 0, 0),
+            new Vector3Int(0, 0, 1), new Vector3Int(0, 0, -1),
+            new Vector3Int(1, 0, 1), new Vector3Int(1, 0, -1),
+            new Vector3Int(-1, 0, 1), new Vector3Int(-1, 0, -1)
+        };
 
-        foreach (int dx in directions)
+        foreach (var dir in directions)
         {
-            foreach (int dz in directions)
+            for (int i = 1; i <= maxRange; i++)
             {
-                if (dx == 0 && dz == 0) continue;
-                for (int i = 1; i <= 3; i++)
-                {
-                    Vector3Int newPos = pos + new Vector3Int(dx * i, 0, dz * i);
-                    if (!board.IsWithinBounds(newPos))
-                    {
-                        break;
-                    }
+                Vector3Int targetPos = pos + dir * i;
+                if (!board.IsWithinBounds(targetPos))
+                    break;
 
-                    if (!board.IsMountain(newPos))
-                    {
-                        if (useRangedAttack)
-                        {
-                            // Дальний бой: проверяем прямую видимость
-                            bool isPathClear = true;
-                            for (int j = 1; j < i; j++)
-                            {
-                                Vector3Int intermediatePos = pos + new Vector3Int(dx * j, 0, dz * j);
-                                if (board.IsBlocked(intermediatePos) || board.IsOccupied(intermediatePos))
-                                {
-                                    isPathClear = false;
-                                    break;
-                                }
-                            }
-                            if (isPathClear)
-                            {
-                                attacks.Add(newPos);
-                            }
-                        }
-                        else
-                        {
-                            // Ближний бой: добавляем клетку без проверки пути
-                            attacks.Add(newPos);
-                        }
-                    }
-                }
+                if (board.IsMountain(targetPos))
+                    break;
+
+                allAttacks.Add(targetPos);
+
+                if (useRangedAttack && board.IsOccupied(targetPos))
+                    break;
             }
         }
-        return attacks;
+
+        return allAttacks;
     }
 
-    /// <summary>
-    /// Выполняет атаку дракона на указанную клетку.
-    /// - Дальний бой: уничтожает фигуру, остаётся на месте.
-    /// - Ближний бой: уничтожает фигуру и перемещается на её место.
-    /// Горы не атакуются.
-    /// </summary>
+    // Выполнение атаки
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
     {
-        // Проверка, что цель не является горой
         if (boardManager.IsMountain(target))
         {
             Debug.LogWarning($"DragonAttackStrategy: Cannot attack mountain at {target}!");
@@ -215,25 +173,11 @@ public class DragonAttackStrategy : IAttackable
         Piece targetPiece = boardManager.GetPieceAt(target);
         if (targetPiece == null)
         {
-            Debug.LogWarning($"DragonAttackStrategy: No piece at {target} to attack!");
+            Debug.LogWarning($"DragonAttackStrategy: No piece at {target}!");
             return;
         }
 
-        if (useRangedAttack)
-        {
-            // Дальний бой: уничтожаем фигуру, остаёмся на месте
-            Debug.Log($"DragonAttackStrategy: Executing ranged attack from {piece.Position} to {target} (piece: {piece.GetType().Name})");
-            boardManager.RemovePiece(target);
-        }
-        else
-        {
-            // Ближний бой: уничтожаем фигуру и перемещаемся
-            Debug.Log($"DragonAttackStrategy: Executing melee attack from {piece.Position} to {target} (piece: {piece.GetType().Name})");
-            boardManager.RemovePiece(target);
-            piece.GetComponent<PieceAnimator>().MoveTo(target, () =>
-            {
-                boardManager.MovePiece(piece, piece.Position, target);
-            });
-        }
+        Debug.Log($"DragonAttackStrategy: Executing {(useRangedAttack ? "ranged" : "melee")} attack to {target}");
+        boardManager.RemovePiece(target);
     }
 }

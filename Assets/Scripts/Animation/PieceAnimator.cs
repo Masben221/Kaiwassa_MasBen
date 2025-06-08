@@ -6,18 +6,16 @@ public class PieceAnimator : MonoBehaviour
     [SerializeField] private float moveDuration = 0.5f; // Длительность анимации
     [SerializeField] private float jumpHeight = 1f; // Высота прыжка
 
-    private bool isMoving; // Флаг, выполняется ли анимация
+    private bool isMoving; // Флаг анимации
 
-    // События для уведомления о начале и завершении анимации
-    public static event Action OnAnimationStarted;
-    public static event Action OnAnimationFinished;
+    public float MoveDuration => moveDuration;
+    public float JumpHeight => jumpHeight;
 
-    /// <summary>
-    /// Перемещает фигуру в целевую позицию с анимацией прыжка.
-    /// </summary>
-    /// <param name="target">Целевая клетка в клеточных координатах.</param>
-    /// <param name="onComplete">Callback, вызываемый после завершения.</param>
-    public void MoveTo(Vector3Int target, Action onComplete)
+    public static event Action<Piece> OnAnimationStarted;
+    public static event Action<Piece> OnAnimationFinished;
+
+    // Перемещение с анимацией
+    public void MoveTo(Vector3Int target, Action onStart, Action onComplete)
     {
         if (isMoving)
         {
@@ -42,21 +40,38 @@ public class PieceAnimator : MonoBehaviour
         Debug.Log($"PieceAnimator: MoveTo called for {piece.Type} to {target}");
         isMoving = true;
 
-        // Уведомляем о начале анимации
-        OnAnimationStarted?.Invoke();
+        onStart?.Invoke();
+        OnAnimationStarted?.Invoke(piece);
 
         Vector3 startPos = transform.position;
-        Vector3 endPos = new Vector3(target.x, 0.5f, target.z); // y=0.5f для высоты
+        Vector3 endPos = new Vector3(target.x, 0.5f, target.z);
+
+        // Отключаем коллайдер во время анимации
+        Collider collider = GetComponent<Collider>();
+        if (collider != null)
+        {
+            collider.enabled = false;
+            Debug.Log($"PieceAnimator: Disabled collider for {piece.Type}");
+        }
+
         StartCoroutine(MoveCoroutine(startPos, endPos, () =>
         {
             isMoving = false;
             transform.position = endPos;
-            // Уведомляем о завершении анимации
-            OnAnimationFinished?.Invoke();
+
+            // Включаем коллайдер после анимации
+            if (collider != null)
+            {
+                collider.enabled = true;
+                Debug.Log($"PieceAnimator: Enabled collider for {piece.Type} at {endPos}");
+            }
+
+            OnAnimationFinished?.Invoke(piece);
             onComplete?.Invoke();
         }));
     }
 
+    // Корутина анимации прыжка
     private System.Collections.IEnumerator MoveCoroutine(Vector3 start, Vector3 end, Action callback)
     {
         float elapsedTime = 0f;

@@ -35,6 +35,7 @@ public class InputHandler : MonoBehaviour
 
     private void Awake()
     {
+        // Подписываемся на события PieceAnimator с новой сигнатурой Action<Piece>
         PieceAnimator.OnAnimationStarted += BlockInput;
         PieceAnimator.OnAnimationFinished += UnblockInput;
 
@@ -63,6 +64,7 @@ public class InputHandler : MonoBehaviour
 
     private void OnDestroy()
     {
+        // Отписываемся от событий PieceAnimator
         PieceAnimator.OnAnimationStarted -= BlockInput;
         PieceAnimator.OnAnimationFinished -= UnblockInput;
         ClearSelection();
@@ -344,15 +346,15 @@ public class InputHandler : MonoBehaviour
         Debug.Log("Selection cleared.");
     }
 
-    private void BlockInput()
+    private void BlockInput(Piece piece)
     {
         isInputBlocked = true;
-        Debug.Log("InputHandler: Input blocked during animation.");
+        Debug.Log($"InputHandler: Input blocked during animation for {piece.Type} at {piece.Position}.");
     }
 
-    private void UnblockInput()
+    private void UnblockInput(Piece piece)
     {
         isInputBlocked = false;
-        Debug.Log("InputHandler: Input unblocked after animation.");
+        Debug.Log($"InputHandler: Input unblocked after animation for {piece.Type} at {piece.Position}.");
     }
 }

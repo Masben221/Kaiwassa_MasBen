@@ -3179,10 +3179,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b41cf27f7540ac49ac5dd47a1b1d91d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraPosition: {x: 7, y: 2.8, z: 4.5}
-  cameraRotation: {x: 43, y: -90, z: 0}
-  orthographicSize: 3.8
+  defaultPosition: {x: 7, y: 2.8, z: 4.5}
+  defaultRotation: {x: 45, y: -90, z: 0}
+  defaultOrthographicSize: 3.8
   nearClippingPlane: -3
+  defaultTransitionDuration: 1
+  followOffset: {x: 2, y: 2, z: 0}
+  followRotationPlayer1: {x: 45, y: 0, z: 0}
+  followRotationPlayer2: {x: 45, y: 180, z: 0}
+  followOrthographicSize: 2.5
+  preFollowTransitionDuration: 0.5
 --- !u!1001 &972237570
 PrefabInstance:
   m_ObjectHideFlags: 0
