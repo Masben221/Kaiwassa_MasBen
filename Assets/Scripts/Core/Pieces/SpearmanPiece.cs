@@ -171,10 +171,6 @@ public class SpearmanAttackStrategy : IAttackable
     {
         Debug.Log($"SpearmanAttackStrategy: Executing melee attack on {target}");
         // Ѕлижний бой: уничтожаем фигуру и перемещаемс€
-        boardManager.RemovePiece(target);
-        piece.GetComponent<PieceAnimator>().MoveTo(target, null, () =>
-        {
-            boardManager.MovePiece(piece, piece.Position, target);
-        });
+        boardManager.RemovePiece(target);       
     }
 }

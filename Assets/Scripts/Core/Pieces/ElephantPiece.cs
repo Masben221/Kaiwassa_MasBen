@@ -189,12 +189,6 @@ public class ElephantAttackStrategy : IAttackable
                     Debug.Log($"ElephantAttackStrategy: Removed piece {targetPiece.GetType().Name} at {currentPos}");
                 }
             }
-        }
-
-        // Перемещаемся на конечную клетку
-        piece.GetComponent<PieceAnimator>().MoveTo(target, null, () =>
-        {
-            boardManager.MovePiece(piece, piece.Position, target);
-        });
+        }        
     }
 }

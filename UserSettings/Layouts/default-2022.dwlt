@@ -390,17 +390,17 @@ MonoBehaviour:
       y: 21
       width: 1392
       height: 905
-    m_Scale: {x: 0.725, y: 0.72499996}
-    m_Translation: {x: 695.99994, y: 452.49997}
+    m_Scale: {x: 0.72499996, y: 0.72499996}
+    m_Translation: {x: 696, y: 452.49997}
     m_MarginLeft: 0
     m_MarginRight: 0
     m_MarginTop: 0
     m_MarginBottom: 0
     m_LastShownAreaInsideMargins:
       serializedVersion: 2
-      x: -959.9999
+      x: -960.00006
       y: -624.13794
-      width: 1919.9999
+      width: 1920.0001
       height: 1248.2759
     m_MinimalGUI: 1
   m_defaultScale: 0.725
@@ -449,21 +449,21 @@ MonoBehaviour:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs: f4620000
       m_LastClickedID: 0
-      m_ExpandedIDs: 082bfdff142bfdff702bfdff443cfdffa298fdffae98fdffdaa7fdff2cfbfffff4ffffff
+      m_ExpandedIDs: 2cfbffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: HeavyHorsePrefab(Clone)
-        m_OriginalName: HeavyHorsePrefab(Clone)
+        m_Name: 
+        m_OriginalName: 
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
           y: 0
           width: 0
           height: 0
-        m_UserData: -157522
+        m_UserData: 0
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 0
+        m_OriginalEventType: 11
         m_IsRenamingFilename: 0
         m_ClientGUIView: {fileID: 7}
       m_SearchString: 

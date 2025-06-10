@@ -118,10 +118,6 @@ public class RabbleAttackStrategy : IAttackable
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
     {
         Debug.Log($"RabbleAttackStrategy: Executing melee attack on {target}");
-        boardManager.RemovePiece(target);
-        piece.GetComponent<PieceAnimator>().MoveTo(target, null, () =>
-        {
-            boardManager.MovePiece(piece, piece.Position, target);
-        });
+        boardManager.RemovePiece(target);       
     }
 }
