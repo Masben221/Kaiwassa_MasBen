@@ -18,7 +18,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] private Vector3 followRotationPlayer1 = new Vector3(45f, 0f, 0f);
     [SerializeField] private Vector3 followRotationPlayer2 = new Vector3(45f, 180f, 0f);
     [SerializeField] private float followOrthographicSize = 2.5f;
-    [SerializeField] private float preFollowTransitionDuration = 0.5f;
+    [SerializeField] private float preFollowTransitionDuration = 0.3f; // Уменьшено для синхронизации (ИСПРАВЛЕНО)
 
     private Camera mainCamera;
     private bool isPlayer1Turn = true;
@@ -47,16 +47,20 @@ public class CameraController : MonoBehaviour
 
     private void OnDestroy()
     {
-        gameManager.OnTurnChanged -= HandleTurnChanged;
+        if (gameManager != null)
+            gameManager.OnTurnChanged -= HandleTurnChanged;
     }
 
+    // Установка дефолтной позиции камеры
     private void SetupDefaultCamera(bool instant = false)
     {
-        if (isFollowingPiece) return;
+        if (isFollowingPiece)
+            return;
 
         if (currentTransition != null)
         {
             StopCoroutine(currentTransition);
+            currentTransition = null; // Сброс для немедленного завершения
         }
 
         if (instant)
@@ -76,20 +80,22 @@ public class CameraController : MonoBehaviour
         }
 
         mainCamera.nearClipPlane = nearClippingPlane;
-        Debug.Log($"CameraController: Set default camera at Position: {defaultPosition}, Rotation: {defaultRotation}, OrthographicSize: {defaultOrthographicSize}");
+        Debug.Log($"CameraController: Set default camera at {defaultPosition}");
     }
 
+    // Обработка смены хода
     private void HandleTurnChanged(bool isPlayer1)
     {
         isPlayer1Turn = isPlayer1;
         SetupDefaultCamera();
     }
 
+    // Подготовка камеры к слежению за фигурой
     public void PrepareToFollowPiece(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack, Action onAnimationComplete)
     {
         if (piece.Type == PieceType.Mountain)
         {
-            Debug.Log("CameraController: Ignoring animation for Mountain piece.");
+            Debug.Log("CameraController: Ignoring animation for Mountain");
             onAnimationComplete?.Invoke();
             return;
         }
@@ -99,12 +105,14 @@ public class CameraController : MonoBehaviour
         if (currentTransition != null)
         {
             StopCoroutine(currentTransition);
+            currentTransition = null;
         }
 
         currentTransition = StartCoroutine(PrepareAndFollowPiece(piece, target, isMove, isRangedAttack, onAnimationComplete));
     }
 
-    private IEnumerator SmoothTransition(Vector3 targetPosition, Quaternion targetRotation, float targetOrthographicSize, float duration)
+    // Плавный переход камеры
+    private IEnumerator SmoothTransition(Vector3 targetPosition, Quaternion targetRotation, float targetSize, float duration)
     {
         Vector3 startPosition = transform.position;
         Quaternion startRotation = transform.rotation;
@@ -117,27 +125,28 @@ public class CameraController : MonoBehaviour
             float t = Mathf.SmoothStep(0f, 1f, elapsedTime / duration);
             transform.position = Vector3.Lerp(startPosition, targetPosition, t);
             transform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
-            mainCamera.orthographicSize = Mathf.Lerp(startOrthographicSize, targetOrthographicSize, t);
+            mainCamera.orthographicSize = Mathf.Lerp(startOrthographicSize, targetSize, t);
             yield return null;
         }
 
         transform.position = targetPosition;
         transform.rotation = targetRotation;
-        mainCamera.orthographicSize = targetOrthographicSize;
+        mainCamera.orthographicSize = targetSize;
     }
 
+    // Слежение за фигурой
     private IEnumerator PrepareAndFollowPiece(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack, Action onAnimationComplete)
     {
         PieceAnimator animator = piece.GetComponent<PieceAnimator>();
         if (animator == null)
         {
-            Debug.LogError($"CameraController: No PieceAnimator found on {piece.Type} at {piece.Position}");
+            Debug.LogError($"CameraController: No PieceAnimator on {piece.Type}");
             isFollowingPiece = false;
             onAnimationComplete?.Invoke();
             yield break;
         }
 
-        // Шаг 1: Перемещение за спину фигуры
+        // Перемещение за спину (синхронизировано с началом поворота фигуры)
         Vector3 piecePosition = piece.transform.position;
         Vector3 targetCameraPosition = piecePosition + (isPlayer1Turn ? followOffset : new Vector3(-followOffset.x, followOffset.y, followOffset.z));
         Quaternion targetRotation = Quaternion.Euler(isPlayer1Turn ? followRotationPlayer1 : followRotationPlayer2);
@@ -149,20 +158,23 @@ public class CameraController : MonoBehaviour
             preFollowTransitionDuration
         ));
 
-        // Шаг 2: Выполнение действия с анимацией
+        // Выполнение действия
         Debug.Log($"CameraController: Processing {(isMove ? "move" : isRangedAttack ? "ranged attack" : "melee attack")} for {piece.Type}");
+
+        // Полная длительность анимации фигуры: поворот + перемещение/пауза + поворот обратно
+        float totalAnimationDuration = animator.RotationDuration * 2 + animator.MoveDuration;
+
         Vector3 startPiecePosition = piecePosition;
         Vector3 endPiecePosition = isRangedAttack ? piecePosition : new Vector3(target.x, 0.5f, target.z);
-        float animationDuration = animator.MoveDuration;
 
-        onAnimationComplete?.Invoke(); // Запускаем PerformAction, который вызывает MoveTo
+        onAnimationComplete?.Invoke();
 
-        // Шаг 3: Слежение за фигурой во время анимации
+        // Слежение за фигурой
         float elapsedTime = 0f;
-        while (elapsedTime < animationDuration && isFollowingPiece)
+        while (elapsedTime < totalAnimationDuration && isFollowingPiece)
         {
             elapsedTime += Time.deltaTime;
-            float t = elapsedTime / animationDuration;
+            float t = elapsedTime / totalAnimationDuration;
             Vector3 currentPiecePosition = Vector3.Lerp(startPiecePosition, endPiecePosition, t);
             float height = isRangedAttack ? 0f : animator.JumpHeight * Mathf.Sin(t * Mathf.PI);
             currentPiecePosition.y += height;
@@ -175,7 +187,9 @@ public class CameraController : MonoBehaviour
             yield return null;
         }
 
+        // Немедленный возврат в дефолтное положение
         isFollowingPiece = false;
-        SetupDefaultCamera();
+        SetupDefaultCamera(instant: false); // Плавный переход без задержки
+        currentTransition = null; // Сбрасываем для следующей анимации
     }
 }

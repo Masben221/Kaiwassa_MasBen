@@ -25,6 +25,7 @@ public abstract class Piece : MonoBehaviour
     protected IAttackable attackStrategy; // Стратегия атаки
     private Vector3Int position; // Позиция на доске
     private bool isPlayer1; // Принадлежность игроку
+    private Quaternion initialRotation; // Начальная ротация фигуры
     [SerializeField] private PieceType type; // Тип фигуры
     [SerializeField] private Sprite iconSprite; // Иконка для UI
 
@@ -32,10 +33,12 @@ public abstract class Piece : MonoBehaviour
     public bool IsPlayer1 => isPlayer1;
     public PieceType Type => type;
     public Sprite IconSprite => iconSprite;
-    public IAttackable AttackStrategy => attackStrategy; // Для доступа к стратегии атаки
+    public IAttackable AttackStrategy => attackStrategy;
+    public Quaternion InitialRotation => initialRotation;
 
     private void Awake()
     {
+        initialRotation = transform.rotation; // Сохраняем начальную ротацию
         SetupStrategies(); // Инициализация стратегий
     }
 
@@ -112,7 +115,7 @@ public abstract class Piece : MonoBehaviour
         Vector3Int animationTarget = isRangedAttack ? position : target;
         Debug.Log($"Piece {GetType().Name}: Performing {(isMove ? "move" : isRangedAttack ? "ranged attack" : "melee attack")} to {target}");
 
-        animator.MoveTo(animationTarget, null, () =>
+        animator.MoveTo(target, animationTarget, null, () => // ИЗМЕНЕНИЕ: передаём target и animationTarget
         {
             if (isMove)
             {
