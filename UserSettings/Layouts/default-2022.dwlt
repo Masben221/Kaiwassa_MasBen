@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 2560
     height: 997
   m_ShowMode: 4
-  m_Title: Project
+  m_Title: Hierarchy
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 371}
   m_MaxSize: {x: 10000, y: 10000}
@@ -276,9 +276,9 @@ MonoBehaviour:
     x: 0
     y: 0
     width: 550
-    height: 611
-  m_MinSize: {x: 275, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+    height: 734
+  m_MinSize: {x: 276, y: 71}
+  m_MaxSize: {x: 4001, y: 4021}
   m_ActualView: {fileID: 22}
   m_Panes:
   - {fileID: 22}
@@ -302,9 +302,9 @@ MonoBehaviour:
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 611
+    y: 734
     width: 550
-    height: 336
+    height: 213
   m_MinSize: {x: 101, y: 121}
   m_MaxSize: {x: 4001, y: 4021}
   m_ActualView: {fileID: 25}
@@ -390,7 +390,7 @@ MonoBehaviour:
       y: 21
       width: 1392
       height: 905
-    m_Scale: {x: 0.725, y: 0.72499996}
+    m_Scale: {x: 0.725, y: 0.725}
     m_Translation: {x: 695.99994, y: 452.49997}
     m_MarginLeft: 0
     m_MarginRight: 0
@@ -447,7 +447,7 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 9c4d0000
+      m_SelectedIDs: 
       m_LastClickedID: 0
       m_ExpandedIDs: 2cfbffff
       m_RenameOverlay:
@@ -518,7 +518,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scripts/Core/Pieces
+    - Assets/Material
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
@@ -526,16 +526,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 82
   m_LastFolders:
-  - Assets/Scripts/Core/Pieces
+  - Assets/Material
   m_LastFoldersGridSize: 82
   m_LastProjectPath: A:\CODE\MASBENGAMES\Kaiwassa_MasBen
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: e2620000
-    m_LastClickedID: 25314
-    m_ExpandedIDs: 0000000066620000686200006a620000
+    m_SelectedIDs: d0620000
+    m_LastClickedID: 25296
+    m_ExpandedIDs: 00000000666200006a620000d6620000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -615,7 +615,7 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
     m_NewAssetIndexInList: -1
-    m_ScrollPosition: {x: 0, y: 171}
+    m_ScrollPosition: {x: 0, y: 0}
     m_GridSize: 82
   m_SkipHiddenPackages: 0
   m_DirectoriesAreaWidth: 239
@@ -1170,9 +1170,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: -15.435007, y: 9.3355255, z: -6.5809526}
+    m_Target: {x: 2.5447338, y: 1.6826609, z: -0.0948396}
     speed: 2
-    m_Value: {x: -15.435007, y: 9.3355255, z: -6.5809526}
+    m_Value: {x: 0.01047188, y: 0.005685687, z: 0.116415724}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1218,13 +1218,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.049979206, y: -0.9350312, z: 0.14648229, w: 0.31901446}
+    m_Target: {x: 0.10752611, y: -0.6337064, z: 0.089558624, w: 0.76081747}
     speed: 2
-    m_Value: {x: 0.04997899, y: -0.9350272, z: 0.14648166, w: 0.3190131}
+    m_Value: {x: 0.2746227, y: -0.60348713, z: 0.23295887, w: 0.7114182}
   m_Size:
-    m_Target: 4.5697956
+    m_Target: 0.06865216
     speed: 2
-    m_Value: 4.37301
+    m_Value: 1.4073439
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -2390,7 +2390,7 @@ MonoBehaviour:
     x: 2010
     y: 73
     width: 549
-    height: 590
+    height: 713
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -2434,10 +2434,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1901
+    x: 2010
     y: 73
-    width: 658
-    height: 617
+    width: 549
+    height: 590
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -2503,9 +2503,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 2010
-    y: 684
+    y: 807
     width: 549
-    height: 315
+    height: 192
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
