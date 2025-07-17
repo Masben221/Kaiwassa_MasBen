@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
 
@@ -16,22 +17,24 @@ public interface IPieceFactory
 /// </summary>
 public class PieceFactory : MonoBehaviour, IPieceFactory
 {
-    [SerializeField] private GameObject kingPrefab;
-    [SerializeField] private GameObject dragonPrefab;
-    [SerializeField] private GameObject elephantPrefab;
-    [SerializeField] private GameObject heavyCavalryPrefab;
-    [SerializeField] private GameObject lightHorsePrefab;
-    [SerializeField] private GameObject spearmanPrefab;
-    [SerializeField] private GameObject crossbowmanPrefab;
-    [SerializeField] private GameObject rabblePrefab;
-    [SerializeField] private GameObject catapultPrefab;
-    [SerializeField] private GameObject trebuchetPrefab;
-    [SerializeField] private GameObject mountainPrefab;
-    [SerializeField] private GameObject swordsmanPrefab;
-    [SerializeField] private GameObject archerPrefab;
-    [SerializeField] private Material player1Material;
-    [SerializeField] private Material player2Material;
-    [SerializeField] private Sprite defaultSprite; // НОВОЕ: Дефолтный спрайт для UI
+    [SerializeField, Tooltip("Префаб Короля")] private GameObject kingPrefab;
+    [SerializeField, Tooltip("Префаб Дракона")] private GameObject dragonPrefab;
+    [SerializeField, Tooltip("Префаб Слона")] private GameObject elephantPrefab;
+    [SerializeField, Tooltip("Префаб Тяжёлой кавалерии")] private GameObject heavyCavalryPrefab;
+    [SerializeField, Tooltip("Префаб Лёгкой кавалерии")] private GameObject lightHorsePrefab;
+    [SerializeField, Tooltip("Префаб Копейщика")] private GameObject spearmanPrefab;
+    [SerializeField, Tooltip("Префаб Арбалетчика")] private GameObject crossbowmanPrefab;
+    [SerializeField, Tooltip("Префаб Ополчения")] private GameObject rabblePrefab;
+    [SerializeField, Tooltip("Префаб Катапульты")] private GameObject catapultPrefab;
+    [SerializeField, Tooltip("Префаб Требушета")] private GameObject trebuchetPrefab;
+    [SerializeField, Tooltip("Префаб Горы")] private GameObject mountainPrefab;
+    [SerializeField, Tooltip("Префаб Мечника")] private GameObject swordsmanPrefab;
+    [SerializeField, Tooltip("Префаб Лучника")] private GameObject archerPrefab;
+    [SerializeField, Tooltip("Материал для фигур Игрока 1")] private Material player1Material;
+    [SerializeField, Tooltip("Материал для фигур Игрока 2")] private Material player2Material;
+    [SerializeField, Tooltip("Дефолтный спрайт для UI")] private Sprite defaultSprite;
+    [SerializeField, Tooltip("Универсальная конфигурация анимаций по умолчанию")]
+    private PieceAnimationConfig defaultAnimationConfig;
 
     private DiContainer container;
 
@@ -43,48 +46,32 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
 
     private void Awake()
     {
-        // Проверяем наличие всех префабов
+        // Проверка наличия всех префабов
         if (kingPrefab == null || dragonPrefab == null || heavyCavalryPrefab == null || mountainPrefab == null ||
             swordsmanPrefab == null || archerPrefab == null)
         {
             Debug.LogError("PieceFactory: Required prefabs (King, Dragon, HeavyCavalry, Mountain, Swordsman, Archer) not assigned!");
         }
-        // НОВОЕ: Проверяем дефолтный спрайт
         if (defaultSprite == null)
         {
             Debug.LogWarning("PieceFactory: Default sprite not assigned, using empty sprite.");
+        }
+        if (defaultAnimationConfig == null)
+        {
+            Debug.LogWarning("PieceFactory: Default animation config not assigned!");
         }
     }
 
     public Piece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position)
     {
-        GameObject prefab = null;
-        switch (type)
-        {
-            case PieceType.King: prefab = kingPrefab; break;
-            case PieceType.Dragon: prefab = dragonPrefab; break;
-            case PieceType.Elephant: prefab = elephantPrefab; break;
-            case PieceType.HeavyCavalry: prefab = heavyCavalryPrefab; break;
-            case PieceType.LightHorse: prefab = lightHorsePrefab; break;
-            case PieceType.Spearman: prefab = spearmanPrefab; break;
-            case PieceType.Crossbowman: prefab = crossbowmanPrefab; break;
-            case PieceType.Rabble: prefab = rabblePrefab; break;
-            case PieceType.Catapult: prefab = catapultPrefab; break;
-            case PieceType.Trebuchet: prefab = trebuchetPrefab; break;
-            case PieceType.Mountain: prefab = mountainPrefab; break;
-            case PieceType.Swordsman: prefab = swordsmanPrefab; break;
-            case PieceType.Archer: prefab = archerPrefab; break;
-            default:
-                Debug.LogError($"PieceFactory: Unknown piece type {type}");
-                return null;
-        }
-
+        GameObject prefab = GetPrefabForType(type);
         if (prefab == null)
         {
             Debug.LogWarning($"PieceFactory: Prefab for {type} is not assigned!");
             return null;
         }
 
+        // Устанавливаем поворот: 0° для игрока 1, 180° для игрока 2 (кроме гор)
         Quaternion rotation = (type != PieceType.Mountain && !isPlayer1) ? Quaternion.Euler(0, 180, 0) : Quaternion.identity;
         GameObject pieceObject = container.InstantiatePrefab(prefab, new Vector3(position.x, 0.5f, position.z), rotation, null);
         Piece piece = pieceObject.GetComponent<Piece>();
@@ -109,30 +96,9 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
         return piece;
     }
 
-    // НОВОЕ: Возвращает спрайт иконки для указанного типа фигуры
     public Sprite GetIconForPiece(PieceType type)
     {
-        GameObject prefab = null;
-        switch (type)
-        {
-            case PieceType.King: prefab = kingPrefab; break;
-            case PieceType.Dragon: prefab = dragonPrefab; break;
-            case PieceType.Elephant: prefab = elephantPrefab; break;
-            case PieceType.HeavyCavalry: prefab = heavyCavalryPrefab; break;
-            case PieceType.LightHorse: prefab = lightHorsePrefab; break;
-            case PieceType.Spearman: prefab = spearmanPrefab; break;
-            case PieceType.Crossbowman: prefab = crossbowmanPrefab; break;
-            case PieceType.Rabble: prefab = rabblePrefab; break;
-            case PieceType.Catapult: prefab = catapultPrefab; break;
-            case PieceType.Trebuchet: prefab = trebuchetPrefab; break;
-            case PieceType.Mountain: prefab = mountainPrefab; break;
-            case PieceType.Swordsman: prefab = swordsmanPrefab; break;
-            case PieceType.Archer: prefab = archerPrefab; break;
-            default:
-                Debug.LogError($"PieceFactory: Unknown piece type {type}");
-                return defaultSprite;
-        }
-
+        GameObject prefab = GetPrefabForType(type);
         if (prefab == null)
         {
             Debug.LogWarning($"PieceFactory: Prefab for {type} is not assigned!");
@@ -154,5 +120,41 @@ public class PieceFactory : MonoBehaviour, IPieceFactory
         }
 
         return sprite;
+    }
+
+    /// <summary>
+    /// Возвращает дефолтную конфигурацию анимаций.
+    /// </summary>
+    public PieceAnimationConfig GetDefaultAnimationConfig()
+    {
+        if (defaultAnimationConfig == null)
+        {
+            Debug.LogWarning("PieceFactory: Default animation config not assigned!");
+        }
+        return defaultAnimationConfig;
+    }
+
+    // Вспомогательный метод для получения префаба по типу фигуры
+    private GameObject GetPrefabForType(PieceType type)
+    {
+        switch (type)
+        {
+            case PieceType.King: return kingPrefab;
+            case PieceType.Dragon: return dragonPrefab;
+            case PieceType.Elephant: return elephantPrefab;
+            case PieceType.HeavyCavalry: return heavyCavalryPrefab;
+            case PieceType.LightHorse: return lightHorsePrefab;
+            case PieceType.Spearman: return spearmanPrefab;
+            case PieceType.Crossbowman: return crossbowmanPrefab;
+            case PieceType.Rabble: return rabblePrefab;
+            case PieceType.Catapult: return catapultPrefab;
+            case PieceType.Trebuchet: return trebuchetPrefab;
+            case PieceType.Mountain: return mountainPrefab;
+            case PieceType.Swordsman: return swordsmanPrefab;
+            case PieceType.Archer: return archerPrefab;
+            default:
+                Debug.LogError($"PieceFactory: Unknown piece type {type}");
+                return null;
+        }
     }
 }

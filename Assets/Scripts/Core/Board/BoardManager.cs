@@ -13,8 +13,8 @@ public interface IBoardManager
     void MovePiece(Piece piece, Vector3Int from, Vector3Int to);
     bool IsWithinBounds(Vector3Int position);
     bool IsOccupied(Vector3Int position);
-    bool IsMountain(Vector3Int position); // Оставлено для совместимости   
-    bool IsBlocked(Vector3Int position);    
+    bool IsMountain(Vector3Int position);
+    bool IsBlocked(Vector3Int position);
     Dictionary<Vector3Int, Piece> GetAllPieces();
     GameObject GetTileAt(Vector3Int position);
 }
@@ -64,7 +64,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
         }
 
         Debug.Log($"Board initialized with size {size}x{size}");
-    }  
+    }
 
     public void PlacePiece(Piece piece, Vector3Int position)
     {
@@ -127,8 +127,21 @@ public class BoardManager : MonoBehaviour, IBoardManager
             pieces.Remove(position);
             if (piece != null && piece.gameObject != null)
             {
-                Destroy(piece.gameObject);
-                Debug.Log($"BoardManager: Removed piece {piece.GetType().Name} at {position}");
+                // ИСПРАВЛЕНИЕ: Вызываем только анимацию смерти
+                PieceAnimator animator = piece.GetComponent<PieceAnimator>();
+                if (animator != null)
+                {
+                    animator.AnimateDeath(() => // НОВЫЙ метод
+                    {
+                        Destroy(piece.gameObject);
+                        Debug.Log($"BoardManager: Removed piece {piece.GetType().Name} at {position} after death animation");
+                    });
+                }
+                else
+                {
+                    Destroy(piece.gameObject);
+                    Debug.LogWarning($"BoardManager: No PieceAnimator on piece at {position}, removed immediately");
+                }
             }
             else
             {
@@ -160,7 +173,7 @@ public class BoardManager : MonoBehaviour, IBoardManager
 
     public bool IsBlocked(Vector3Int position)
     {
-        return IsOccupied(position); // Горы теперь в pieces
+        return IsOccupied(position);
     }
 
     public Dictionary<Vector3Int, Piece> GetAllPieces()

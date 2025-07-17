@@ -18,7 +18,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] private Vector3 followRotationPlayer1 = new Vector3(45f, 0f, 0f);
     [SerializeField] private Vector3 followRotationPlayer2 = new Vector3(45f, 180f, 0f);
     [SerializeField] private float followOrthographicSize = 2.5f;
-    [SerializeField] private float preFollowTransitionDuration = 0.3f; // Уменьшено для синхронизации (ИСПРАВЛЕНО)
+    [SerializeField] private float preFollowTransitionDuration = 0.5f; // Увеличено для плавности (ИСПРАВЛЕНИЕ)
 
     private Camera mainCamera;
     private bool isPlayer1Turn = true;
@@ -51,7 +51,6 @@ public class CameraController : MonoBehaviour
             gameManager.OnTurnChanged -= HandleTurnChanged;
     }
 
-    // Установка дефолтной позиции камеры
     private void SetupDefaultCamera(bool instant = false)
     {
         if (isFollowingPiece)
@@ -60,7 +59,7 @@ public class CameraController : MonoBehaviour
         if (currentTransition != null)
         {
             StopCoroutine(currentTransition);
-            currentTransition = null; // Сброс для немедленного завершения
+            currentTransition = null;
         }
 
         if (instant)
@@ -83,14 +82,12 @@ public class CameraController : MonoBehaviour
         Debug.Log($"CameraController: Set default camera at {defaultPosition}");
     }
 
-    // Обработка смены хода
     private void HandleTurnChanged(bool isPlayer1)
     {
         isPlayer1Turn = isPlayer1;
         SetupDefaultCamera();
     }
 
-    // Подготовка камеры к слежению за фигурой
     public void PrepareToFollowPiece(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack, Action onAnimationComplete)
     {
         if (piece.Type == PieceType.Mountain)
@@ -111,7 +108,6 @@ public class CameraController : MonoBehaviour
         currentTransition = StartCoroutine(PrepareAndFollowPiece(piece, target, isMove, isRangedAttack, onAnimationComplete));
     }
 
-    // Плавный переход камеры
     private IEnumerator SmoothTransition(Vector3 targetPosition, Quaternion targetRotation, float targetSize, float duration)
     {
         Vector3 startPosition = transform.position;
@@ -134,7 +130,6 @@ public class CameraController : MonoBehaviour
         mainCamera.orthographicSize = targetSize;
     }
 
-    // Слежение за фигурой
     private IEnumerator PrepareAndFollowPiece(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack, Action onAnimationComplete)
     {
         PieceAnimator animator = piece.GetComponent<PieceAnimator>();
@@ -146,50 +141,91 @@ public class CameraController : MonoBehaviour
             yield break;
         }
 
-        // Перемещение за спину (синхронизировано с началом поворота фигуры)
         Vector3 piecePosition = piece.transform.position;
-        Vector3 targetCameraPosition = piecePosition + (isPlayer1Turn ? followOffset : new Vector3(-followOffset.x, followOffset.y, followOffset.z));
+        Vector3 targetPosition = new Vector3(target.x, 0.5f, target.z);
+        PieceAnimationConfig config = animator.GetAnimationConfig(piece);
+
+        // Определяем начальную позицию камеры (над атакующей фигурой)
+        Vector3 attackerCameraPosition = piecePosition + (isPlayer1Turn ? followOffset : new Vector3(-followOffset.x, followOffset.y, followOffset.z));
         Quaternion targetRotation = Quaternion.Euler(isPlayer1Turn ? followRotationPlayer1 : followRotationPlayer2);
 
+        // Плавный переход к начальной позиции камеры
         yield return StartCoroutine(SmoothTransition(
-            targetCameraPosition,
+            attackerCameraPosition,
             targetRotation,
             followOrthographicSize,
             preFollowTransitionDuration
         ));
 
-        // Выполнение действия
+        // Запускаем анимацию фигуры
         Debug.Log($"CameraController: Processing {(isMove ? "move" : isRangedAttack ? "ranged attack" : "melee attack")} for {piece.Type}");
-
-        // Полная длительность анимации фигуры: поворот + перемещение/пауза + поворот обратно
-        float totalAnimationDuration = animator.RotationDuration * 2 + animator.MoveDuration;
-
-        Vector3 startPiecePosition = piecePosition;
-        Vector3 endPiecePosition = isRangedAttack ? piecePosition : new Vector3(target.x, 0.5f, target.z);
-
         onAnimationComplete?.Invoke();
 
-        // Слежение за фигурой
-        float elapsedTime = 0f;
-        while (elapsedTime < totalAnimationDuration && isFollowingPiece)
+        if (isRangedAttack)
         {
-            elapsedTime += Time.deltaTime;
-            float t = elapsedTime / totalAnimationDuration;
-            Vector3 currentPiecePosition = Vector3.Lerp(startPiecePosition, endPiecePosition, t);
-            float height = isRangedAttack ? 0f : animator.JumpHeight * Mathf.Sin(t * Mathf.PI);
-            currentPiecePosition.y += height;
-            Vector3 cameraPosition = currentPiecePosition + (isPlayer1Turn ? followOffset : new Vector3(-followOffset.x, followOffset.y, followOffset.z));
+            // Для дальней атаки: сначала смотрим на стреляющего, затем на цель
+            float rotationAndRecoilDuration = (config?.RecoilDuration ?? 0.2f) + animator.RotationDuration;
+            float projectileFlightDuration = config?.RangedAttackDuration ?? 0.5f;
+            float deathAnimationDuration = config?.DeathDuration ?? 0.5f;
 
-            transform.position = cameraPosition;
-            transform.rotation = targetRotation;
-            mainCamera.orthographicSize = followOrthographicSize;
+            // Фаза 1: Смотрим на стреляющего во время поворота и отдачи
+            float elapsedTime = 0f;
+            while (elapsedTime < rotationAndRecoilDuration && isFollowingPiece)
+            {
+                elapsedTime += Time.deltaTime;
+                transform.position = attackerCameraPosition;
+                transform.rotation = targetRotation;
+                mainCamera.orthographicSize = followOrthographicSize;
+                yield return null;
+            }
 
-            yield return null;
+            // Фаза 2: Плавно перемещаемся к цели во время полёта снаряда
+            Vector3 targetCameraPosition = targetPosition + (isPlayer1Turn ? followOffset : new Vector3(-followOffset.x, followOffset.y, followOffset.z));
+            yield return StartCoroutine(SmoothTransition(
+                targetCameraPosition,
+                targetRotation,
+                followOrthographicSize,
+                projectileFlightDuration
+            ));
+
+            // Ждём анимацию попадания и смерти
+            elapsedTime = 0f;
+            while (elapsedTime < deathAnimationDuration && isFollowingPiece)
+            {
+                elapsedTime += Time.deltaTime;
+                transform.position = targetCameraPosition;
+                transform.rotation = targetRotation;
+                mainCamera.orthographicSize = followOrthographicSize;
+                yield return null;
+            }
+        }
+        else
+        {
+            // Для перемещения или ближней атаки: следим за фигурой
+            float totalAnimationDuration = animator.RotationDuration * 2 + animator.MoveDuration;
+            Vector3 startPiecePosition = piecePosition;
+            Vector3 endPiecePosition = isMove ? targetPosition : piecePosition;
+
+            float elapsedTime = 0f;
+            while (elapsedTime < totalAnimationDuration && isFollowingPiece)
+            {
+                elapsedTime += Time.deltaTime;
+                float t = elapsedTime / totalAnimationDuration;
+                Vector3 currentPiecePosition = Vector3.Lerp(startPiecePosition, endPiecePosition, t);
+                float height = isMove ? animator.JumpHeight * Mathf.Sin(t * Mathf.PI) : 0f;
+                currentPiecePosition.y += height;
+                Vector3 cameraPosition = currentPiecePosition + (isPlayer1Turn ? followOffset : new Vector3(-followOffset.x, followOffset.y, followOffset.z));
+
+                transform.position = cameraPosition;
+                transform.rotation = targetRotation;
+                mainCamera.orthographicSize = followOrthographicSize;
+                yield return null;
+            }
         }
 
-        // Немедленный возврат в дефолтное положение
+        // Плавный возврат в дефолтное положение
         isFollowingPiece = false;
-        SetupDefaultCamera(instant: false); // Плавный переход без задержки
-        currentTransition = null; // Сбрасываем для следующей анимации
+        SetupDefaultCamera(instant: false);
+        currentTransition = null;
     }
 }

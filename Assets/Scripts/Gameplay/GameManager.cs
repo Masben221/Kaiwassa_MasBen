@@ -2,7 +2,6 @@ using UnityEngine;
 using Zenject;
 using System;
 
-// Интерфейс для дальних атак
 public interface IRangedAttackable
 {
     bool IsRangedAttack();
@@ -52,7 +51,6 @@ public class GameManager : MonoBehaviour, IGameManager
         Debug.Log("GameManager: Waiting for UI to start game.");
     }
 
-    // Запуск игры
     public void StartGame(int mountainsPerSide, bool isRandomPlacement)
     {
         Debug.Log($"GameManager: Starting game with {mountainsPerSide} mountains, Random: {isRandomPlacement}");
@@ -71,7 +69,6 @@ public class GameManager : MonoBehaviour, IGameManager
         OnTurnChanged?.Invoke(isPlayer1Turn);
     }
 
-    // Обработка хода
     public void MakeMove(Piece piece, Vector3Int target)
     {
         if (isGameOver)
@@ -102,13 +99,23 @@ public class GameManager : MonoBehaviour, IGameManager
         if (isAttack)
         {
             Piece targetPiece = boardManager.GetPieceAt(target);
-            if (targetPiece == null && targetPiece.IsPlayer1 == piece.IsPlayer1)
+            if (targetPiece == null || targetPiece.IsPlayer1 == piece.IsPlayer1)
             {
-                Debug.LogError($"GameManager: Cannot attack own piece at {target}!");
+                Debug.LogError($"GameManager: Cannot attack own piece or empty cell at {target}!");
                 return;
             }
-        }
 
+            // ИСПРАВЛЕНИЕ: Убираем анимацию Hit перед атакой
+            PerformMove(piece, target, isMove, isRangedAttack);
+        }
+        else
+        {
+            PerformMove(piece, target, isMove, isRangedAttack);
+        }
+    }
+
+    private void PerformMove(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack)
+    {
         Debug.Log($"GameManager: Processing {(isMove ? "move" : isRangedAttack ? "ranged attack" : "melee attack")} to {target} by {piece.Type}");
 
         if (cameraController != null)
@@ -133,7 +140,6 @@ public class GameManager : MonoBehaviour, IGameManager
         }
     }
 
-    // Проверяет, является ли атака дальней
     private bool IsRangedAttack(Piece piece)
     {
         switch (piece.Type)
@@ -155,7 +161,6 @@ public class GameManager : MonoBehaviour, IGameManager
         }
     }
 
-    // Смена хода
     private void SwitchTurn()
     {
         if (isGameOver)
@@ -166,7 +171,6 @@ public class GameManager : MonoBehaviour, IGameManager
         OnTurnChanged?.Invoke(isPlayer1Turn);
     }
 
-    // Проверка условий победы
     private void CheckWinCondition()
     {
         bool player1KingAlive = false;

@@ -1,14 +1,16 @@
-using UnityEngine;
+п»їusing UnityEngine;
 using System;
 using System.Collections;
+using DG.Tweening;
 
 public class PieceAnimator : MonoBehaviour
 {
-    [SerializeField] private float moveDuration = 0.5f; // Длительность анимации перемещения
-    [SerializeField] private float jumpHeight = 1f; // Высота прыжка
-    [SerializeField] private float rotationDuration = 0.3f; // Длительность поворота
+    [SerializeField, Tooltip("Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ Р°РЅРёРјР°С†РёРё РїРµСЂРµРјРµС‰РµРЅРёСЏ")] private float moveDuration = 0.5f;
+    [SerializeField, Tooltip("Р’С‹СЃРѕС‚Р° РїСЂС‹Р¶РєР° РїСЂРё РїРµСЂРµРјРµС‰РµРЅРёРё")] private float jumpHeight = 1f;
+    [SerializeField, Tooltip("Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ РїРѕРІРѕСЂРѕС‚Р° С„РёРіСѓСЂС‹")] private float rotationDuration = 0.3f;
+    [SerializeField, Tooltip("РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ Р°РЅРёРјР°С†РёР№ РґР»СЏ С„РёРіСѓСЂС‹")] private PieceAnimationConfig animationConfig;
 
-    private bool isAnimating; // Флаг анимации
+    private bool isAnimating;
 
     public float MoveDuration => moveDuration;
     public float JumpHeight => jumpHeight;
@@ -17,8 +19,15 @@ public class PieceAnimator : MonoBehaviour
     public static event Action<Piece> OnAnimationStarted;
     public static event Action<Piece> OnAnimationFinished;
 
-    // Перемещение с анимацией и поворотом
-    public void MoveTo(Vector3Int targetPos, Vector3Int animationTarget, Action onStart, Action onComplete) // ИЗМЕНЕНИЕ: добавлен targetPos
+    private void Awake()
+    {
+        if (animationConfig == null)
+        {
+            Debug.LogWarning($"PieceAnimator: AnimationConfig not assigned on {gameObject.name}, will use default from PieceFactory");
+        }
+    }
+
+    public void MoveTo(Vector3Int targetPos, Vector3Int animationTarget, Action onStart, Action onComplete)
     {
         if (isAnimating)
         {
@@ -47,27 +56,135 @@ public class PieceAnimator : MonoBehaviour
         onStart?.Invoke();
         OnAnimationStarted?.Invoke(piece);
 
-        StartCoroutine(AnimateMoveAndRotate(piece, targetPos, animationTarget, () =>
-        {
-            isAnimating = false;
-            OnAnimationFinished?.Invoke(piece);
-            onComplete?.Invoke();
-        }));
+        StartCoroutine(AnimateMoveAndRotate(piece, targetPos, animationTarget, onComplete));
     }
 
-    // Корутина для анимации перемещения и поворота
-    private IEnumerator AnimateMoveAndRotate(Piece piece, Vector3Int targetPos, Vector3Int animationTarget, Action callback)
+    public void AnimateMeleeAttack(Vector3Int targetPos, Action onComplete)
+    {
+        if (isAnimating)
+        {
+            Debug.LogWarning($"PieceAnimator: Already animating for {gameObject.name}");
+            return;
+        }
+
+        Piece piece = GetComponent<Piece>();
+        if (piece == null)
+        {
+            Debug.LogError($"PieceAnimator: No Piece component on {gameObject.name}");
+            onComplete?.Invoke();
+            return;
+        }
+
+        if (piece.Type == PieceType.Mountain)
+        {
+            Debug.Log($"PieceAnimator: Cannot animate Mountain at {targetPos}");
+            onComplete?.Invoke();
+            return;
+        }
+
+        isAnimating = true;
+        OnAnimationStarted?.Invoke(piece);
+
+        StartCoroutine(AnimateMeleeAttackCoroutine(piece, targetPos, onComplete));
+    }
+
+    public void AnimateRangedAttack(Vector3Int targetPos, Action onComplete)
+    {
+        if (isAnimating)
+        {
+            Debug.LogWarning($"PieceAnimator: Already animating for {gameObject.name}");
+            return;
+        }
+
+        Piece piece = GetComponent<Piece>();
+        if (piece == null)
+        {
+            Debug.LogError($"PieceAnimator: No Piece component on {gameObject.name}");
+            onComplete?.Invoke();
+            return;
+        }
+
+        if (piece.Type == PieceType.Mountain)
+        {
+            Debug.Log($"PieceAnimator: Cannot animate Mountain at {targetPos}");
+            onComplete?.Invoke();
+            return;
+        }
+
+        isAnimating = true;
+        OnAnimationStarted?.Invoke(piece);
+
+        StartCoroutine(AnimateRangedAttackCoroutine(piece, targetPos, onComplete));
+    }
+
+    public void AnimateHitAndDeath(bool isDeath, Action onComplete, Vector3? hitDirection = null)
+    {
+        if (isAnimating)
+        {
+            Debug.LogWarning($"PieceAnimator: Already animating for {gameObject.name}");
+            return;
+        }
+
+        Piece piece = GetComponent<Piece>();
+        if (piece == null)
+        {
+            Debug.LogError($"PieceAnimator: No Piece component on {gameObject.name}");
+            onComplete?.Invoke();
+            return;
+        }
+
+        if (piece.Type == PieceType.Mountain)
+        {
+            Debug.Log($"PieceAnimator: Cannot animate Mountain at {piece.Position}");
+            onComplete?.Invoke();
+            return;
+        }
+
+        isAnimating = true;
+        OnAnimationStarted?.Invoke(piece);
+
+        StartCoroutine(AnimateHitAndDeathCoroutine(piece, isDeath, hitDirection, onComplete));
+    }
+
+    public void AnimateDeath(Action onComplete)
+    {
+        if (isAnimating)
+        {
+            Debug.LogWarning($"PieceAnimator: Already animating for {gameObject.name}");
+            return;
+        }
+
+        Piece piece = GetComponent<Piece>();
+        if (piece == null)
+        {
+            Debug.LogError($"PieceAnimator: No Piece component on {gameObject.name}");
+            onComplete?.Invoke();
+            return;
+        }
+
+        if (piece.Type == PieceType.Mountain)
+        {
+            Debug.Log($"PieceAnimator: Cannot animate Mountain at {piece.Position}");
+            onComplete?.Invoke();
+            return;
+        }
+
+        isAnimating = true;
+        OnAnimationStarted?.Invoke(piece);
+
+        StartCoroutine(AnimateDeathCoroutine(piece, onComplete));
+    }
+
+    private IEnumerator AnimateMoveAndRotate(Piece piece, Vector3Int targetPos, Vector3Int animationTarget, Action onComplete)
     {
         Vector3 startPos = transform.position;
-        Vector3 endPos = new Vector3(animationTarget.x, 0.5f, animationTarget.z); // Используем animationTarget для перемещения
+        Vector3 endPos = new Vector3(animationTarget.x, 0.5f, animationTarget.z);
         Quaternion startRotation = transform.rotation;
         Quaternion initialRotation = piece.InitialRotation;
 
-        // Вычисляем направление поворота на основе targetPos
         Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z);
         Quaternion targetRotation = direction.sqrMagnitude > 0.01f ? Quaternion.LookRotation(direction, Vector3.up) : startRotation;
 
-        // Поворот к цели
         float elapsedTime = 0f;
         while (elapsedTime < rotationDuration)
         {
@@ -78,9 +195,8 @@ public class PieceAnimator : MonoBehaviour
         }
         transform.rotation = targetRotation;
 
-        // Перемещение (или ожидание для дальней атаки)
         elapsedTime = 0f;
-        if (Vector3.Distance(startPos, endPos) > 0.1f) // Перемещаем, если animationTarget отличается
+        if (Vector3.Distance(startPos, endPos) > 0.1f)
         {
             while (elapsedTime < moveDuration)
             {
@@ -92,12 +208,11 @@ public class PieceAnimator : MonoBehaviour
             }
             transform.position = endPos;
         }
-        else // Для дальней атаки ждём
+        else
         {
             yield return new WaitForSeconds(moveDuration);
         }
 
-        // Поворот обратно в начальную ротацию
         elapsedTime = 0f;
         while (elapsedTime < rotationDuration)
         {
@@ -108,7 +223,289 @@ public class PieceAnimator : MonoBehaviour
         }
         transform.rotation = initialRotation;
 
+        isAnimating = false;
+        OnAnimationFinished?.Invoke(piece);
+        onComplete?.Invoke();
         Debug.Log($"PieceAnimator: Animation completed for {piece.Type} to target {targetPos}");
-        callback?.Invoke();
+    }
+
+    private IEnumerator AnimateMeleeAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
+    {
+        PieceAnimationConfig config = GetAnimationConfig(piece);
+        Vector3 startPos = transform.position;
+        Vector3 endPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
+        Quaternion startRotation = transform.rotation;
+        Quaternion initialRotation = piece.InitialRotation;
+
+        Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z);
+        Quaternion targetRotation = direction.sqrMagnitude > 0.01f ? Quaternion.LookRotation(direction, Vector3.up) : startRotation;
+
+        float elapsedTime = 0f;
+        while (elapsedTime < rotationDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
+            transform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
+            yield return null;
+        }
+        transform.rotation = targetRotation;
+
+        elapsedTime = 0f;
+        while (elapsedTime < moveDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / moveDuration);
+            float height = jumpHeight * Mathf.Sin(t * Mathf.PI);
+            transform.position = Vector3.Lerp(startPos, endPos, t) + new Vector3(0, height, 0);
+            yield return null;
+        }
+        transform.position = endPos;
+
+        if (config != null)
+        {
+            Vector3 punchDirection = direction.normalized * config.MeleePunchDistance;
+            transform.DOPunchPosition(punchDirection, config.MeleeAttackDuration, 10, 1f)
+                .SetEase(Ease.InOutSine);
+
+            if (config.HitEffectPrefab != null)
+            {
+                ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, endPos + Vector3.up * 0.5f, Quaternion.identity);
+                hitEffect.Play();
+                Destroy(hitEffect.gameObject, hitEffect.main.duration);
+
+                Piece targetPiece = FindObjectOfType<BoardManager>().GetPieceAt(targetPos);
+                if (targetPiece != null)
+                {
+                    PieceAnimator targetAnimator = targetPiece.GetComponent<PieceAnimator>();
+                    if (targetAnimator != null)
+                    {
+                        targetAnimator.AnimateHitAndDeath(false, null, -direction.normalized);
+                    }
+                }
+            }
+
+            yield return new WaitForSeconds(config.MeleeAttackDuration);
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        elapsedTime = 0f;
+        while (elapsedTime < rotationDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
+            transform.rotation = Quaternion.Slerp(targetRotation, initialRotation, t);
+            yield return null;
+        }
+        transform.rotation = initialRotation;
+
+        isAnimating = false;
+        OnAnimationFinished?.Invoke(piece);
+        onComplete?.Invoke();
+        Debug.Log($"PieceAnimator: Melee attack animation completed for {piece.Type} to target {targetPos}");
+    }
+
+    private IEnumerator AnimateRangedAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
+    {
+        PieceAnimationConfig config = GetAnimationConfig(piece);
+        Vector3 startPos = transform.position;
+        Quaternion startRotation = transform.rotation;
+        Quaternion initialRotation = piece.InitialRotation;
+
+        Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z).normalized;
+        Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+
+        float elapsedTime = 0f;
+        while (elapsedTime < rotationDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
+            transform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
+            yield return null;
+        }
+        transform.rotation = targetRotation;
+
+        if (config != null)
+        {
+            Vector3 recoilDirection = -direction * config.RecoilDistance;
+            transform.DOPunchPosition(recoilDirection, config.RecoilDuration, 10, 1f)
+                .SetEase(Ease.InOutSine);
+
+            if (config.ProjectileModelPrefab != null)
+            {
+                Vector3 targetWorldPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
+                // РЎРѕР·РґР°РЅРёРµ СЃ С„РёРєСЃРёСЂРѕРІР°РЅРЅС‹Рј Р»РѕРєР°Р»СЊРЅС‹Рј rotation.x = 90 РіСЂР°РґСѓСЃРѕРІ
+                GameObject projectile = Instantiate(config.ProjectileModelPrefab, startPos + direction * 0.2f + Vector3.up * 0.5f, Quaternion.Euler(90f, 0f, 0f));
+
+                // РџСЂСЏРјРѕР»РёРЅРµР№РЅРѕРµ РґРІРёР¶РµРЅРёРµ Рє С†РµР»Рё
+                projectile.transform.DOMove(targetWorldPos, config.RangedAttackDuration)
+                    .SetEase(Ease.Linear)
+                    .OnUpdate(() =>
+                    {
+                    // РџРѕРІРѕСЂРѕС‚ С‚РѕР»СЊРєРѕ РІРѕРєСЂСѓРі РіР»РѕР±Р°Р»СЊРЅРѕР№ Y-РѕСЃРё РїРѕ РЅР°РїСЂР°РІР»РµРЅРёСЋ Рє С†РµР»Рё
+                    Vector3 targetDirection = (targetWorldPos - projectile.transform.position).normalized;
+                        float targetYRotation = Mathf.Atan2(targetDirection.x, targetDirection.z) * Mathf.Rad2Deg;
+                        Quaternion yRotation = Quaternion.Euler(90f, targetYRotation, 0f); // Р¤РёРєСЃРёСЂСѓРµРј X РЅР° 90, РјРµРЅСЏРµРј С‚РѕР»СЊРєРѕ Y
+                    projectile.transform.rotation = yRotation;
+                    })
+                    .OnComplete(() =>
+                    {
+                        if (config.HitEffectPrefab != null)
+                        {
+                            ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, targetWorldPos, Quaternion.identity);
+                            hitEffect.Play();
+                            Destroy(hitEffect.gameObject, hitEffect.main.duration);
+
+                            Piece targetPiece = FindObjectOfType<BoardManager>().GetPieceAt(targetPos);
+                            if (targetPiece != null)
+                            {
+                                PieceAnimator targetAnimator = targetPiece.GetComponent<PieceAnimator>();
+                                if (targetAnimator != null)
+                                {
+                                    targetAnimator.AnimateHitAndDeath(false, null, -direction);
+                                }
+                            }
+                        }
+                        Destroy(projectile);
+                    });
+            }
+
+            yield return new WaitForSeconds(config.RangedAttackDuration);
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        elapsedTime = 0f;
+        while (elapsedTime < rotationDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
+            transform.rotation = Quaternion.Slerp(targetRotation, initialRotation, t);
+            yield return null;
+        }
+        transform.rotation = initialRotation;
+
+        isAnimating = false;
+        OnAnimationFinished?.Invoke(piece);
+        onComplete?.Invoke();
+        Debug.Log($"PieceAnimator: Ranged attack animation completed for {piece.Type} to target {targetPos}");
+    }
+
+    private IEnumerator AnimateHitAndDeathCoroutine(Piece piece, bool isDeath, Vector3? hitDirection, Action onComplete)
+    {
+        PieceAnimationConfig config = GetAnimationConfig(piece);
+
+        if (config != null)
+        {
+            if (hitDirection.HasValue)
+            {
+                Vector3 punchDirection = hitDirection.Value * config.HitPunchDistance;
+                transform.DOPunchPosition(punchDirection, config.HitDuration, 10, 1f)
+                    .SetEase(Ease.InOutSine);
+            }
+            else
+            {
+                transform.DOShakePosition(config.HitDuration, config.HitPunchDistance, 10, 90f, false)
+                    .SetEase(Ease.InOutSine);
+            }
+
+            if (config.HitEffectPrefab != null)
+            {
+                ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, transform.position, Quaternion.identity);
+                hitEffect.Play();
+                Destroy(hitEffect.gameObject, hitEffect.main.duration);
+            }
+
+            yield return new WaitForSeconds(config.HitDuration);
+
+            if (isDeath)
+            {
+                Renderer renderer = GetComponentInChildren<Renderer>();
+                if (renderer != null && renderer.material != null)
+                {
+                    Material mat = renderer.material;
+                    mat.DOFade(0f, config.DeathDuration).SetEase(Ease.InOutSine);
+                }
+                transform.DOScale(Vector3.zero, config.DeathDuration).SetEase(Ease.InOutSine);
+
+                if (config.DeathEffectPrefab != null)
+                {
+                    ParticleSystem deathEffect = Instantiate(config.DeathEffectPrefab, transform.position, Quaternion.identity);
+                    deathEffect.Play();
+                    Destroy(deathEffect.gameObject, deathEffect.main.duration);
+                }
+
+                yield return new WaitForSeconds(config.DeathDuration);
+            }
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        isAnimating = false;
+        OnAnimationFinished?.Invoke(piece);
+        onComplete?.Invoke();
+        Debug.Log($"PieceAnimator: {(isDeath ? "Death" : "Hit")} animation completed for {piece.Type}");
+    }
+
+    private IEnumerator AnimateDeathCoroutine(Piece piece, Action onComplete)
+    {
+        PieceAnimationConfig config = GetAnimationConfig(piece);
+
+        if (config != null)
+        {
+            Renderer renderer = GetComponentInChildren<Renderer>();
+            if (renderer != null && renderer.material != null)
+            {
+                Material mat = renderer.material;
+                mat.DOFade(0f, config.DeathDuration).SetEase(Ease.InOutSine);
+            }
+            transform.DOScale(Vector3.zero, config.DeathDuration).SetEase(Ease.InOutSine);
+
+            if (config.DeathEffectPrefab != null)
+            {
+                ParticleSystem deathEffect = Instantiate(config.DeathEffectPrefab, transform.position, Quaternion.identity);
+                deathEffect.Play();
+                Destroy(deathEffect.gameObject, deathEffect.main.duration);
+            }
+
+            yield return new WaitForSeconds(config.DeathDuration);
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        isAnimating = false;
+        OnAnimationFinished?.Invoke(piece);
+        onComplete?.Invoke();
+        Debug.Log($"PieceAnimator: Death animation completed for {piece.Type}");
+    }
+
+    public PieceAnimationConfig GetAnimationConfig(Piece piece)
+    {
+        if (animationConfig != null)
+        {
+            return animationConfig;
+        }
+
+        PieceFactory factory = FindObjectOfType<PieceFactory>();
+        if (factory == null)
+        {
+            Debug.LogError("PieceAnimator: PieceFactory not found in scene!");
+            return null;
+        }
+
+        PieceAnimationConfig defaultConfig = factory.GetDefaultAnimationConfig();
+        if (defaultConfig == null)
+        {
+            Debug.LogWarning($"PieceAnimator: No animation config assigned for {piece.Type} and no default config in PieceFactory");
+        }
+        return defaultConfig;
     }
 }

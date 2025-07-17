@@ -21,13 +21,13 @@ public enum PieceType
 
 public abstract class Piece : MonoBehaviour
 {
-    protected IMovable movementStrategy; // Стратегия движения
-    protected IAttackable attackStrategy; // Стратегия атаки
-    private Vector3Int position; // Позиция на доске
-    private bool isPlayer1; // Принадлежность игроку
-    private Quaternion initialRotation; // Начальная ротация фигуры
-    [SerializeField] private PieceType type; // Тип фигуры
-    [SerializeField] private Sprite iconSprite; // Иконка для UI
+    protected IMovable movementStrategy;
+    protected IAttackable attackStrategy;
+    private Vector3Int position;
+    private bool isPlayer1;
+    private Quaternion initialRotation;
+    [SerializeField] private PieceType type;
+    [SerializeField] private Sprite iconSprite;
 
     public Vector3Int Position => position;
     public bool IsPlayer1 => isPlayer1;
@@ -38,14 +38,12 @@ public abstract class Piece : MonoBehaviour
 
     private void Awake()
     {
-        initialRotation = transform.rotation; // Сохраняем начальную ротацию
-        SetupStrategies(); // Инициализация стратегий
+        initialRotation = transform.rotation;
+        SetupStrategies();
     }
 
-    // Реализуется в дочерних классах для установки стратегий
     protected abstract void SetupStrategies();
 
-    // Инициализация фигуры
     public void Initialize(bool isPlayer1, Material material)
     {
         this.isPlayer1 = isPlayer1;
@@ -61,46 +59,47 @@ public abstract class Piece : MonoBehaviour
         Debug.Log($"Piece {GetType().Name} initialized for Player {(isPlayer1 ? 1 : 2)}");
     }
 
-    // Установка позиции
     public void SetPosition(Vector3Int newPosition)
     {
         position = newPosition;
         transform.position = new Vector3(newPosition.x, 0.5f, newPosition.z);
-        // Обновление коллайдера (если есть)
         Collider collider = GetComponent<Collider>();
         if (collider != null)
         {
             collider.enabled = false;
-            collider.enabled = true; // Перезапускаем коллайдер для синхронизации
+            collider.enabled = true;
         }
         Debug.Log($"Piece {GetType().Name} set to position {newPosition}");
     }
 
-    // Получение допустимых ходов
     public List<Vector3Int> GetValidMoves(IBoardManager board)
     {
         return movementStrategy?.CalculateMoves(board, this) ?? new List<Vector3Int>();
     }
 
-    // Получение целей атаки
     public List<Vector3Int> GetAttackMoves(IBoardManager board)
     {
         return attackStrategy?.CalculateAttacks(board, this) ?? new List<Vector3Int>();
     }
 
-    // Получение всех возможных целей атаки
     public List<Vector3Int> GetAllPotentialAttackMoves(IBoardManager board)
     {
         return attackStrategy?.CalculateAllAttacks(board, this) ?? new List<Vector3Int>();
     }
 
-    // Запуск атаки (пустой, так как атака обрабатывается в PerformAction)
     public void Attack(Vector3Int target, IBoardManager boardManager)
     {
         Debug.Log($"Piece {GetType().Name}: Attack called for {target}");
     }
 
-    // Выполняет действие (движение или атака) с анимацией
+    /// <summary>
+    /// Выполняет действие (движение, ближняя или дальняя атака) с соответствующей анимацией.
+    /// </summary>
+    /// <param name="target">Целевая клетка для действия.</param>
+    /// <param name="isMove">Если true, выполняется перемещение.</param>
+    /// <param name="isRangedAttack">Если true, выполняется дальняя атака; иначе ближняя.</param>
+    /// <param name="boardManager">Менеджер доски для обновления состояния.</param>
+    /// <param name="onComplete">Действие после завершения анимации.</param>
     public void PerformAction(Vector3Int target, bool isMove, bool isRangedAttack, IBoardManager boardManager, Action onComplete)
     {
         PieceAnimator animator = GetComponent<PieceAnimator>();
@@ -111,33 +110,34 @@ public abstract class Piece : MonoBehaviour
             return;
         }
 
-        // Для дальней атаки остаёмся на месте
         Vector3Int animationTarget = isRangedAttack ? position : target;
         Debug.Log($"Piece {GetType().Name}: Performing {(isMove ? "move" : isRangedAttack ? "ranged attack" : "melee attack")} to {target}");
 
-        animator.MoveTo(target, animationTarget, null, () => // ИЗМЕНЕНИЕ: передаём target и animationTarget
+        if (isMove)
         {
-            if (isMove)
+            // ИСПРАВЛЕНИЕ: Вызываем MovePiece после анимации для обновления логической позиции
+            animator.MoveTo(target, target, null, () =>
             {
                 boardManager.MovePiece(this, position, target);
-            }
-            else
+                onComplete?.Invoke();
+            });
+        }
+        else if (isRangedAttack)
+        {
+            animator.AnimateRangedAttack(target, () =>
             {
-                if (attackStrategy != null)
-                {
-                    attackStrategy.ExecuteAttack(this, target, boardManager);
-                    // Для ближней атаки перемещаем фигуру на клетку цели
-                    if (!isRangedAttack)
-                    {
-                        boardManager.MovePiece(this, position, target);
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning($"Piece {GetType().Name}: No attack strategy assigned");
-                }
-            }
-            onComplete?.Invoke();
-        });
+                attackStrategy?.ExecuteAttack(this, target, boardManager);
+                onComplete?.Invoke();
+            });
+        }
+        else
+        {
+            animator.AnimateMeleeAttack(target, () =>
+            {
+                attackStrategy?.ExecuteAttack(this, target, boardManager);
+                boardManager.MovePiece(this, position, target);
+                onComplete?.Invoke();
+            });
+        }
     }
 }

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7bcc533881cd6544b59004ba0a9eaff, type: 3}
+  m_Name: ArcherConfig
+  m_EditorClassIdentifier: 
+  meleeAttackDuration: 0.3
+  meleePunchDistance: 0.2
+  hitEffectPrefab: {fileID: 4296184526264814347, guid: 8d725d28a12984d488c3696ca07b3693, type: 3}
+  rangedAttackDuration: 0.5
+  recoilDistance: 0.1
+  recoilDuration: 0.2
+  projectileModelPrefab: {fileID: 7007984530500675039, guid: 3cf6e6c4d90f0924ca3724ad955a9c43, type: 3}
+  hitDuration: 0.2
+  hitShakeStrength: 0.1
+  deathDuration: 0.5
+  deathEffectPrefab: {fileID: 4296184526264814347, guid: a9fc9295e89d22f4faf26aeb1fed32f8, type: 3}
