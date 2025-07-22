@@ -9,6 +9,10 @@ public class PieceAnimator : MonoBehaviour
     [SerializeField, Tooltip("Высота прыжка при перемещении")] private float jumpHeight = 1f;
     [SerializeField, Tooltip("Длительность поворота фигуры")] private float rotationDuration = 0.3f;
     [SerializeField, Tooltip("Конфигурация анимаций для фигуры")] private PieceAnimationConfig animationConfig;
+    [SerializeField, Tooltip("Высота дуги для параболического полёта снаряда")] private float projectileArcHeight = 1f;
+    [SerializeField, Tooltip("Длительность полёта снаряда (в секундах)")] private float projectileFlightDuration = 0.5f;
+
+    public float ProjectileFlightDuration => projectileFlightDuration; // Публичное свойство
 
     private bool isAnimating;
 
@@ -16,8 +20,12 @@ public class PieceAnimator : MonoBehaviour
     public float JumpHeight => jumpHeight;
     public float RotationDuration => rotationDuration;
 
-    public static event Action<Piece> OnAnimationStarted;
-    public static event Action<Piece> OnAnimationFinished;
+    public static event Action<Piece, Vector3Int, bool, bool> OnAnimationStarted; // Piece, target, isMove, isRangedAttack
+    public static event Action<GameObject> OnProjectileFlying; // Projectile GameObject
+    public static event Action<Piece> OnAnimationCompleted; // Piece
+
+    public static event Action<Piece> OnAnimationStartedLegacy; // Для обратной совместимости
+    public static event Action<Piece> OnAnimationFinishedLegacy; // Для обратной совместимости
 
     private void Awake()
     {
@@ -54,7 +62,8 @@ public class PieceAnimator : MonoBehaviour
         isAnimating = true;
 
         onStart?.Invoke();
-        OnAnimationStarted?.Invoke(piece);
+        OnAnimationStarted?.Invoke(piece, targetPos, true, false);
+        OnAnimationStartedLegacy?.Invoke(piece);
 
         StartCoroutine(AnimateMoveAndRotate(piece, targetPos, animationTarget, onComplete));
     }
@@ -83,7 +92,8 @@ public class PieceAnimator : MonoBehaviour
         }
 
         isAnimating = true;
-        OnAnimationStarted?.Invoke(piece);
+        OnAnimationStarted?.Invoke(piece, targetPos, false, false);
+        OnAnimationStartedLegacy?.Invoke(piece);
 
         StartCoroutine(AnimateMeleeAttackCoroutine(piece, targetPos, onComplete));
     }
@@ -112,7 +122,8 @@ public class PieceAnimator : MonoBehaviour
         }
 
         isAnimating = true;
-        OnAnimationStarted?.Invoke(piece);
+        OnAnimationStarted?.Invoke(piece, targetPos, false, true);
+        OnAnimationStartedLegacy?.Invoke(piece);
 
         StartCoroutine(AnimateRangedAttackCoroutine(piece, targetPos, onComplete));
     }
@@ -141,7 +152,7 @@ public class PieceAnimator : MonoBehaviour
         }
 
         isAnimating = true;
-        OnAnimationStarted?.Invoke(piece);
+        OnAnimationStartedLegacy?.Invoke(piece);
 
         StartCoroutine(AnimateHitAndDeathCoroutine(piece, isDeath, hitDirection, onComplete));
     }
@@ -170,7 +181,7 @@ public class PieceAnimator : MonoBehaviour
         }
 
         isAnimating = true;
-        OnAnimationStarted?.Invoke(piece);
+        OnAnimationStartedLegacy?.Invoke(piece);
 
         StartCoroutine(AnimateDeathCoroutine(piece, onComplete));
     }
@@ -224,7 +235,8 @@ public class PieceAnimator : MonoBehaviour
         transform.rotation = initialRotation;
 
         isAnimating = false;
-        OnAnimationFinished?.Invoke(piece);
+        OnAnimationCompleted?.Invoke(piece);
+        OnAnimationFinishedLegacy?.Invoke(piece);
         onComplete?.Invoke();
         Debug.Log($"PieceAnimator: Animation completed for {piece.Type} to target {targetPos}");
     }
@@ -302,7 +314,8 @@ public class PieceAnimator : MonoBehaviour
         transform.rotation = initialRotation;
 
         isAnimating = false;
-        OnAnimationFinished?.Invoke(piece);
+        OnAnimationCompleted?.Invoke(piece);
+        OnAnimationFinishedLegacy?.Invoke(piece);
         onComplete?.Invoke();
         Debug.Log($"PieceAnimator: Melee attack animation completed for {piece.Type} to target {targetPos}");
     }
@@ -336,19 +349,25 @@ public class PieceAnimator : MonoBehaviour
             if (config.ProjectileModelPrefab != null)
             {
                 Vector3 targetWorldPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
-                // Создание с фиксированным локальным rotation.x = 90 градусов
                 GameObject projectile = Instantiate(config.ProjectileModelPrefab, startPos + direction * 0.2f + Vector3.up * 0.5f, Quaternion.Euler(90f, 0f, 0f));
+                projectile.transform.position = startPos + direction * 0.2f + Vector3.up * 0.5f;
 
-                // Прямолинейное движение к цели
-                projectile.transform.DOMove(targetWorldPos, config.RangedAttackDuration)
+                Vector3 midPoint = (startPos + targetWorldPos) * 0.5f + Vector3.up * projectileArcHeight;
+                Vector3[] path = new Vector3[] { startPos + direction * 0.2f + Vector3.up * 0.5f, midPoint, targetWorldPos };
+
+                projectile.transform.DOPath(path, projectileFlightDuration, PathType.CatmullRom)
                     .SetEase(Ease.Linear)
+                    .OnStart(() =>
+                    {
+                        projectile.transform.position = path[0];
+                        OnProjectileFlying?.Invoke(projectile); // Уведомляем камеру о начале полёта
+                    })
                     .OnUpdate(() =>
                     {
-                    // Поворот только вокруг глобальной Y-оси по направлению к цели
-                    Vector3 targetDirection = (targetWorldPos - projectile.transform.position).normalized;
+                        Vector3 targetDirection = (targetWorldPos - projectile.transform.position).normalized;
                         float targetYRotation = Mathf.Atan2(targetDirection.x, targetDirection.z) * Mathf.Rad2Deg;
-                        Quaternion yRotation = Quaternion.Euler(90f, targetYRotation, 0f); // Фиксируем X на 90, меняем только Y
-                    projectile.transform.rotation = yRotation;
+                        Quaternion yRotation = Quaternion.Euler(90f, targetYRotation, 0f);
+                        projectile.transform.rotation = yRotation;
                     })
                     .OnComplete(() =>
                     {
@@ -372,7 +391,7 @@ public class PieceAnimator : MonoBehaviour
                     });
             }
 
-            yield return new WaitForSeconds(config.RangedAttackDuration);
+            yield return new WaitForSeconds(projectileFlightDuration);
         }
         else
         {
@@ -390,7 +409,8 @@ public class PieceAnimator : MonoBehaviour
         transform.rotation = initialRotation;
 
         isAnimating = false;
-        OnAnimationFinished?.Invoke(piece);
+        OnAnimationCompleted?.Invoke(piece);
+        OnAnimationFinishedLegacy?.Invoke(piece);
         onComplete?.Invoke();
         Debug.Log($"PieceAnimator: Ranged attack animation completed for {piece.Type} to target {targetPos}");
     }
@@ -448,7 +468,8 @@ public class PieceAnimator : MonoBehaviour
         }
 
         isAnimating = false;
-        OnAnimationFinished?.Invoke(piece);
+        OnAnimationCompleted?.Invoke(piece);
+        OnAnimationFinishedLegacy?.Invoke(piece);
         onComplete?.Invoke();
         Debug.Log($"PieceAnimator: {(isDeath ? "Death" : "Hit")} animation completed for {piece.Type}");
     }
@@ -482,7 +503,8 @@ public class PieceAnimator : MonoBehaviour
         }
 
         isAnimating = false;
-        OnAnimationFinished?.Invoke(piece);
+        OnAnimationCompleted?.Invoke(piece);
+        OnAnimationFinishedLegacy?.Invoke(piece);
         onComplete?.Invoke();
         Debug.Log($"PieceAnimator: Death animation completed for {piece.Type}");
     }

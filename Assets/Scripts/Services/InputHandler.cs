@@ -35,9 +35,9 @@ public class InputHandler : MonoBehaviour
 
     private void Awake()
     {
-        // Подписываемся на события PieceAnimator с новой сигнатурой Action<Piece>
-        PieceAnimator.OnAnimationStarted += BlockInput;
-        PieceAnimator.OnAnimationFinished += UnblockInput;
+        // Подписываемся на события PieceAnimator с новой сигнатурой
+        PieceAnimator.OnAnimationStarted += (piece, target, isMove, isRangedAttack) => BlockInput(piece);
+        PieceAnimator.OnAnimationCompleted += UnblockInput;
 
         // Инициализация пулов объектов
         moveMarkerPool = new ObjectPool<GameObject>(
@@ -65,8 +65,8 @@ public class InputHandler : MonoBehaviour
     private void OnDestroy()
     {
         // Отписываемся от событий PieceAnimator
-        PieceAnimator.OnAnimationStarted -= BlockInput;
-        PieceAnimator.OnAnimationFinished -= UnblockInput;
+        PieceAnimator.OnAnimationStarted -= (piece, target, isMove, isRangedAttack) => BlockInput(piece);
+        PieceAnimator.OnAnimationCompleted -= UnblockInput;
         ClearSelection();
         ClearHintMarkers();
         // Очистка пулов

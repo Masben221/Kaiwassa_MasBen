@@ -74,6 +74,8 @@ MonoBehaviour:
   jumpHeight: 0
   rotationDuration: 0.3
   animationConfig: {fileID: 11400000, guid: c94ee5d5b2d0f53458b8ef52fdca9144, type: 2}
+  projectileArcHeight: 1
+  projectileFlightDuration: 3
 --- !u!65 &2393685384707432591
 BoxCollider:
   m_ObjectHideFlags: 0
