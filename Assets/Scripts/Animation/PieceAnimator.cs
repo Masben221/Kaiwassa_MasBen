@@ -322,14 +322,23 @@ public class PieceAnimator : MonoBehaviour
 
     private IEnumerator AnimateRangedAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
     {
+        // Получение конфигурации анимации для фигуры
         PieceAnimationConfig config = GetAnimationConfig(piece);
         Vector3 startPos = transform.position;
         Quaternion startRotation = transform.rotation;
         Quaternion initialRotation = piece.InitialRotation;
 
+        // Вычисление направления и расстояния до цели
         Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z).normalized;
         Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+        float distance = Vector3.Distance(startPos, new Vector3(targetPos.x, 0.5f, targetPos.z));
 
+        // Вычисление начального угла поворота стрелы (theta) на основе расстояния и высоты дуги
+        float theta = Mathf.Atan2(4f * projectileArcHeight, distance) * Mathf.Rad2Deg;
+        float startPitch = 90f - theta; // Начальный угол (например, 37°)
+        float endPitch = 90f + theta;   // Конечный угол (например, 143°)
+
+        // Поворот стрелка к цели
         float elapsedTime = 0f;
         while (elapsedTime < rotationDuration)
         {
@@ -342,49 +351,72 @@ public class PieceAnimator : MonoBehaviour
 
         if (config != null)
         {
+            // Отдача стрелка
             Vector3 recoilDirection = -direction * config.RecoilDistance;
             transform.DOPunchPosition(recoilDirection, config.RecoilDuration, 10, 1f)
                 .SetEase(Ease.InOutSine);
 
+            // Запуск снаряда
             if (config.ProjectileModelPrefab != null)
             {
                 Vector3 targetWorldPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
-                GameObject projectile = Instantiate(config.ProjectileModelPrefab, startPos + direction * 0.2f + Vector3.up * 0.5f, Quaternion.Euler(90f, 0f, 0f));
-                projectile.transform.position = startPos + direction * 0.2f + Vector3.up * 0.5f;
 
+                // Смещение выстрела чуть вперёд и выше
+                Vector3 launchOffset = direction * 0.2f + Vector3.up * 0.5f;
+                GameObject projectile = Instantiate(
+                    config.ProjectileModelPrefab,
+                    startPos + launchOffset,
+                    Quaternion.Euler(startPitch, 0f, 0f) // Начальный угол поворота стрелы
+                );
+
+                // Параболический путь
                 Vector3 midPoint = (startPos + targetWorldPos) * 0.5f + Vector3.up * projectileArcHeight;
-                Vector3[] path = new Vector3[] { startPos + direction * 0.2f + Vector3.up * 0.5f, midPoint, targetWorldPos };
+                Vector3[] path = { startPos + launchOffset, midPoint, targetWorldPos };
+
+                // Собственный таймер для прогресса полёта
+                float flightElapsed = 0f;
 
                 projectile.transform.DOPath(path, projectileFlightDuration, PathType.CatmullRom)
                     .SetEase(Ease.Linear)
-                    .OnStart(() =>
-                    {
-                        projectile.transform.position = path[0];
-                        OnProjectileFlying?.Invoke(projectile); // Уведомляем камеру о начале полёта
-                    })
+                    .OnStart(() => OnProjectileFlying?.Invoke(projectile))
                     .OnUpdate(() =>
                     {
-                        Vector3 targetDirection = (targetWorldPos - projectile.transform.position).normalized;
-                        float targetYRotation = Mathf.Atan2(targetDirection.x, targetDirection.z) * Mathf.Rad2Deg;
-                        Quaternion yRotation = Quaternion.Euler(90f, targetYRotation, 0f);
-                        projectile.transform.rotation = yRotation;
+                        flightElapsed += Time.deltaTime;
+                        float progress = Mathf.Clamp01(flightElapsed / projectileFlightDuration);
+
+                        // Параболический коэффициент 0..1..0
+                        float parabola = 4f * progress * (1f - progress);
+
+                        // Линейная интерполяция угла от startPitch до endPitch через 90°
+                        float pitch;
+                        if (progress < 0.5f)
+                            pitch = Mathf.Lerp(startPitch, 90f, progress * 2f);
+                        else
+                            pitch = Mathf.Lerp(90f, endPitch, (progress - 0.5f) * 2f);
+
+                        // Yaw (горизонтальный поворот) к цели
+                        Vector3 dirFlat = (targetWorldPos - projectile.transform.position);
+                        dirFlat.y = 0f;
+                        float yaw = dirFlat.sqrMagnitude > 0.001f
+                            ? Mathf.Atan2(dirFlat.x, dirFlat.z) * Mathf.Rad2Deg
+                            : projectile.transform.eulerAngles.y;
+
+                        projectile.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
                     })
                     .OnComplete(() =>
                     {
+                        // Визуальный эффект попадания
                         if (config.HitEffectPrefab != null)
                         {
                             ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, targetWorldPos, Quaternion.identity);
                             hitEffect.Play();
                             Destroy(hitEffect.gameObject, hitEffect.main.duration);
 
-                            Piece targetPiece = FindObjectOfType<BoardManager>().GetPieceAt(targetPos);
+                            Piece targetPiece = FindObjectOfType<BoardManager>()?.GetPieceAt(targetPos);
                             if (targetPiece != null)
                             {
                                 PieceAnimator targetAnimator = targetPiece.GetComponent<PieceAnimator>();
-                                if (targetAnimator != null)
-                                {
-                                    targetAnimator.AnimateHitAndDeath(false, null, -direction);
-                                }
+                                targetAnimator?.AnimateHitAndDeath(false, null, -direction);
                             }
                         }
                         Destroy(projectile);
@@ -398,6 +430,7 @@ public class PieceAnimator : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
         }
 
+        // Возврат стрелка в исходное положение
         elapsedTime = 0f;
         while (elapsedTime < rotationDuration)
         {
@@ -408,11 +441,11 @@ public class PieceAnimator : MonoBehaviour
         }
         transform.rotation = initialRotation;
 
+        // Завершение анимации
         isAnimating = false;
         OnAnimationCompleted?.Invoke(piece);
         OnAnimationFinishedLegacy?.Invoke(piece);
         onComplete?.Invoke();
-        Debug.Log($"PieceAnimator: Ranged attack animation completed for {piece.Type} to target {targetPos}");
     }
 
     private IEnumerator AnimateHitAndDeathCoroutine(Piece piece, bool isDeath, Vector3? hitDirection, Action onComplete)
