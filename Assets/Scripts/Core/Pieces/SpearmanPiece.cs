@@ -167,10 +167,10 @@ public class SpearmanAttackStrategy : IAttackable
         return attacks;
     }
 
-    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
+    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         Debug.Log($"SpearmanAttackStrategy: Executing melee attack on {target}");
         // Ѕлижний бой: уничтожаем фигуру и перемещаемс€
-        boardManager.RemovePiece(target);       
+        piece.SelectAttack(target, isRangedAttack);
     }
 }

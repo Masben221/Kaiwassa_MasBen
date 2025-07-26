@@ -162,7 +162,7 @@ public class DragonAttackStrategy : IAttackable, IRangedAttackable
     }
 
     // Выполнение атаки
-    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
+    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         if (boardManager.IsMountain(target))
         {
@@ -178,6 +178,6 @@ public class DragonAttackStrategy : IAttackable, IRangedAttackable
         }
 
         Debug.Log($"DragonAttackStrategy: Executing {(useRangedAttack ? "ranged" : "melee")} attack to {target}");
-        boardManager.RemovePiece(target);
+        piece.SelectAttack(target, isRangedAttack);
     }
 }

@@ -198,7 +198,7 @@ public class HeavyHorseAttackStrategy : IAttackable
         return attacks;
     }
 
-    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
+    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         // ѕроверка, что цель не €вл€етс€ горой
         if (boardManager.IsMountain(target))
@@ -209,6 +209,6 @@ public class HeavyHorseAttackStrategy : IAttackable
 
         Debug.Log($"HeavyHorseAttackStrategy: Executing melee attack on {target}");
         // Ѕлижний бой: уничтожаем фигуру и перемещаемс€
-        boardManager.RemovePiece(target);        
+        piece.SelectAttack(target, isRangedAttack);
     }
 }

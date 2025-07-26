@@ -192,7 +192,7 @@ public class ArcherAttackStrategy : IAttackable
     /// Выполняет дальнюю атаку на указанную клетку.
     /// Уничтожает вражескую фигуру, оставаясь на месте.
     /// </summary>
-    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
+    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         Debug.Log($"ArcherAttackStrategy: Executing ranged attack from {piece.Position} to {target}");
         Piece targetPiece = boardManager.GetPieceAt(target);
@@ -203,7 +203,7 @@ public class ArcherAttackStrategy : IAttackable
                 Debug.LogWarning($"ArcherAttackStrategy: Cannot attack mountain at {target}!");
                 return;
             }
-            boardManager.RemovePiece(target);
+            piece.SelectAttack(target, isRangedAttack);
             Debug.Log($"ArcherAttackStrategy: Removed piece {targetPiece.GetType().Name} at {target}");
         }
         else

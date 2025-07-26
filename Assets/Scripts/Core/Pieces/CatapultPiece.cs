@@ -157,7 +157,7 @@ public class CatapultAttackStrategy : IAttackable
         return attacks;
     }
 
-    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
+    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         Debug.Log($"CatapultAttackStrategy: Executing ranged attack from {piece.Position} to {target}");
         Piece targetPiece = boardManager.GetPieceAt(target);
@@ -168,7 +168,7 @@ public class CatapultAttackStrategy : IAttackable
                 Debug.LogWarning($"CatapultAttackStrategy: Cannot attack mountain at {target}!");
                 return;
             }
-            boardManager.RemovePiece(target);
+            piece.SelectAttack(target, isRangedAttack);
             Debug.Log($"CatapultAttackStrategy: Removed piece {targetPiece.GetType().Name} at {target}");
         }
         else

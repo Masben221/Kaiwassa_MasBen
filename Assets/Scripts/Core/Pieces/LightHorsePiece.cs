@@ -167,10 +167,10 @@ public class LightHorseAttackStrategy : IAttackable
         return attacks;
     }
 
-    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
+    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         Debug.Log($"LightHorseAttackStrategy: Executing melee attack on {target}");
         // Ближний бой: уничтожаем фигуру 
-        boardManager.RemovePiece(target);       
+        piece.SelectAttack(target, isRangedAttack);
     }
 }

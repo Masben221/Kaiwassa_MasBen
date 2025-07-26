@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using Zenject;
 
 public enum PieceType
 {
@@ -21,6 +22,7 @@ public enum PieceType
 
 public abstract class Piece : MonoBehaviour
 {
+    [Inject] protected IBoardManager boardManager;
     protected IMovable movementStrategy;
     protected IAttackable attackStrategy;
     private Vector3Int position;
@@ -108,35 +110,46 @@ public abstract class Piece : MonoBehaviour
             Debug.LogError($"Piece {GetType().Name}: No PieceAnimator found");
             onComplete?.Invoke();
             return;
-        }
-
-        Vector3Int animationTarget = isRangedAttack ? position : target;
-        Debug.Log($"Piece {GetType().Name}: Performing {(isMove ? "move" : isRangedAttack ? "ranged attack" : "melee attack")} to {target}");
+        }       
 
         if (isMove)
         {
-            // ИСПРАВЛЕНИЕ: Вызываем MovePiece после анимации для обновления логической позиции
             animator.MoveTo(target, target, null, () =>
             {
                 boardManager.MovePiece(this, position, target);
                 onComplete?.Invoke();
             });
         }
+      
+        else
+        {           
+            attackStrategy?.ExecuteAttack(this, target, boardManager, isRangedAttack);            
+            onComplete?.Invoke();          
+        }
+    }
+
+    public void SelectAttack(Vector3Int target, bool isRangedAttack)
+    {
+        PieceAnimator animator = GetComponent<PieceAnimator>();
+        if (animator == null)
+        {
+            Debug.LogError($"Piece {GetType().Name}: No PieceAnimator found");            
+            return;
+        }
+      
         else if (isRangedAttack)
         {
             animator.AnimateRangedAttack(target, () =>
             {
-                attackStrategy?.ExecuteAttack(this, target, boardManager);
-                onComplete?.Invoke();
+                boardManager.RemovePiece(target);                
             });
         }
         else
         {
             animator.AnimateMeleeAttack(target, () =>
             {
-                attackStrategy?.ExecuteAttack(this, target, boardManager);
+                boardManager.RemovePiece(target);
                 boardManager.MovePiece(this, position, target);
-                onComplete?.Invoke();
             });
         }
     }

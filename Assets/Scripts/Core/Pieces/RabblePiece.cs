@@ -115,9 +115,9 @@ public class RabbleAttackStrategy : IAttackable
         return attacks;
     }
 
-    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
+    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         Debug.Log($"RabbleAttackStrategy: Executing melee attack on {target}");
-        boardManager.RemovePiece(target);       
+        piece.SelectAttack(target, isRangedAttack);
     }
 }

@@ -163,7 +163,7 @@ public class ElephantAttackStrategy : IAttackable
         return attacks;
     }
 
-    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
+    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         Debug.Log($"ElephantAttackStrategy: Executing melee attack on {target}");
         Vector3Int pos = piece.Position;
@@ -185,7 +185,7 @@ public class ElephantAttackStrategy : IAttackable
                 Piece targetPiece = boardManager.GetPieceAt(currentPos);
                 if (targetPiece != null && targetPiece.IsPlayer1 != piece.IsPlayer1)
                 {
-                    boardManager.RemovePiece(currentPos);
+                    piece.SelectAttack(currentPos, isRangedAttack);
                     Debug.Log($"ElephantAttackStrategy: Removed piece {targetPiece.GetType().Name} at {currentPos}");
                 }
             }

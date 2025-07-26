@@ -38,5 +38,5 @@ public interface IAttackable
     /// <param name="piece">Фигура, выполняющая атаку.</param>
     /// <param name="target">Целевая клетка для атаки.</param>
     /// <param name="boardManager">Интерфейс доски для изменения состояния.</param>
-    void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager);
+    void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack);
 }

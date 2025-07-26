@@ -136,7 +136,7 @@ public class CrossbowmanAttackStrategy : IAttackable
         return attacks;
     }
 
-    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager)
+    public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         Debug.Log($"CrossbowmanAttackStrategy: Executing ranged attack from {piece.Position} to {target}");
         Piece targetPiece = boardManager.GetPieceAt(target);
@@ -147,7 +147,7 @@ public class CrossbowmanAttackStrategy : IAttackable
                 Debug.LogWarning($"CrossbowmanAttackStrategy: Cannot attack mountain at {target}!");
                 return;
             }
-            boardManager.RemovePiece(target);
+            piece.SelectAttack(target, isRangedAttack);
             Debug.Log($"CrossbowmanAttackStrategy: Removed piece {targetPiece.GetType().Name} at {target}");
         }
         else
