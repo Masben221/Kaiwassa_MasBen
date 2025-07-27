@@ -5,7 +5,6 @@ using DG.Tweening;
 
 public class PieceAnimator : MonoBehaviour
 {
-    [SerializeField, Tooltip("Длительность анимации перемещения")] private float moveDuration = 0.5f;
     [SerializeField, Tooltip("Высота прыжка при перемещении")] private float jumpHeight = 1f;
     [SerializeField, Tooltip("Длительность поворота фигуры")] private float rotationDuration = 0.3f;
     [SerializeField, Tooltip("Конфигурация анимаций для фигуры")] private PieceAnimationConfig animationConfig;
@@ -16,7 +15,6 @@ public class PieceAnimator : MonoBehaviour
 
     private bool isAnimating;
 
-    public float MoveDuration => moveDuration;
     public float JumpHeight => jumpHeight;
     public float RotationDuration => rotationDuration;
 
@@ -72,9 +70,8 @@ public class PieceAnimator : MonoBehaviour
     /// Запускает анимацию ближней атаки для фигуры.
     /// </summary>
     /// <param name="targetPos">Целевая клетка для атаки.</param>
-    /// <param name="moveToTarget">Если true, фигура анимируется с перемещением на клетку цели.</param>
     /// <param name="onComplete">Действие после завершения анимации.</param>
-    public void AnimateMeleeAttack(Vector3Int targetPos, bool moveToTarget, Action onComplete)
+    public void AnimateMeleeAttack(Vector3Int targetPos, Action onComplete)
     {
         if (isAnimating)
         {
@@ -101,7 +98,7 @@ public class PieceAnimator : MonoBehaviour
         OnAnimationStarted?.Invoke(piece, targetPos, false, false);
         OnAnimationStartedLegacy?.Invoke(piece);
 
-        StartCoroutine(AnimateMeleeAttackCoroutine(piece, targetPos, moveToTarget, onComplete));
+        StartCoroutine(AnimateMeleeAttackCoroutine(piece, targetPos, onComplete));
     }
 
     public void AnimateRangedAttack(Vector3Int targetPos, Action onComplete)
@@ -194,6 +191,7 @@ public class PieceAnimator : MonoBehaviour
 
     private IEnumerator AnimateMoveAndRotate(Piece piece, Vector3Int targetPos, Vector3Int animationTarget, Action onComplete)
     {
+        PieceAnimationConfig config = GetAnimationConfig(piece);
         Vector3 startPos = transform.position;
         Vector3 endPos = new Vector3(animationTarget.x, 0.5f, animationTarget.z);
         Quaternion startRotation = transform.rotation;
@@ -215,10 +213,10 @@ public class PieceAnimator : MonoBehaviour
         elapsedTime = 0f;
         if (Vector3.Distance(startPos, endPos) > 0.1f)
         {
-            while (elapsedTime < moveDuration)
+            while (elapsedTime < (config?.MoveDuration ?? 0.5f))
             {
                 elapsedTime += Time.deltaTime;
-                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / moveDuration);
+                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / (config?.MoveDuration ?? 0.5f));
                 float height = jumpHeight * Mathf.Sin(t * Mathf.PI);
                 transform.position = Vector3.Lerp(startPos, endPos, t) + new Vector3(0, height, 0);
                 yield return null;
@@ -227,7 +225,7 @@ public class PieceAnimator : MonoBehaviour
         }
         else
         {
-            yield return new WaitForSeconds(moveDuration);
+            yield return new WaitForSeconds(config?.MoveDuration ?? 0.5f);
         }
 
         elapsedTime = 0f;
@@ -249,11 +247,11 @@ public class PieceAnimator : MonoBehaviour
 
     /// <summary>
     /// Корутина для анимации ближней атаки.
-    /// Поворачивает фигуру к цели, выполняет движение (если moveToTarget = true) с длительностью, пропорциональной расстоянию,
+    /// Поворачивает фигуру к цели, выполняет движение к цели с длительностью, пропорциональной расстоянию,
     /// выполняет рывок атаки, эффект попадания, анимацию попадания для целевой фигуры,
     /// затем возвращает исходную ротацию.
     /// </summary>
-    private IEnumerator AnimateMeleeAttackCoroutine(Piece piece, Vector3Int targetPos, bool moveToTarget, Action onComplete)
+    private IEnumerator AnimateMeleeAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
     {
         try
         {
@@ -265,7 +263,7 @@ public class PieceAnimator : MonoBehaviour
 
             // Рассчитываем расстояние для пропорционального движения (максимум 3 клетки)
             float distance = Vector3.Distance(startPos, endPos);
-            float moveDurationAdjusted = distance > 0 ? moveDuration * (distance / 3f) : moveDuration;
+            float moveDurationAdjusted = distance > 0 ? (config?.MoveDuration ?? 0.5f) * (distance / 3f) : (config?.MoveDuration ?? 0.5f);
 
             // Поворот к цели
             Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z);
@@ -281,9 +279,9 @@ public class PieceAnimator : MonoBehaviour
             }
             transform.rotation = targetRotation;
 
-            // Движение к цели (если moveToTarget = true и расстояние больше 0.1)
+            // Движение к цели
             elapsedTime = 0f;
-            if (moveToTarget && Vector3.Distance(startPos, endPos) > 0.1f)
+            if (Vector3.Distance(startPos, endPos) > 0.1f)
             {
                 while (elapsedTime < moveDurationAdjusted)
                 {

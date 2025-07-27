@@ -7,6 +7,10 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "PieceAnimationConfig", menuName = "Cyvasse/PieceAnimationConfig", order = 1)]
 public class PieceAnimationConfig : ScriptableObject
 {
+    [Header("Movement Settings")]
+    [SerializeField, Tooltip("Длительность анимации перемещения")]
+    private float moveDuration = 0.5f;
+
     [Header("Melee Attack Settings")]
     [SerializeField, Tooltip("Длительность анимации ближней атаки (рывок вперёд и назад)")]
     private float meleeAttackDuration = 0.3f;
@@ -29,12 +33,13 @@ public class PieceAnimationConfig : ScriptableObject
     [SerializeField, Tooltip("Длительность анимации получения удара (отбрасывание)")]
     private float hitDuration = 0.2f;
     [SerializeField, Tooltip("Амплитуда отбрасывания при получении удара")]
-    private float hitPunchDistance = 0.15f; // НОВОЕ ПОЛЕ
+    private float hitPunchDistance = 0.15f;
     [SerializeField, Tooltip("Длительность анимации смерти (растворение/падение)")]
     private float deathDuration = 0.5f;
     [SerializeField, Tooltip("Префаб частиц для эффекта смерти")]
     private ParticleSystem deathEffectPrefab;
 
+    public float MoveDuration => moveDuration;
     public float MeleeAttackDuration => meleeAttackDuration;
     public float MeleePunchDistance => meleePunchDistance;
     public ParticleSystem HitEffectPrefab => hitEffectPrefab;
@@ -43,7 +48,7 @@ public class PieceAnimationConfig : ScriptableObject
     public float RecoilDuration => recoilDuration;
     public GameObject ProjectileModelPrefab => projectileModelPrefab;
     public float HitDuration => hitDuration;
-    public float HitPunchDistance => hitPunchDistance; // НОВОЕ СВОЙСТВО
+    public float HitPunchDistance => hitPunchDistance;
     public float DeathDuration => deathDuration;
     public ParticleSystem DeathEffectPrefab => deathEffectPrefab;
 }

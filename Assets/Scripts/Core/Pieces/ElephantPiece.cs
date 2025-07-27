@@ -62,6 +62,7 @@ public class ElephantMoveStrategy : IMovable
 /// <summary>
 /// —тратеги€ атаки дл€ —лона.
 /// –еализует ближний бой: атака на 1-3 клетки по пр€мой, уничтожает до двух фигур противника подр€д.
+/// —лон перемещаетс€ на клетку каждой атакованной фигуры.
 /// ѕровер€ет путь на наличие преп€тствий.
 /// ѕредоставл€ет список всех потенциальных клеток атаки дл€ подсказок (включа€ пустые и свои фигуры, исключа€ горы).
 /// </summary>
@@ -166,8 +167,8 @@ public class ElephantAttackStrategy : IAttackable
 
     /// <summary>
     /// ¬ыполн€ет атаку —лона на указанную клетку, уничтожа€ до двух фигур противника.
+    /// —лон перемещаетс€ на клетку каждой атакованной фигуры.
     /// ƒл€ каждой фигуры выполн€етс€ анимаци€ атаки, попадани€ и смерти.
-    /// —лон перемещаетс€ только на конечную клетку (target).
     /// </summary>
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
@@ -201,32 +202,33 @@ public class ElephantAttackStrategy : IAttackable
         if (targets.Count == 1)
         {
             // ≈сли одна цель, атакуем еЄ с перемещением
-            piece.SelectAttack(targets[0], isRangedAttack, moveToTarget: true);
+            piece.SelectAttack(targets[0], isRangedAttack);
         }
         else if (targets.Count == 2)
         {
-            // ≈сли две цели, атакуем первую без перемещени€, вторую с перемещением
-            piece.SelectAttack(targets[0], isRangedAttack, moveToTarget: false);
-            // –ассчитываем длительность анимации дл€ первой цели
-            PieceAnimator animator = piece.GetComponent<PieceAnimator>();
-            PieceAnimationConfig config = animator?.GetAnimationConfig(piece);
-            float moveDistance = Vector3.Distance(
-                new Vector3(pos.x, 0.5f, pos.z),
-                new Vector3(targets[0].x, 0.5f, targets[0].z)
-            );
-            float moveDurationAdjusted = config != null ? animator.MoveDuration * (moveDistance / 3f) : 0.5f;
-            float animationDuration = moveDurationAdjusted + (config?.MeleeAttackDuration ?? 0.3f) +
-                                     (config?.HitDuration ?? 0.2f) + (config?.DeathDuration ?? 0.5f) + 0.1f;
-            piece.StartCoroutine(WaitForAnimation(piece, targets[1], isRangedAttack, animationDuration));
+            // ≈сли две цели, атакуем первую с перемещением, затем вторую после паузы
+            piece.SelectAttack(targets[0], isRangedAttack);
+            piece.StartCoroutine(WaitForAnimation(piece, targets[1], isRangedAttack));
         }
     }
 
     /// <summary>
     ///  орутина дл€ ожидани€ завершени€ анимации атаки первой фигуры перед атакой второй.
+    /// ѕересчитывает направление атаки от текущей позиции —лона.
     /// </summary>
-    private IEnumerator WaitForAnimation(Piece piece, Vector3Int secondTarget, bool isRangedAttack, float duration)
+    private IEnumerator WaitForAnimation(Piece piece, Vector3Int secondTarget, bool isRangedAttack)
     {
-        yield return new WaitForSeconds(duration);
-        piece.SelectAttack(secondTarget, isRangedAttack, moveToTarget: true);
+        // ѕолучаем конфигурацию анимации
+        PieceAnimator animator = piece.GetComponent<PieceAnimator>();
+        PieceAnimationConfig config = animator?.GetAnimationConfig(piece);
+
+        // —уммарное врем€ анимации: движение + атака + попадание + смерть + задержка
+        float animationDuration = (config?.MoveDuration ?? 0.5f) +
+                                 (config?.MeleeAttackDuration ?? 0.3f) +
+                                 (config?.HitDuration ?? 0.2f) +
+                                 (config?.DeathDuration ?? 0.5f) + 0.1f;
+
+        yield return new WaitForSeconds(animationDuration);
+        piece.SelectAttack(secondTarget, isRangedAttack);
     }
 }

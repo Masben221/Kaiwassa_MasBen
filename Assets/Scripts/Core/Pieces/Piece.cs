@@ -132,8 +132,7 @@ public abstract class Piece : MonoBehaviour
     /// </summary>
     /// <param name="target">Целевая клетка для атаки.</param>
     /// <param name="isRangedAttack">Если true, выполняется дальняя атака; иначе ближняя.</param>
-    /// <param name="moveToTarget">Если true, фигура перемещается на клетку цели после ближней атаки.</param>
-    public void SelectAttack(Vector3Int target, bool isRangedAttack, bool moveToTarget = true)
+    public void SelectAttack(Vector3Int target, bool isRangedAttack)
     {
         PieceAnimator animator = GetComponent<PieceAnimator>();
         if (animator == null)
@@ -151,13 +150,10 @@ public abstract class Piece : MonoBehaviour
         }
         else
         {
-            animator.AnimateMeleeAttack(target, moveToTarget, () =>
+            animator.AnimateMeleeAttack(target, () =>
             {
                 boardManager.RemovePiece(target);
-                if (moveToTarget)
-                {
-                    boardManager.MovePiece(this, position, target);
-                }
+                boardManager.MovePiece(this, position, target);
             });
         }
     }

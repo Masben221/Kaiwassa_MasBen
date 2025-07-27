@@ -202,7 +202,7 @@ public class CameraController : MonoBehaviour
         else
         {
             // ƒл€ перемещени€ или ближней атаки: следим за фигурой
-            float totalAnimationDuration = animator.RotationDuration * 2 + animator.MoveDuration;
+            float totalAnimationDuration = animator.RotationDuration * 2 + (config?.MoveDuration ?? 0.5f);
             Vector3 startPiecePosition = piecePosition;
             Vector3 endPiecePosition = isMove ? targetPosition : piecePosition;
 
