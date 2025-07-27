@@ -9,9 +9,9 @@ public class PieceAnimator : MonoBehaviour
     [SerializeField, Tooltip("Длительность поворота фигуры")] private float rotationDuration = 0.3f;
     [SerializeField, Tooltip("Конфигурация анимаций для фигуры")] private PieceAnimationConfig animationConfig;
     [SerializeField, Tooltip("Высота дуги для параболического полёта снаряда")] private float projectileArcHeight = 1f;
-    [SerializeField, Tooltip("Длительность полёта снаряда (в секундах)")] private float projectileFlightDuration = 0.5f;
+    //[SerializeField, Tooltip("Длительность полёта снаряда (в секундах)")] private float projectileFlightDuration = 0.5f;
 
-    public float ProjectileFlightDuration => projectileFlightDuration; // Публичное свойство
+    public float ProjectileFlightDuration => animationConfig?.RangedAttackDuration ?? 0.5f;
 
     private bool isAnimating;
 
@@ -409,13 +409,13 @@ public class PieceAnimator : MonoBehaviour
                     // Собственный таймер для прогресса полёта
                     float flightElapsed = 0f;
 
-                    projectile.transform.DOPath(path, projectileFlightDuration, PathType.CatmullRom)
+                    projectile.transform.DOPath(path, ProjectileFlightDuration, PathType.CatmullRom)
                         .SetEase(Ease.Linear)
                         .OnStart(() => OnProjectileFlying?.Invoke(projectile))
                         .OnUpdate(() =>
                         {
                             flightElapsed += Time.deltaTime;
-                            float progress = Mathf.Clamp01(flightElapsed / projectileFlightDuration);
+                            float progress = Mathf.Clamp01(flightElapsed / ProjectileFlightDuration);
 
                             // Параболический коэффициент 0..1..0
                             float parabola = 4f * progress * (1f - progress);
@@ -456,7 +456,7 @@ public class PieceAnimator : MonoBehaviour
                         });
                 }
 
-                yield return new WaitForSeconds(projectileFlightDuration);
+                yield return new WaitForSeconds(ProjectileFlightDuration);
             }
             else
             {
