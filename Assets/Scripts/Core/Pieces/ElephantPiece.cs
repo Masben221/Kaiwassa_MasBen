@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 /// <summary>
 ///  ласс дл€ фигуры "—лон".
@@ -163,6 +164,11 @@ public class ElephantAttackStrategy : IAttackable
         return attacks;
     }
 
+    /// <summary>
+    /// ¬ыполн€ет атаку —лона на указанную клетку, уничтожа€ до двух фигур противника.
+    /// ƒл€ каждой фигуры выполн€етс€ анимаци€ атаки, попадани€ и смерти.
+    /// —лон перемещаетс€ только на конечную клетку (target).
+    /// </summary>
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
         Debug.Log($"ElephantAttackStrategy: Executing melee attack on {target}");
@@ -174,9 +180,10 @@ public class ElephantAttackStrategy : IAttackable
             delta.x == 0 ? 0 : (delta.x > 0 ? 1 : -1),
             0,
             delta.z == 0 ? 0 : (delta.z > 0 ? 1 : -1)
-        ); // Ќаправление: (+1,0,0), (-1,0,0), (0,0,+1), или (0,0,-1)
+        );
 
-        // ”ничтожаем фигуры на пути (до двух)
+        // —обираем позиции вражеских фигур
+        List<Vector3Int> targets = new List<Vector3Int>();
         for (int i = 1; i <= distance && i <= 3; i++)
         {
             Vector3Int currentPos = pos + dir * i;
@@ -185,10 +192,41 @@ public class ElephantAttackStrategy : IAttackable
                 Piece targetPiece = boardManager.GetPieceAt(currentPos);
                 if (targetPiece != null && targetPiece.IsPlayer1 != piece.IsPlayer1)
                 {
-                    piece.SelectAttack(currentPos, isRangedAttack);
-                    Debug.Log($"ElephantAttackStrategy: Removed piece {targetPiece.GetType().Name} at {currentPos}");
+                    targets.Add(currentPos);
                 }
             }
-        }        
+        }
+
+        // ќбрабатываем цели
+        if (targets.Count == 1)
+        {
+            // ≈сли одна цель, атакуем еЄ с перемещением
+            piece.SelectAttack(targets[0], isRangedAttack, moveToTarget: true);
+        }
+        else if (targets.Count == 2)
+        {
+            // ≈сли две цели, атакуем первую без перемещени€, вторую с перемещением
+            piece.SelectAttack(targets[0], isRangedAttack, moveToTarget: false);
+            // –ассчитываем длительность анимации дл€ первой цели
+            PieceAnimator animator = piece.GetComponent<PieceAnimator>();
+            PieceAnimationConfig config = animator?.GetAnimationConfig(piece);
+            float moveDistance = Vector3.Distance(
+                new Vector3(pos.x, 0.5f, pos.z),
+                new Vector3(targets[0].x, 0.5f, targets[0].z)
+            );
+            float moveDurationAdjusted = config != null ? animator.MoveDuration * (moveDistance / 3f) : 0.5f;
+            float animationDuration = moveDurationAdjusted + (config?.MeleeAttackDuration ?? 0.3f) +
+                                     (config?.HitDuration ?? 0.2f) + (config?.DeathDuration ?? 0.5f) + 0.1f;
+            piece.StartCoroutine(WaitForAnimation(piece, targets[1], isRangedAttack, animationDuration));
+        }
+    }
+
+    /// <summary>
+    ///  орутина дл€ ожидани€ завершени€ анимации атаки первой фигуры перед атакой второй.
+    /// </summary>
+    private IEnumerator WaitForAnimation(Piece piece, Vector3Int secondTarget, bool isRangedAttack, float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        piece.SelectAttack(secondTarget, isRangedAttack, moveToTarget: true);
     }
 }

@@ -68,7 +68,13 @@ public class PieceAnimator : MonoBehaviour
         StartCoroutine(AnimateMoveAndRotate(piece, targetPos, animationTarget, onComplete));
     }
 
-    public void AnimateMeleeAttack(Vector3Int targetPos, Action onComplete)
+    /// <summary>
+    /// Запускает анимацию ближней атаки для фигуры.
+    /// </summary>
+    /// <param name="targetPos">Целевая клетка для атаки.</param>
+    /// <param name="moveToTarget">Если true, фигура анимируется с перемещением на клетку цели.</param>
+    /// <param name="onComplete">Действие после завершения анимации.</param>
+    public void AnimateMeleeAttack(Vector3Int targetPos, bool moveToTarget, Action onComplete)
     {
         if (isAnimating)
         {
@@ -95,7 +101,7 @@ public class PieceAnimator : MonoBehaviour
         OnAnimationStarted?.Invoke(piece, targetPos, false, false);
         OnAnimationStartedLegacy?.Invoke(piece);
 
-        StartCoroutine(AnimateMeleeAttackCoroutine(piece, targetPos, onComplete));
+        StartCoroutine(AnimateMeleeAttackCoroutine(piece, targetPos, moveToTarget, onComplete));
     }
 
     public void AnimateRangedAttack(Vector3Int targetPos, Action onComplete)
@@ -241,241 +247,315 @@ public class PieceAnimator : MonoBehaviour
         Debug.Log($"PieceAnimator: Animation completed for {piece.Type} to target {targetPos}");
     }
 
-    private IEnumerator AnimateMeleeAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
+    /// <summary>
+    /// Корутина для анимации ближней атаки.
+    /// Поворачивает фигуру к цели, выполняет движение (если moveToTarget = true) с длительностью, пропорциональной расстоянию,
+    /// выполняет рывок атаки, эффект попадания, анимацию попадания для целевой фигуры,
+    /// затем возвращает исходную ротацию.
+    /// </summary>
+    private IEnumerator AnimateMeleeAttackCoroutine(Piece piece, Vector3Int targetPos, bool moveToTarget, Action onComplete)
     {
-        PieceAnimationConfig config = GetAnimationConfig(piece);
-        Vector3 startPos = transform.position;
-        Vector3 endPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
-        Quaternion startRotation = transform.rotation;
-        Quaternion initialRotation = piece.InitialRotation;
-
-        Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z);
-        Quaternion targetRotation = direction.sqrMagnitude > 0.01f ? Quaternion.LookRotation(direction, Vector3.up) : startRotation;
-
-        float elapsedTime = 0f;
-        while (elapsedTime < rotationDuration)
+        try
         {
-            elapsedTime += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
-            transform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
-            yield return null;
-        }
-        transform.rotation = targetRotation;
+            PieceAnimationConfig config = GetAnimationConfig(piece);
+            Vector3 startPos = transform.position;
+            Vector3 endPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
+            Quaternion startRotation = transform.rotation;
+            Quaternion initialRotation = piece.InitialRotation;
 
-        elapsedTime = 0f;
-        while (elapsedTime < moveDuration)
-        {
-            elapsedTime += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / moveDuration);
-            float height = jumpHeight * Mathf.Sin(t * Mathf.PI);
-            transform.position = Vector3.Lerp(startPos, endPos, t) + new Vector3(0, height, 0);
-            yield return null;
-        }
-        transform.position = endPos;
+            // Рассчитываем расстояние для пропорционального движения (максимум 3 клетки)
+            float distance = Vector3.Distance(startPos, endPos);
+            float moveDurationAdjusted = distance > 0 ? moveDuration * (distance / 3f) : moveDuration;
 
-        if (config != null)
-        {
-            Vector3 punchDirection = direction.normalized * config.MeleePunchDistance;
-            transform.DOPunchPosition(punchDirection, config.MeleeAttackDuration, 10, 1f)
-                .SetEase(Ease.InOutSine);
+            // Поворот к цели
+            Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z);
+            Quaternion targetRotation = direction.sqrMagnitude > 0.01f ? Quaternion.LookRotation(direction, Vector3.up) : startRotation;
 
-            if (config.HitEffectPrefab != null)
+            float elapsedTime = 0f;
+            while (elapsedTime < rotationDuration)
             {
-                ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, endPos + Vector3.up * 0.5f, Quaternion.identity);
-                hitEffect.Play();
-                Destroy(hitEffect.gameObject, hitEffect.main.duration);
+                elapsedTime += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
+                transform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
+                yield return null;
+            }
+            transform.rotation = targetRotation;
 
-                Piece targetPiece = FindObjectOfType<BoardManager>().GetPieceAt(targetPos);
-                if (targetPiece != null)
+            // Движение к цели (если moveToTarget = true и расстояние больше 0.1)
+            elapsedTime = 0f;
+            if (moveToTarget && Vector3.Distance(startPos, endPos) > 0.1f)
+            {
+                while (elapsedTime < moveDurationAdjusted)
                 {
-                    PieceAnimator targetAnimator = targetPiece.GetComponent<PieceAnimator>();
-                    if (targetAnimator != null)
-                    {
-                        targetAnimator.AnimateHitAndDeath(false, null, -direction.normalized);
-                    }
+                    elapsedTime += Time.deltaTime;
+                    float t = Mathf.SmoothStep(0f, 1f, elapsedTime / moveDurationAdjusted);
+                    float height = jumpHeight * Mathf.Sin(t * Mathf.PI);
+                    transform.position = Vector3.Lerp(startPos, endPos, t) + new Vector3(0, height, 0);
+                    yield return null;
                 }
+                transform.position = endPos;
+            }
+            else
+            {
+                yield return new WaitForSeconds(moveDurationAdjusted);
             }
 
-            yield return new WaitForSeconds(config.MeleeAttackDuration);
-        }
-        else
-        {
-            yield return new WaitForSeconds(0.3f);
-        }
+            // Анимация атаки и эффекты
+            if (config != null)
+            {
+                Vector3 punchDirection = direction.normalized * config.MeleePunchDistance;
+                transform.DOPunchPosition(punchDirection, config.MeleeAttackDuration, 10, 1f)
+                    .SetEase(Ease.InOutSine);
 
-        elapsedTime = 0f;
-        while (elapsedTime < rotationDuration)
-        {
-            elapsedTime += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
-            transform.rotation = Quaternion.Slerp(targetRotation, initialRotation, t);
-            yield return null;
-        }
-        transform.rotation = initialRotation;
+                if (config.HitEffectPrefab != null)
+                {
+                    ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, endPos + Vector3.up * 0.5f, Quaternion.identity);
+                    hitEffect.Play();
+                    Destroy(hitEffect.gameObject, hitEffect.main.duration);
 
-        isAnimating = false;
-        OnAnimationCompleted?.Invoke(piece);
-        OnAnimationFinishedLegacy?.Invoke(piece);
-        onComplete?.Invoke();
-        Debug.Log($"PieceAnimator: Melee attack animation completed for {piece.Type} to target {targetPos}");
+                    Piece targetPiece = FindObjectOfType<BoardManager>().GetPieceAt(targetPos);
+                    if (targetPiece != null)
+                    {
+                        PieceAnimator targetAnimator = targetPiece.GetComponent<PieceAnimator>();
+                        if (targetAnimator != null)
+                        {
+                            targetAnimator.AnimateHitAndDeath(false, null, -direction.normalized);
+                        }
+                    }
+                }
+
+                // Задержка после анимации атаки для синхронизации
+                yield return new WaitForSeconds(config.MeleeAttackDuration + 0.1f);
+            }
+            else
+            {
+                yield return new WaitForSeconds(0.3f);
+            }
+
+            // Возврат исходной ротации
+            elapsedTime = 0f;
+            while (elapsedTime < rotationDuration)
+            {
+                elapsedTime += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
+                transform.rotation = Quaternion.Slerp(targetRotation, initialRotation, t);
+                yield return null;
+            }
+            transform.rotation = initialRotation;
+        }
+        finally
+        {
+            isAnimating = false;
+            OnAnimationCompleted?.Invoke(piece);
+            OnAnimationFinishedLegacy?.Invoke(piece);
+            onComplete?.Invoke();
+            Debug.Log($"PieceAnimator: Melee attack animation completed for {piece.Type} to target {targetPos}");
+        }
     }
 
     private IEnumerator AnimateRangedAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
     {
-        // Получение конфигурации анимации для фигуры
-        PieceAnimationConfig config = GetAnimationConfig(piece);
-        Vector3 startPos = transform.position;
-        Quaternion startRotation = transform.rotation;
-        Quaternion initialRotation = piece.InitialRotation;
-
-        // Вычисление направления и расстояния до цели
-        Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z).normalized;
-        Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
-        float distance = Vector3.Distance(startPos, new Vector3(targetPos.x, 0.5f, targetPos.z));
-
-        // Вычисление начального угла поворота стрелы (theta) на основе расстояния и высоты дуги
-        float theta = Mathf.Atan2(4f * projectileArcHeight, distance) * Mathf.Rad2Deg;
-        float startPitch = 90f - theta; // Начальный угол (например, 37°)
-        float endPitch = 90f + theta;   // Конечный угол (например, 143°)
-
-        // Поворот стрелка к цели
-        float elapsedTime = 0f;
-        while (elapsedTime < rotationDuration)
+        try
         {
-            elapsedTime += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
-            transform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
-            yield return null;
-        }
-        transform.rotation = targetRotation;
+            // Получение конфигурации анимации для фигуры
+            PieceAnimationConfig config = GetAnimationConfig(piece);
+            Vector3 startPos = transform.position;
+            Quaternion startRotation = transform.rotation;
+            Quaternion initialRotation = piece.InitialRotation;
 
-        if (config != null)
-        {
-            // Отдача стрелка
-            Vector3 recoilDirection = -direction * config.RecoilDistance;
-            transform.DOPunchPosition(recoilDirection, config.RecoilDuration, 10, 1f)
-                .SetEase(Ease.InOutSine);
+            // Вычисление направления и расстояния до цели
+            Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z).normalized;
+            Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+            float distance = Vector3.Distance(startPos, new Vector3(targetPos.x, 0.5f, targetPos.z));
 
-            // Запуск снаряда
-            if (config.ProjectileModelPrefab != null)
+            // Вычисление начального угла поворота стрелы (theta) на основе расстояния и высоты дуги
+            float theta = Mathf.Atan2(4f * projectileArcHeight, distance) * Mathf.Rad2Deg;
+            float startPitch = 90f - theta; // Начальный угол (например, 37°)
+            float endPitch = 90f + theta;   // Конечный угол (например, 143°)
+
+            // Поворот стрелка к цели
+            float elapsedTime = 0f;
+            while (elapsedTime < rotationDuration)
             {
-                Vector3 targetWorldPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
+                elapsedTime += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
+                transform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
+                yield return null;
+            }
+            transform.rotation = targetRotation;
 
-                // Смещение выстрела чуть вперёд и выше
-                Vector3 launchOffset = direction * 0.2f + Vector3.up * 0.5f;
-                GameObject projectile = Instantiate(
-                    config.ProjectileModelPrefab,
-                    startPos + launchOffset,
-                    Quaternion.Euler(startPitch, 0f, 0f) // Начальный угол поворота стрелы
-                );
+            if (config != null)
+            {
+                // Отдача стрелка
+                Vector3 recoilDirection = -direction * config.RecoilDistance;
+                transform.DOPunchPosition(recoilDirection, config.RecoilDuration, 10, 1f)
+                    .SetEase(Ease.InOutSine);
 
-                // Параболический путь
-                Vector3 midPoint = (startPos + targetWorldPos) * 0.5f + Vector3.up * projectileArcHeight;
-                Vector3[] path = { startPos + launchOffset, midPoint, targetWorldPos };
+                // Запуск снаряда
+                if (config.ProjectileModelPrefab != null)
+                {
+                    Vector3 targetWorldPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
 
-                // Собственный таймер для прогресса полёта
-                float flightElapsed = 0f;
+                    // Смещение выстрела чуть вперёд и выше
+                    Vector3 launchOffset = direction * 0.2f + Vector3.up * 0.5f;
+                    GameObject projectile = Instantiate(
+                        config.ProjectileModelPrefab,
+                        startPos + launchOffset,
+                        Quaternion.Euler(startPitch, 0f, 0f) // Начальный угол поворота стрелы
+                    );
 
-                projectile.transform.DOPath(path, projectileFlightDuration, PathType.CatmullRom)
-                    .SetEase(Ease.Linear)
-                    .OnStart(() => OnProjectileFlying?.Invoke(projectile))
-                    .OnUpdate(() =>
-                    {
-                        flightElapsed += Time.deltaTime;
-                        float progress = Mathf.Clamp01(flightElapsed / projectileFlightDuration);
+                    // Параболический путь
+                    Vector3 midPoint = (startPos + targetWorldPos) * 0.5f + Vector3.up * projectileArcHeight;
+                    Vector3[] path = { startPos + launchOffset, midPoint, targetWorldPos };
 
-                        // Параболический коэффициент 0..1..0
-                        float parabola = 4f * progress * (1f - progress);
+                    // Собственный таймер для прогресса полёта
+                    float flightElapsed = 0f;
 
-                        // Линейная интерполяция угла от startPitch до endPitch через 90°
-                        float pitch;
-                        if (progress < 0.5f)
-                            pitch = Mathf.Lerp(startPitch, 90f, progress * 2f);
-                        else
-                            pitch = Mathf.Lerp(90f, endPitch, (progress - 0.5f) * 2f);
-
-                        // Yaw (горизонтальный поворот) к цели
-                        Vector3 dirFlat = (targetWorldPos - projectile.transform.position);
-                        dirFlat.y = 0f;
-                        float yaw = dirFlat.sqrMagnitude > 0.001f
-                            ? Mathf.Atan2(dirFlat.x, dirFlat.z) * Mathf.Rad2Deg
-                            : projectile.transform.eulerAngles.y;
-
-                        projectile.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
-                    })
-                    .OnComplete(() =>
-                    {
-                        // Визуальный эффект попадания
-                        if (config.HitEffectPrefab != null)
+                    projectile.transform.DOPath(path, projectileFlightDuration, PathType.CatmullRom)
+                        .SetEase(Ease.Linear)
+                        .OnStart(() => OnProjectileFlying?.Invoke(projectile))
+                        .OnUpdate(() =>
                         {
-                            ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, targetWorldPos, Quaternion.identity);
-                            hitEffect.Play();
-                            Destroy(hitEffect.gameObject, hitEffect.main.duration);
+                            flightElapsed += Time.deltaTime;
+                            float progress = Mathf.Clamp01(flightElapsed / projectileFlightDuration);
 
-                            Piece targetPiece = FindObjectOfType<BoardManager>()?.GetPieceAt(targetPos);
-                            if (targetPiece != null)
+                            // Параболический коэффициент 0..1..0
+                            float parabola = 4f * progress * (1f - progress);
+
+                            // Линейная интерполяция угла от startPitch до endPitch через 90°
+                            float pitch;
+                            if (progress < 0.5f)
+                                pitch = Mathf.Lerp(startPitch, 90f, progress * 2f);
+                            else
+                                pitch = Mathf.Lerp(90f, endPitch, (progress - 0.5f) * 2f);
+
+                            // Yaw (горизонтальный поворот) к цели
+                            Vector3 dirFlat = (targetWorldPos - projectile.transform.position);
+                            dirFlat.y = 0f;
+                            float yaw = dirFlat.sqrMagnitude > 0.001f
+                                ? Mathf.Atan2(dirFlat.x, dirFlat.z) * Mathf.Rad2Deg
+                                : projectile.transform.eulerAngles.y;
+
+                            projectile.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
+                        })
+                        .OnComplete(() =>
+                        {
+                            // Визуальный эффект попадания
+                            if (config.HitEffectPrefab != null)
                             {
-                                PieceAnimator targetAnimator = targetPiece.GetComponent<PieceAnimator>();
-                                targetAnimator?.AnimateHitAndDeath(false, null, -direction);
+                                ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, targetWorldPos, Quaternion.identity);
+                                hitEffect.Play();
+                                Destroy(hitEffect.gameObject, hitEffect.main.duration);
+
+                                Piece targetPiece = FindObjectOfType<BoardManager>()?.GetPieceAt(targetPos);
+                                if (targetPiece != null)
+                                {
+                                    PieceAnimator targetAnimator = targetPiece.GetComponent<PieceAnimator>();
+                                    targetAnimator?.AnimateHitAndDeath(false, null, -direction);
+                                }
                             }
-                        }
-                        Destroy(projectile);
-                    });
+                            Destroy(projectile);
+                        });
+                }
+
+                yield return new WaitForSeconds(projectileFlightDuration);
+            }
+            else
+            {
+                yield return new WaitForSeconds(0.5f);
             }
 
-            yield return new WaitForSeconds(projectileFlightDuration);
+            // Возврат стрелка в исходное положение
+            elapsedTime = 0f;
+            while (elapsedTime < rotationDuration)
+            {
+                elapsedTime += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
+                transform.rotation = Quaternion.Slerp(targetRotation, initialRotation, t);
+                yield return null;
+            }
+            transform.rotation = initialRotation;
         }
-        else
+        finally
         {
-            yield return new WaitForSeconds(0.5f);
+            isAnimating = false;
+            OnAnimationCompleted?.Invoke(piece);
+            OnAnimationFinishedLegacy?.Invoke(piece);
+            onComplete?.Invoke();
         }
-
-        // Возврат стрелка в исходное положение
-        elapsedTime = 0f;
-        while (elapsedTime < rotationDuration)
-        {
-            elapsedTime += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / rotationDuration);
-            transform.rotation = Quaternion.Slerp(targetRotation, initialRotation, t);
-            yield return null;
-        }
-        transform.rotation = initialRotation;
-
-        // Завершение анимации
-        isAnimating = false;
-        OnAnimationCompleted?.Invoke(piece);
-        OnAnimationFinishedLegacy?.Invoke(piece);
-        onComplete?.Invoke();
     }
 
     private IEnumerator AnimateHitAndDeathCoroutine(Piece piece, bool isDeath, Vector3? hitDirection, Action onComplete)
     {
-        PieceAnimationConfig config = GetAnimationConfig(piece);
-
-        if (config != null)
+        try
         {
-            if (hitDirection.HasValue)
+            PieceAnimationConfig config = GetAnimationConfig(piece);
+
+            if (config != null)
             {
-                Vector3 punchDirection = hitDirection.Value * config.HitPunchDistance;
-                transform.DOPunchPosition(punchDirection, config.HitDuration, 10, 1f)
-                    .SetEase(Ease.InOutSine);
+                if (hitDirection.HasValue)
+                {
+                    Vector3 punchDirection = hitDirection.Value * config.HitPunchDistance;
+                    transform.DOPunchPosition(punchDirection, config.HitDuration, 10, 1f)
+                        .SetEase(Ease.InOutSine);
+                }
+                else
+                {
+                    transform.DOShakePosition(config.HitDuration, config.HitPunchDistance, 10, 90f, false)
+                        .SetEase(Ease.InOutSine);
+                }
+
+                if (config.HitEffectPrefab != null)
+                {
+                    ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, transform.position, Quaternion.identity);
+                    hitEffect.Play();
+                    Destroy(hitEffect.gameObject, hitEffect.main.duration);
+                }
+
+                yield return new WaitForSeconds(config.HitDuration);
+
+                if (isDeath)
+                {
+                    Renderer renderer = GetComponentInChildren<Renderer>();
+                    if (renderer != null && renderer.material != null)
+                    {
+                        Material mat = renderer.material;
+                        mat.DOFade(0f, config.DeathDuration).SetEase(Ease.InOutSine);
+                    }
+                    transform.DOScale(Vector3.zero, config.DeathDuration).SetEase(Ease.InOutSine);
+
+                    if (config.DeathEffectPrefab != null)
+                    {
+                        ParticleSystem deathEffect = Instantiate(config.DeathEffectPrefab, transform.position, Quaternion.identity);
+                        deathEffect.Play();
+                        Destroy(deathEffect.gameObject, deathEffect.main.duration);
+                    }
+
+                    yield return new WaitForSeconds(config.DeathDuration);
+                }
             }
             else
             {
-                transform.DOShakePosition(config.HitDuration, config.HitPunchDistance, 10, 90f, false)
-                    .SetEase(Ease.InOutSine);
+                yield return new WaitForSeconds(0.5f);
             }
+        }
+        finally
+        {
+            isAnimating = false;
+            OnAnimationCompleted?.Invoke(piece);
+            OnAnimationFinishedLegacy?.Invoke(piece);
+            onComplete?.Invoke();
+            Debug.Log($"PieceAnimator: {(isDeath ? "Death" : "Hit")} animation completed for {piece.Type}");
+        }
+    }
 
-            if (config.HitEffectPrefab != null)
-            {
-                ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, transform.position, Quaternion.identity);
-                hitEffect.Play();
-                Destroy(hitEffect.gameObject, hitEffect.main.duration);
-            }
+    private IEnumerator AnimateDeathCoroutine(Piece piece, Action onComplete)
+    {
+        try
+        {
+            PieceAnimationConfig config = GetAnimationConfig(piece);
 
-            yield return new WaitForSeconds(config.HitDuration);
-
-            if (isDeath)
+            if (config != null)
             {
                 Renderer renderer = GetComponentInChildren<Renderer>();
                 if (renderer != null && renderer.material != null)
@@ -494,52 +574,19 @@ public class PieceAnimator : MonoBehaviour
 
                 yield return new WaitForSeconds(config.DeathDuration);
             }
-        }
-        else
-        {
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        isAnimating = false;
-        OnAnimationCompleted?.Invoke(piece);
-        OnAnimationFinishedLegacy?.Invoke(piece);
-        onComplete?.Invoke();
-        Debug.Log($"PieceAnimator: {(isDeath ? "Death" : "Hit")} animation completed for {piece.Type}");
-    }
-
-    private IEnumerator AnimateDeathCoroutine(Piece piece, Action onComplete)
-    {
-        PieceAnimationConfig config = GetAnimationConfig(piece);
-
-        if (config != null)
-        {
-            Renderer renderer = GetComponentInChildren<Renderer>();
-            if (renderer != null && renderer.material != null)
+            else
             {
-                Material mat = renderer.material;
-                mat.DOFade(0f, config.DeathDuration).SetEase(Ease.InOutSine);
+                yield return new WaitForSeconds(0.5f);
             }
-            transform.DOScale(Vector3.zero, config.DeathDuration).SetEase(Ease.InOutSine);
-
-            if (config.DeathEffectPrefab != null)
-            {
-                ParticleSystem deathEffect = Instantiate(config.DeathEffectPrefab, transform.position, Quaternion.identity);
-                deathEffect.Play();
-                Destroy(deathEffect.gameObject, deathEffect.main.duration);
-            }
-
-            yield return new WaitForSeconds(config.DeathDuration);
         }
-        else
+        finally
         {
-            yield return new WaitForSeconds(0.5f);
+            isAnimating = false;
+            OnAnimationCompleted?.Invoke(piece);
+            OnAnimationFinishedLegacy?.Invoke(piece);
+            onComplete?.Invoke();
+            Debug.Log($"PieceAnimator: Death animation completed for {piece.Type}");
         }
-
-        isAnimating = false;
-        OnAnimationCompleted?.Invoke(piece);
-        OnAnimationFinishedLegacy?.Invoke(piece);
-        onComplete?.Invoke();
-        Debug.Log($"PieceAnimator: Death animation completed for {piece.Type}");
     }
 
     public PieceAnimationConfig GetAnimationConfig(Piece piece)

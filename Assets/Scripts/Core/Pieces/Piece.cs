@@ -89,7 +89,7 @@ public abstract class Piece : MonoBehaviour
         return attackStrategy?.CalculateAllAttacks(board, this) ?? new List<Vector3Int>();
     }
 
-    public void Attack(Vector3Int target, IBoardManager boardManager)
+    public void Attack(Vector3Int target, IBoardManager board)
     {
         Debug.Log($"Piece {GetType().Name}: Attack called for {target}");
     }
@@ -110,7 +110,7 @@ public abstract class Piece : MonoBehaviour
             Debug.LogError($"Piece {GetType().Name}: No PieceAnimator found");
             onComplete?.Invoke();
             return;
-        }       
+        }
 
         if (isMove)
         {
@@ -120,36 +120,44 @@ public abstract class Piece : MonoBehaviour
                 onComplete?.Invoke();
             });
         }
-      
         else
-        {           
-            attackStrategy?.ExecuteAttack(this, target, boardManager, isRangedAttack);            
-            onComplete?.Invoke();          
+        {
+            attackStrategy?.ExecuteAttack(this, target, boardManager, isRangedAttack);
+            onComplete?.Invoke();
         }
     }
 
-    public void SelectAttack(Vector3Int target, bool isRangedAttack)
+    /// <summary>
+    /// ¬ыбирает тип атаки (ближн€€ или дальн€€) и выполн€ет соответствующую анимацию.
+    /// </summary>
+    /// <param name="target">÷елева€ клетка дл€ атаки.</param>
+    /// <param name="isRangedAttack">≈сли true, выполн€етс€ дальн€€ атака; иначе ближн€€.</param>
+    /// <param name="moveToTarget">≈сли true, фигура перемещаетс€ на клетку цели после ближней атаки.</param>
+    public void SelectAttack(Vector3Int target, bool isRangedAttack, bool moveToTarget = true)
     {
         PieceAnimator animator = GetComponent<PieceAnimator>();
         if (animator == null)
         {
-            Debug.LogError($"Piece {GetType().Name}: No PieceAnimator found");            
+            Debug.LogError($"Piece {GetType().Name}: No PieceAnimator found");
             return;
         }
-      
-        else if (isRangedAttack)
+
+        if (isRangedAttack)
         {
             animator.AnimateRangedAttack(target, () =>
             {
-                boardManager.RemovePiece(target);                
+                boardManager.RemovePiece(target);
             });
         }
         else
         {
-            animator.AnimateMeleeAttack(target, () =>
+            animator.AnimateMeleeAttack(target, moveToTarget, () =>
             {
                 boardManager.RemovePiece(target);
-                boardManager.MovePiece(this, position, target);
+                if (moveToTarget)
+                {
+                    boardManager.MovePiece(this, position, target);
+                }
             });
         }
     }
