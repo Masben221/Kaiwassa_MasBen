@@ -9,6 +9,7 @@ public interface IPieceFactory
 {
     Piece CreatePiece(PieceType type, bool isPlayer1, Vector3Int position);
     Sprite GetIconForPiece(PieceType type);
+    PieceAnimationConfig GetDefaultAnimationConfig();
 }
 
 /// <summary>

@@ -274,7 +274,7 @@ public class CameraController : MonoBehaviour
         else
         {
             // Для перемещения или ближней атаки: следим за фигурой
-            float totalAnimationDuration = animator.RotationDuration * 2 + (config?.MoveDuration ?? 0.5f); // Время анимации (два поворота + движение)
+            float totalAnimationDuration = (config?.MeleePunchDistance ?? 0.2f) * 2 + (config?.MeleeAttackDuration ?? 0.3f) * 2 + animator.RotationDuration * 2 + (config?.MoveDuration ?? 0.5f) * 2; // Время анимации (два поворота + движение)
             Vector3 startPiecePosition = piecePosition;
             Vector3 endPiecePosition = targetPosition;
 

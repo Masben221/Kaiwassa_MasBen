@@ -83,8 +83,8 @@ public class GameManager : MonoBehaviour, IGameManager
             return;
         }
 
-        var validMoves = piece.GetValidMoves(boardManager);
-        var attackMoves = piece.GetAttackMoves(boardManager);
+        var validMoves = piece.GetValidMoves();
+        var attackMoves = piece.GetAttackMoves();
 
         bool isMove = validMoves.Contains(target) && !attackMoves.Contains(target);
         bool isAttack = attackMoves.Contains(target);
@@ -122,7 +122,7 @@ public class GameManager : MonoBehaviour, IGameManager
         {
             cameraController.PrepareToFollowPiece(piece, target, isMove, isRangedAttack, () =>
             {
-                piece.PerformAction(target, isMove, isRangedAttack, boardManager, () =>
+                piece.PerformAction(target, isMove, isRangedAttack, () =>
                 {
                     SwitchTurn();
                     CheckWinCondition();
@@ -132,7 +132,7 @@ public class GameManager : MonoBehaviour, IGameManager
         else
         {
             Debug.LogError("GameManager: CameraController missing!");
-            piece.PerformAction(target, isMove, isRangedAttack, boardManager, () =>
+            piece.PerformAction(target, isMove, isRangedAttack, () =>
             {
                 SwitchTurn();
                 CheckWinCondition();

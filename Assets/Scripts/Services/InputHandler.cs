@@ -138,8 +138,8 @@ public class InputHandler : MonoBehaviour
 
             if (selectedPiece != null)
             {
-                var validMoves = selectedPiece.GetValidMoves(boardManager);
-                var attackMoves = selectedPiece.GetAttackMoves(boardManager);
+                var validMoves = selectedPiece.GetValidMoves();
+                var attackMoves = selectedPiece.GetAttackMoves();
 
                 if (validMoves.Contains(clickedPos) || attackMoves.Contains(clickedPos))
                 {
@@ -199,7 +199,7 @@ public class InputHandler : MonoBehaviour
             renderer.material = highlightMaterial;
         }
 
-        var validMoves = piece.GetValidMoves(boardManager);
+        var validMoves = piece.GetValidMoves();
         foreach (var move in validMoves)
         {
             GameObject marker = moveMarkerPool.Get();
@@ -208,7 +208,7 @@ public class InputHandler : MonoBehaviour
             currentMarkers.Add(marker);
         }
 
-        var attackMoves = piece.GetAttackMoves(boardManager);
+        var attackMoves = piece.GetAttackMoves();
         foreach (var attack in attackMoves)
         {
             GameObject marker = pulsatingAttackMarkerPool.Get();
@@ -233,7 +233,7 @@ public class InputHandler : MonoBehaviour
             Piece piece = pieceEntry.Value;
             if (piece.IsPlayer1 == isPlayer1 && piece.Type != PieceType.Mountain)
             {
-                var attackMoves = piece.GetAttackMoves(boardManager);
+                var attackMoves = piece.GetAttackMoves();
                 foreach (var attack in attackMoves)
                 {
                     attackTiles.Add(attack);
@@ -267,13 +267,13 @@ public class InputHandler : MonoBehaviour
             Piece piece = pieceEntry.Value;
             if (piece.IsPlayer1 == isPlayer1 && piece.Type != PieceType.Mountain)
             {
-                var potentialAttacks = piece.GetAllPotentialAttackMoves(boardManager);
+                var potentialAttacks = piece.GetAllPotentialAttackMoves();
                 foreach (var attack in potentialAttacks)
                 {
                     potentialAttackTiles.Add(attack);
                 }
 
-                var enemyAttacks = piece.GetAttackMoves(boardManager);
+                var enemyAttacks = piece.GetAttackMoves();
                 foreach (var attack in enemyAttacks)
                 {
                     enemyAttackTiles.Add(attack);

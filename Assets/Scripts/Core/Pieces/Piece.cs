@@ -74,25 +74,20 @@ public abstract class Piece : MonoBehaviour
         Debug.Log($"Piece {GetType().Name} set to position {newPosition}");
     }
 
-    public List<Vector3Int> GetValidMoves(IBoardManager board)
+    public List<Vector3Int> GetValidMoves()
     {
-        return movementStrategy?.CalculateMoves(board, this) ?? new List<Vector3Int>();
+        return movementStrategy?.CalculateMoves(boardManager, this) ?? new List<Vector3Int>();
     }
 
-    public List<Vector3Int> GetAttackMoves(IBoardManager board)
+    public List<Vector3Int> GetAttackMoves()
     {
-        return attackStrategy?.CalculateAttacks(board, this) ?? new List<Vector3Int>();
+        return attackStrategy?.CalculateAttacks(boardManager, this) ?? new List<Vector3Int>();
     }
 
-    public List<Vector3Int> GetAllPotentialAttackMoves(IBoardManager board)
+    public List<Vector3Int> GetAllPotentialAttackMoves()
     {
-        return attackStrategy?.CalculateAllAttacks(board, this) ?? new List<Vector3Int>();
-    }
-
-    public void Attack(Vector3Int target, IBoardManager board)
-    {
-        Debug.Log($"Piece {GetType().Name}: Attack called for {target}");
-    }
+        return attackStrategy?.CalculateAllAttacks(boardManager, this) ?? new List<Vector3Int>();
+    }   
 
     /// <summary>
     /// ¬ыполн€ет действие (движение, ближн€€ или дальн€€ атака) с соответствующей анимацией.
@@ -102,7 +97,7 @@ public abstract class Piece : MonoBehaviour
     /// <param name="isRangedAttack">≈сли true, выполн€етс€ дальн€€ атака; иначе ближн€€.</param>
     /// <param name="boardManager">ћенеджер доски дл€ обновлени€ состо€ни€.</param>
     /// <param name="onComplete">ƒействие после завершени€ анимации.</param>
-    public void PerformAction(Vector3Int target, bool isMove, bool isRangedAttack, IBoardManager boardManager, Action onComplete)
+    public void PerformAction(Vector3Int target, bool isMove, bool isRangedAttack, Action onComplete)
     {
         PieceAnimator animator = GetComponent<PieceAnimator>();
         if (animator == null)

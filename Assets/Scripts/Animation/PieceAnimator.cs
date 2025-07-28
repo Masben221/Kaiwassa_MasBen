@@ -2,14 +2,17 @@
 using System;
 using System.Collections;
 using DG.Tweening;
+using Zenject;
 
 public class PieceAnimator : MonoBehaviour
 {
+    [Inject] private IBoardManager boardManager;
+    [Inject] private IPieceFactory pieceFactory; // Фабрика для создания фигур
+
     [SerializeField, Tooltip("Высота прыжка при перемещении")] private float jumpHeight = 1f;
     [SerializeField, Tooltip("Длительность поворота фигуры")] private float rotationDuration = 0.3f;
     [SerializeField, Tooltip("Конфигурация анимаций для фигуры")] private PieceAnimationConfig animationConfig;
-    [SerializeField, Tooltip("Высота дуги для параболического полёта снаряда")] private float projectileArcHeight = 1f;
-    //[SerializeField, Tooltip("Длительность полёта снаряда (в секундах)")] private float projectileFlightDuration = 0.5f;
+    [SerializeField, Tooltip("Высота дуги для параболического полёта снаряда")] private float projectileArcHeight = 1f;    
 
     public float ProjectileFlightDuration => animationConfig?.RangedAttackDuration ?? 0.5f;
 
@@ -311,7 +314,7 @@ public class PieceAnimator : MonoBehaviour
                     hitEffect.Play();
                     Destroy(hitEffect.gameObject, hitEffect.main.duration);
 
-                    Piece targetPiece = FindObjectOfType<BoardManager>().GetPieceAt(targetPos);
+                    Piece targetPiece = boardManager.GetPieceAt(targetPos);
                     if (targetPiece != null)
                     {
                         PieceAnimator targetAnimator = targetPiece.GetComponent<PieceAnimator>();
@@ -445,7 +448,7 @@ public class PieceAnimator : MonoBehaviour
                                 hitEffect.Play();
                                 Destroy(hitEffect.gameObject, hitEffect.main.duration);
 
-                                Piece targetPiece = FindObjectOfType<BoardManager>()?.GetPieceAt(targetPos);
+                                Piece targetPiece = boardManager?.GetPieceAt(targetPos);
                                 if (targetPiece != null)
                                 {
                                     PieceAnimator targetAnimator = targetPiece.GetComponent<PieceAnimator>();
@@ -594,14 +597,14 @@ public class PieceAnimator : MonoBehaviour
             return animationConfig;
         }
 
-        PieceFactory factory = FindObjectOfType<PieceFactory>();
-        if (factory == null)
+        
+        if (pieceFactory == null)
         {
             Debug.LogError("PieceAnimator: PieceFactory not found in scene!");
             return null;
         }
 
-        PieceAnimationConfig defaultConfig = factory.GetDefaultAnimationConfig();
+        PieceAnimationConfig defaultConfig = pieceFactory.GetDefaultAnimationConfig();
         if (defaultConfig == null)
         {
             Debug.LogWarning($"PieceAnimator: No animation config assigned for {piece.Type} and no default config in PieceFactory");

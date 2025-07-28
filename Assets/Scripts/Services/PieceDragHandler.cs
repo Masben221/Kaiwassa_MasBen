@@ -12,7 +12,7 @@ public class PieceDragHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
     private bool isPlayer1;
     private PieceType type;
     private UIManualPlacement uiManager;
-    private IPieceFactory pieceFactory;
+    [Inject] private IPieceFactory pieceFactory; // Фабрика для создания фигур
     private GameObject previewObject;
     private Piece previewPiece;
     private Vector3Int? lastHighlighted;
