@@ -12,14 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7bcc533881cd6544b59004ba0a9eaff, type: 3}
   m_Name: DragonConfig
   m_EditorClassIdentifier: 
+  moveDuration: 1
   meleeAttackDuration: 0.3
   meleePunchDistance: 0.2
-  hitEffectPrefab: {fileID: 4296184526264814347, guid: 8d725d28a12984d488c3696ca07b3693, type: 3}
+  hitEffectPrefab: {fileID: 2073245521221404567, guid: 8d725d28a12984d488c3696ca07b3693, type: 3}
+  meleeWeaponEffectPrefab: {fileID: 2073245521221404567, guid: ca74bd1deb57f4342a99c2df4677d61a, type: 3}
+  meleeWeaponEffectDelay: 0.5
   rangedAttackDuration: 0.5
   recoilDistance: 0.1
   recoilDuration: 0.2
   projectileModelPrefab: {fileID: 5310337442897017640, guid: 5ae1e7b27f20d6e45938917cfe24dfc7, type: 3}
   hitDuration: 0.2
-  hitShakeStrength: 0.1
+  hitPunchDistance: 0.15
   deathDuration: 0.5
-  deathEffectPrefab: {fileID: 4296184526264814347, guid: a9fc9295e89d22f4faf26aeb1fed32f8, type: 3}
+  deathEffectPrefab: {fileID: 2073245521221404567, guid: a9fc9295e89d22f4faf26aeb1fed32f8, type: 3}

@@ -12,7 +12,7 @@ public class PieceAnimator : MonoBehaviour
     [SerializeField, Tooltip("Высота прыжка при перемещении")] private float jumpHeight = 1f;
     [SerializeField, Tooltip("Длительность поворота фигуры")] private float rotationDuration = 0.3f;
     [SerializeField, Tooltip("Конфигурация анимаций для фигуры")] private PieceAnimationConfig animationConfig;
-    [SerializeField, Tooltip("Высота дуги для параболического полёта снаряда")] private float projectileArcHeight = 1f;    
+    [SerializeField, Tooltip("Высота дуги для параболического полёта снаряда")] private float projectileArcHeight = 1f;
 
     public float ProjectileFlightDuration => animationConfig?.RangedAttackDuration ?? 0.5f;
 
@@ -251,8 +251,8 @@ public class PieceAnimator : MonoBehaviour
     /// <summary>
     /// Корутина для анимации ближней атаки.
     /// Поворачивает фигуру к цели, выполняет движение к цели с длительностью, пропорциональной расстоянию,
-    /// выполняет рывок атаки, эффект попадания, анимацию попадания для целевой фигуры,
-    /// затем возвращает исходную ротацию.
+    /// выполняет рывок атаки, эффект попадания, эффект оружия (если задан) с заданной задержкой от начала анимации,
+    /// анимацию попадания для целевой фигуры, затем возвращает исходную ротацию.
     /// </summary>
     private IEnumerator AnimateMeleeAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
     {
@@ -267,6 +267,16 @@ public class PieceAnimator : MonoBehaviour
             // Рассчитываем расстояние для пропорционального движения (максимум 3 клетки)
             float distance = Vector3.Distance(startPos, endPos);
             float moveDurationAdjusted = distance > 0 ? (config?.MoveDuration ?? 0.5f) * (distance / 3f) : (config?.MoveDuration ?? 0.5f);
+
+            // Полная длительность анимации атаки
+            float totalAnimationDuration = rotationDuration + moveDurationAdjusted + (config?.MeleeAttackDuration ?? 0.3f);
+
+            // Запуск корутины для создания эффекта оружия с задержкой от начала анимации
+            if (config?.MeleeWeaponEffectPrefab != null)
+            {
+                float cappedDelay = Mathf.Min(config.MeleeWeaponEffectDelay, totalAnimationDuration);
+                StartCoroutine(CreateWeaponEffectWithDelay(piece, cappedDelay));
+            }
 
             // Поворот к цели
             Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z);
@@ -308,11 +318,16 @@ public class PieceAnimator : MonoBehaviour
                 transform.DOPunchPosition(punchDirection, config.MeleeAttackDuration, 10, 1f)
                     .SetEase(Ease.InOutSine);
 
+                // Эффект попадания
                 if (config.HitEffectPrefab != null)
                 {
-                    ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, endPos + Vector3.up * 0.5f, Quaternion.identity);
-                    hitEffect.Play();
-                    Destroy(hitEffect.gameObject, hitEffect.main.duration);
+                    GameObject hitEffect = Instantiate(config.HitEffectPrefab, endPos + Vector3.up * 0.5f, Quaternion.identity);
+                    ImpactEffect impactEffect = hitEffect.GetComponent<ImpactEffect>();
+                    if (impactEffect == null)
+                    {
+                        Debug.LogWarning($"PieceAnimator: HitEffectPrefab on {piece.Type} does not have ImpactEffect component!");
+                        Destroy(hitEffect);
+                    }
 
                     Piece targetPiece = boardManager.GetPieceAt(targetPos);
                     if (targetPiece != null)
@@ -326,7 +341,7 @@ public class PieceAnimator : MonoBehaviour
                 }
 
                 // Задержка после анимации атаки для синхронизации
-                yield return new WaitForSeconds(config.MeleeAttackDuration + 0.1f);
+                yield return new WaitForSeconds(config.MeleeAttackDuration);
             }
             else
             {
@@ -354,27 +369,48 @@ public class PieceAnimator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Корутина для создания эффекта оружия с заданной задержкой от начала анимации.
+    /// </summary>
+    private IEnumerator CreateWeaponEffectWithDelay(Piece piece, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        PieceAnimationConfig config = GetAnimationConfig(piece);
+        if (config.MeleeWeaponEffectPrefab != null)
+        {
+            // Смещение задаётся в префабе (например, для пасти дракона)
+            GameObject weaponEffect = Instantiate(config.MeleeWeaponEffectPrefab, transform);
+            ImpactEffect impactEffect = weaponEffect.GetComponent<ImpactEffect>();
+            if (impactEffect == null)
+            {
+                Debug.LogWarning($"PieceAnimator: MeleeWeaponEffectPrefab on {piece.Type} does not have ImpactEffect component!");
+                Destroy(weaponEffect);
+            }
+            else
+            {
+                Debug.Log($"PieceAnimator: Created melee weapon effect for {piece.Type} as child of {gameObject.name} after {delay}s delay");
+            }
+        }
+    }
+
     private IEnumerator AnimateRangedAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
     {
         try
         {
-            // Получение конфигурации анимации для фигуры
             PieceAnimationConfig config = GetAnimationConfig(piece);
             Vector3 startPos = transform.position;
             Quaternion startRotation = transform.rotation;
             Quaternion initialRotation = piece.InitialRotation;
 
-            // Вычисление направления и расстояния до цели
             Vector3 direction = new Vector3(targetPos.x - piece.Position.x, 0, targetPos.z - piece.Position.z).normalized;
             Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
             float distance = Vector3.Distance(startPos, new Vector3(targetPos.x, 0.5f, targetPos.z));
 
-            // Вычисление начального угла поворота стрелы (theta) на основе расстояния и высоты дуги
             float theta = Mathf.Atan2(4f * projectileArcHeight, distance) * Mathf.Rad2Deg;
-            float startPitch = 90f - theta; // Начальный угол (например, 37°)
-            float endPitch = 90f + theta;   // Конечный угол (например, 143°)
+            float startPitch = 90f - theta;
+            float endPitch = 90f + theta;
 
-            // Поворот стрелка к цели
             float elapsedTime = 0f;
             while (elapsedTime < rotationDuration)
             {
@@ -387,29 +423,23 @@ public class PieceAnimator : MonoBehaviour
 
             if (config != null)
             {
-                // Отдача стрелка
                 Vector3 recoilDirection = -direction * config.RecoilDistance;
                 transform.DOPunchPosition(recoilDirection, config.RecoilDuration, 10, 1f)
                     .SetEase(Ease.InOutSine);
 
-                // Запуск снаряда
                 if (config.ProjectileModelPrefab != null)
                 {
                     Vector3 targetWorldPos = new Vector3(targetPos.x, 0.5f, targetPos.z);
-
-                    // Смещение выстрела чуть вперёд и выше
                     Vector3 launchOffset = direction * 0.2f + Vector3.up * 0.5f;
                     GameObject projectile = Instantiate(
                         config.ProjectileModelPrefab,
                         startPos + launchOffset,
-                        Quaternion.Euler(startPitch, 0f, 0f) // Начальный угол поворота стрелы
+                        Quaternion.Euler(startPitch, 0f, 0f)
                     );
 
-                    // Параболический путь
                     Vector3 midPoint = (startPos + targetWorldPos) * 0.5f + Vector3.up * projectileArcHeight;
                     Vector3[] path = { startPos + launchOffset, midPoint, targetWorldPos };
 
-                    // Собственный таймер для прогресса полёта
                     float flightElapsed = 0f;
 
                     projectile.transform.DOPath(path, ProjectileFlightDuration, PathType.CatmullRom)
@@ -419,18 +449,13 @@ public class PieceAnimator : MonoBehaviour
                         {
                             flightElapsed += Time.deltaTime;
                             float progress = Mathf.Clamp01(flightElapsed / ProjectileFlightDuration);
-
-                            // Параболический коэффициент 0..1..0
                             float parabola = 4f * progress * (1f - progress);
-
-                            // Линейная интерполяция угла от startPitch до endPitch через 90°
                             float pitch;
                             if (progress < 0.5f)
                                 pitch = Mathf.Lerp(startPitch, 90f, progress * 2f);
                             else
                                 pitch = Mathf.Lerp(90f, endPitch, (progress - 0.5f) * 2f);
 
-                            // Yaw (горизонтальный поворот) к цели
                             Vector3 dirFlat = (targetWorldPos - projectile.transform.position);
                             dirFlat.y = 0f;
                             float yaw = dirFlat.sqrMagnitude > 0.001f
@@ -441,12 +466,15 @@ public class PieceAnimator : MonoBehaviour
                         })
                         .OnComplete(() =>
                         {
-                            // Визуальный эффект попадания
                             if (config.HitEffectPrefab != null)
                             {
-                                ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, targetWorldPos, Quaternion.identity);
-                                hitEffect.Play();
-                                Destroy(hitEffect.gameObject, hitEffect.main.duration);
+                                GameObject hitEffect = Instantiate(config.HitEffectPrefab, targetWorldPos, Quaternion.identity);
+                                ImpactEffect impactEffect = hitEffect.GetComponent<ImpactEffect>();
+                                if (impactEffect == null)
+                                {
+                                    Debug.LogWarning($"PieceAnimator: HitEffectPrefab on {piece.Type} does not have ImpactEffect component!");
+                                    Destroy(hitEffect);
+                                }
 
                                 Piece targetPiece = boardManager?.GetPieceAt(targetPos);
                                 if (targetPiece != null)
@@ -466,7 +494,6 @@ public class PieceAnimator : MonoBehaviour
                 yield return new WaitForSeconds(0.5f);
             }
 
-            // Возврат стрелка в исходное положение
             elapsedTime = 0f;
             while (elapsedTime < rotationDuration)
             {
@@ -508,9 +535,13 @@ public class PieceAnimator : MonoBehaviour
 
                 if (config.HitEffectPrefab != null)
                 {
-                    ParticleSystem hitEffect = Instantiate(config.HitEffectPrefab, transform.position, Quaternion.identity);
-                    hitEffect.Play();
-                    Destroy(hitEffect.gameObject, hitEffect.main.duration);
+                    GameObject hitEffect = Instantiate(config.HitEffectPrefab, transform.position, Quaternion.identity);
+                    ImpactEffect impactEffect = hitEffect.GetComponent<ImpactEffect>();
+                    if (impactEffect == null)
+                    {
+                        Debug.LogWarning($"PieceAnimator: HitEffectPrefab on {piece.Type} does not have ImpactEffect component!");
+                        Destroy(hitEffect);
+                    }
                 }
 
                 yield return new WaitForSeconds(config.HitDuration);
@@ -527,9 +558,13 @@ public class PieceAnimator : MonoBehaviour
 
                     if (config.DeathEffectPrefab != null)
                     {
-                        ParticleSystem deathEffect = Instantiate(config.DeathEffectPrefab, transform.position, Quaternion.identity);
-                        deathEffect.Play();
-                        Destroy(deathEffect.gameObject, deathEffect.main.duration);
+                        GameObject deathEffect = Instantiate(config.DeathEffectPrefab, transform.position, Quaternion.identity);
+                        ImpactEffect impactEffect = deathEffect.GetComponent<ImpactEffect>();
+                        if (impactEffect == null)
+                        {
+                            Debug.LogWarning($"PieceAnimator: DeathEffectPrefab on {piece.Type} does not have ImpactEffect component!");
+                            Destroy(deathEffect);
+                        }
                     }
 
                     yield return new WaitForSeconds(config.DeathDuration);
@@ -568,9 +603,13 @@ public class PieceAnimator : MonoBehaviour
 
                 if (config.DeathEffectPrefab != null)
                 {
-                    ParticleSystem deathEffect = Instantiate(config.DeathEffectPrefab, transform.position, Quaternion.identity);
-                    deathEffect.Play();
-                    Destroy(deathEffect.gameObject, deathEffect.main.duration);
+                    GameObject deathEffect = Instantiate(config.DeathEffectPrefab, transform.position, Quaternion.identity);
+                    ImpactEffect impactEffect = deathEffect.GetComponent<ImpactEffect>();
+                    if (impactEffect == null)
+                    {
+                        Debug.LogWarning($"PieceAnimator: DeathEffectPrefab on {piece.Type} does not have ImpactEffect component!");
+                        Destroy(deathEffect);
+                    }
                 }
 
                 yield return new WaitForSeconds(config.DeathDuration);
@@ -597,7 +636,6 @@ public class PieceAnimator : MonoBehaviour
             return animationConfig;
         }
 
-        
         if (pieceFactory == null)
         {
             Debug.LogError("PieceAnimator: PieceFactory not found in scene!");

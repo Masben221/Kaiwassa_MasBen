@@ -71,6 +71,7 @@
     <Compile Include="Assets\Scripts\Core\Board\BoardPieceDragHandler.cs" />
     <Compile Include="Assets\Scripts\Services\ArrowDebug.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\KingPiece.cs" />
+    <Compile Include="Assets\Scripts\ImpactEffect\ImpactEffect.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\SpearmanPiece.cs" />
     <Compile Include="Assets\Scripts\Services\InputHandler.cs" />
     <Compile Include="Assets\Scripts\UI\UISystem.cs" />

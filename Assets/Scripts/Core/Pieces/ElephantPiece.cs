@@ -168,7 +168,7 @@ public class ElephantAttackStrategy : IAttackable
     /// <summary>
     /// Выполняет атаку Слона на указанную клетку, уничтожая до двух фигур противника.
     /// Слон перемещается на клетку каждой атакованной фигуры.
-    /// Для каждой фигуры выполняется анимация атаки, попадания и смерти.
+    /// Для каждой фигуры выполняется анимация атаки, попадания, эффекта оружия и смерти.
     /// </summary>
     public void ExecuteAttack(Piece piece, Vector3Int target, IBoardManager boardManager, bool isRangedAttack)
     {
@@ -208,7 +208,7 @@ public class ElephantAttackStrategy : IAttackable
         {
             // Если две цели, атакуем первую с перемещением, затем вторую после паузы
             piece.SelectAttack(targets[0], isRangedAttack);
-            piece.StartCoroutine(WaitForAnimation(piece, targets[1], isRangedAttack));
+            piece.StartCoroutine(WaitForAnimation(piece, targets[1], isRangedAttack, boardManager));
         }
     }
 
@@ -216,17 +216,25 @@ public class ElephantAttackStrategy : IAttackable
     /// Корутина для ожидания завершения анимации атаки первой фигуры перед атакой второй.
     /// Пересчитывает направление атаки от текущей позиции Слона.
     /// </summary>
-    private IEnumerator WaitForAnimation(Piece piece, Vector3Int secondTarget, bool isRangedAttack)
+    private IEnumerator WaitForAnimation(Piece piece, Vector3Int secondTarget, bool isRangedAttack, IBoardManager boardManager)
     {
         // Получаем конфигурацию анимации
         PieceAnimator animator = piece.GetComponent<PieceAnimator>();
         PieceAnimationConfig config = animator?.GetAnimationConfig(piece);
 
-        // Суммарное время анимации: движение + атака + попадание + смерть + задержка
-        float animationDuration = (config?.MoveDuration ?? 0.5f) +
-                                 (config?.MeleeAttackDuration ?? 0.3f) +
+        // Полная длительность анимации атаки: поворот + движение + рывок
+        float rotationDuration = animator?.RotationDuration ?? 0.3f;
+        Vector3 startPos = piece.transform.position;
+        Vector3 endPos = new Vector3(secondTarget.x, 0.5f, secondTarget.z);
+        float distance = Vector3.Distance(startPos, endPos);
+        float moveDurationAdjusted = distance > 0 ? (config?.MoveDuration ?? 0.5f) * (distance / 3f) : (config?.MoveDuration ?? 0.5f);
+        float totalAnimationDuration = rotationDuration + moveDurationAdjusted + (config?.MeleeAttackDuration ?? 0.3f);
+
+        // Суммарное время ожидания: полная анимация + эффект оружия (с учётом задержки) + попадание + смерть
+        float animationDuration = totalAnimationDuration +
+                                 (config?.MeleeWeaponEffectPrefab != null ? Mathf.Min(config.MeleeWeaponEffectDelay, totalAnimationDuration) : 0f) +
                                  (config?.HitDuration ?? 0.2f) +
-                                 (config?.DeathDuration ?? 0.5f) + 0.1f;
+                                 (config?.DeathDuration ?? 0.5f);
 
         yield return new WaitForSeconds(animationDuration);
         piece.SelectAttack(secondTarget, isRangedAttack);

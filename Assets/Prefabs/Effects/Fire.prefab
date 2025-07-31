@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3667553137084189364}
   - component: {fileID: 4296184526264814347}
   - component: {fileID: 2149188937819064983}
+  - component: {fileID: 5863200343267008717}
   m_Layer: 0
   m_Name: Fire
   m_TagString: Untagged
@@ -26,13 +27,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2073245521221404567}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.30070576, y: 0, z: 0, w: 0.953717}
+  m_LocalPosition: {x: -0.178, y: 0.075, z: 0.528}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 35, y: 0, z: 0}
 --- !u!198 &4296184526264814347
 ParticleSystem:
   m_ObjectHideFlags: 0
@@ -4830,3 +4831,16 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
+--- !u!114 &5863200343267008717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2073245521221404567}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80ba08bf15cd65b4f8711f7e5ad13f78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_LifeTime: 1
