@@ -9,17 +9,11 @@ public class PieceAnimator : MonoBehaviour
     [Inject] private IBoardManager boardManager;
     [Inject] private IPieceFactory pieceFactory; // Фабрика для создания фигур
 
-    [SerializeField, Tooltip("Высота прыжка при перемещении")] private float jumpHeight = 1f;
-    [SerializeField, Tooltip("Длительность поворота фигуры")] private float rotationDuration = 0.3f;
     [SerializeField, Tooltip("Конфигурация анимаций для фигуры")] private PieceAnimationConfig animationConfig;
-    [SerializeField, Tooltip("Высота дуги для параболического полёта снаряда")] private float projectileArcHeight = 1f;
 
     public float ProjectileFlightDuration => animationConfig?.RangedAttackDuration ?? 0.5f;
 
     private bool isAnimating;
-
-    public float JumpHeight => jumpHeight;
-    public float RotationDuration => rotationDuration;
 
     public static event Action<Piece, Vector3Int, bool, bool> OnAnimationStarted; // Piece, target, isMove, isRangedAttack
     public static event Action<GameObject> OnProjectileFlying; // Projectile GameObject
@@ -204,6 +198,7 @@ public class PieceAnimator : MonoBehaviour
         Quaternion targetRotation = direction.sqrMagnitude > 0.01f ? Quaternion.LookRotation(direction, Vector3.up) : startRotation;
 
         float elapsedTime = 0f;
+        float rotationDuration = config?.RotationDuration ?? 0.3f;
         while (elapsedTime < rotationDuration)
         {
             elapsedTime += Time.deltaTime;
@@ -215,36 +210,22 @@ public class PieceAnimator : MonoBehaviour
 
         elapsedTime = 0f;
         float moveDuration = config?.MoveDuration ?? 0.5f;
-        float peakPause = config?.JumpPeakPauseDuration ?? 0f;
+        float jumpHeight = config?.JumpHeight ?? 1f;
         if (Vector3.Distance(startPos, endPos) > 0.1f)
         {
             while (elapsedTime < moveDuration)
             {
                 elapsedTime += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsedTime / moveDuration);
-                float adjustedT = t;
-
-                // Пауза в пике прыжка (t = 0.5)
-                if (peakPause > 0f && t >= 0.5f && elapsedTime < (moveDuration * 0.5f + peakPause))
-                {
-                    adjustedT = 0.5f; // Замораживаем интерполяцию на пике
-                }
-                else if (peakPause > 0f && t > 0.5f)
-                {
-                    // Смещаем t после паузы
-                    float timeAfterPause = elapsedTime - (moveDuration * 0.5f + peakPause);
-                    adjustedT = Mathf.Clamp01(0.5f + timeAfterPause / (moveDuration * 0.5f));
-                }
-
-                float height = jumpHeight * Mathf.Sin(adjustedT * Mathf.PI);
-                transform.position = Vector3.Lerp(startPos, endPos, adjustedT) + new Vector3(0, height, 0);
+                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / moveDuration);
+                float height = jumpHeight * Mathf.Sin(t * Mathf.PI);
+                transform.position = Vector3.Lerp(startPos, endPos, t) + new Vector3(0, height, 0);
                 yield return null;
             }
             transform.position = endPos;
         }
         else
         {
-            yield return new WaitForSeconds(moveDuration + peakPause);
+            yield return new WaitForSeconds(moveDuration);
         }
 
         elapsedTime = 0f;
@@ -283,6 +264,7 @@ public class PieceAnimator : MonoBehaviour
             // Рассчитываем фиксированную длительность движения
             float moveDurationAdjusted = config?.MoveDuration ?? 0.5f;
             float peakPause = config?.JumpPeakPauseDuration ?? 0f;
+            float jumpHeight = config?.JumpHeight ?? 1f;
 
             // Запуск корутины для создания эффекта оружия с процентной задержкой от длительности движения
             if (config?.MeleeWeaponEffectPrefab != null)
@@ -296,6 +278,7 @@ public class PieceAnimator : MonoBehaviour
             Quaternion targetRotation = direction.sqrMagnitude > 0.01f ? Quaternion.LookRotation(direction, Vector3.up) : startRotation;
 
             float elapsedTime = 0f;
+            float rotationDuration = config?.RotationDuration ?? 0.3f;
             while (elapsedTime < rotationDuration)
             {
                 elapsedTime += Time.deltaTime;
@@ -434,11 +417,13 @@ public class PieceAnimator : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
             float distance = Vector3.Distance(startPos, new Vector3(targetPos.x, 0.5f, targetPos.z));
 
+            float projectileArcHeight = config?.ProjectileArcHeight ?? 1f;
             float theta = Mathf.Atan2(4f * projectileArcHeight, distance) * Mathf.Rad2Deg;
             float startPitch = 90f - theta;
             float endPitch = 90f + theta;
 
             float elapsedTime = 0f;
+            float rotationDuration = config?.RotationDuration ?? 0.3f;
             while (elapsedTime < rotationDuration)
             {
                 elapsedTime += Time.deltaTime;

@@ -14,32 +14,24 @@ public class CameraController : MonoBehaviour
     [Header("Default Camera Settings")]
     [SerializeField, Tooltip("Позиция камеры по умолчанию (над центром доски)")]
     private Vector3 defaultPosition = new Vector3(7f, 2.8f, 4.5f);
-
     [SerializeField, Tooltip("Угол поворота камеры по умолчанию (45° наклон, -90° поворот)")]
     private Vector3 defaultRotation = new Vector3(45f, -90f, 0f);
-
     [SerializeField, Tooltip("Размер ортографической камеры для обзора всей доски")]
     private float defaultOrthographicSize = 3.8f;
-
     [SerializeField, Tooltip("Ближняя плоскость отсечения камеры")]
     private float nearClippingPlane = -3f;
-
     [SerializeField, Tooltip("Длительность плавного перехода к дефолтному положению (в секундах)")]
     private float defaultTransitionDuration = 1f;
 
     [Header("Piece Follow Settings")]
     [SerializeField, Tooltip("Смещение камеры относительно фигуры при следовании")]
     private Vector3 followOffset = new Vector3(2f, 2f, 0f);
-
     [SerializeField, Tooltip("Угол поворота камеры для игрока 1 при следовании (45° наклон, 0° поворот)")]
     private Vector3 followRotationPlayer1 = new Vector3(45f, 0f, 0f);
-
     [SerializeField, Tooltip("Угол поворота камеры для игрока 2 при следовании (45° наклон, 180° поворот)")]
     private Vector3 followRotationPlayer2 = new Vector3(45f, 180f, 0f);
-
     [SerializeField, Tooltip("Размер ортографической камеры при следовании за фигурой")]
     private float followOrthographicSize = 2.5f;
-
     [SerializeField, Tooltip("Длительность перехода к начальной позиции следования (в секундах)")]
     private float preFollowTransitionDuration = 0.5f; // Увеличено для плавности
 
@@ -175,8 +167,8 @@ public class CameraController : MonoBehaviour
         Vector3 startPosition = transform.position;
         Quaternion startRotation = transform.rotation;
         float startOrthographicSize = mainCamera.orthographicSize;
-        float elapsedTime = 0f;
 
+        float elapsedTime = 0f;
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
@@ -214,9 +206,17 @@ public class CameraController : MonoBehaviour
             yield break;
         }
 
+        PieceAnimationConfig config = animator.GetAnimationConfig(piece); // Конфигурация анимаций
+        if (config == null)
+        {
+            Debug.LogError($"CameraController: No PieceAnimationConfig for {piece.Type}");
+            isFollowingPiece = false;
+            onAnimationComplete?.Invoke();
+            yield break;
+        }
+
         Vector3 piecePosition = piece.transform.position; // Начальная позиция фигуры
         Vector3 targetPosition = new Vector3(target.x, 0.5f, target.z); // Целевая позиция
-        PieceAnimationConfig config = animator.GetAnimationConfig(piece); // Конфигурация анимаций
 
         // Определяем начальную позицию камеры над фигурой
         Vector3 attackerCameraPosition = piecePosition + (isPlayer1Turn ? followOffset : new Vector3(-followOffset.x, followOffset.y, followOffset.z));
@@ -237,7 +237,7 @@ public class CameraController : MonoBehaviour
         if (isRangedAttack)
         {
             // Для дальней атаки: три фазы
-            float rotationAndRecoilDuration = (config?.RecoilDuration ?? 0.2f) + animator.RotationDuration; // Время поворота и отдачи
+            float rotationAndRecoilDuration = (config?.RecoilDuration ?? 0.2f) + (config?.RotationDuration ?? 0.3f); // Время поворота и отдачи
             float cameraProjectileFlightDuration = animator.ProjectileFlightDuration + (config?.HitDuration ?? 0.2f) + (config?.DeathDuration ?? 0.5f); // Время полёта снаряда + эффекты
 
             // Фаза 1: Смотрим на стреляющую фигуру во время поворота и отдачи
@@ -274,7 +274,7 @@ public class CameraController : MonoBehaviour
         else
         {
             // Для перемещения или ближней атаки: следим за фигурой
-            float totalAnimationDuration = (config?.MeleePunchDistance ?? 0.2f) * 2 + (config?.MeleeAttackDuration ?? 0.3f) * 2 + animator.RotationDuration * 2 + (config?.MoveDuration ?? 0.5f) * 2; // Время анимации (два поворота + движение)
+            float totalAnimationDuration = (config?.MeleePunchDistance ?? 0.2f) * 2 + (config?.MeleeAttackDuration ?? 0.3f) * 2 + (config?.RotationDuration ?? 0.3f) * 2 + (config?.MoveDuration ?? 0.5f) * 2; // Время анимации (два поворота + движение)
             Vector3 startPiecePosition = piecePosition;
             Vector3 endPiecePosition = targetPosition;
 
@@ -284,10 +284,9 @@ public class CameraController : MonoBehaviour
                 elapsedTime += Time.deltaTime;
                 float t = elapsedTime / totalAnimationDuration;
                 Vector3 currentPiecePosition = Vector3.Lerp(startPiecePosition, endPiecePosition, t); // Интерполяция позиции
-                float height = isMove ? animator.JumpHeight * Mathf.Sin(t * Mathf.PI) : 0f; // Учёт высоты прыжка
+                float height = isMove ? (config?.JumpHeight ?? 1f) * Mathf.Sin(t * Mathf.PI) : 0f; // Учёт высоты прыжка
                 currentPiecePosition.y += height;
                 Vector3 cameraPosition = currentPiecePosition + (isPlayer1Turn ? followOffset : new Vector3(-followOffset.x, followOffset.y, followOffset.z));
-
                 transform.position = cameraPosition;
                 transform.rotation = targetRotation;
                 mainCamera.orthographicSize = followOrthographicSize;

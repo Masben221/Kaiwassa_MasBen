@@ -223,7 +223,7 @@ public class ElephantAttackStrategy : IAttackable
         PieceAnimationConfig config = animator?.GetAnimationConfig(piece);
 
         // Полная длительность анимации: поворот + движение + рывок + эффект оружия + попадание + смерть
-        float rotationDuration = animator?.RotationDuration ?? 0.3f;
+        float rotationDuration = (config?.RotationDuration ?? 0.3f);
         float moveDuration = config?.MoveDuration ?? 0.5f;
         float meleeAttackDuration = config?.MeleeAttackDuration ?? 0.3f;
         float hitDuration = config?.HitDuration ?? 0.2f;
