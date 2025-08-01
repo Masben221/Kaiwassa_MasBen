@@ -222,19 +222,13 @@ public class ElephantAttackStrategy : IAttackable
         PieceAnimator animator = piece.GetComponent<PieceAnimator>();
         PieceAnimationConfig config = animator?.GetAnimationConfig(piece);
 
-        // Полная длительность анимации атаки: поворот + движение + рывок
+        // Полная длительность анимации: поворот + движение + рывок + эффект оружия + попадание + смерть
         float rotationDuration = animator?.RotationDuration ?? 0.3f;
-        Vector3 startPos = piece.transform.position;
-        Vector3 endPos = new Vector3(secondTarget.x, 0.5f, secondTarget.z);
-        float distance = Vector3.Distance(startPos, endPos);
-        float moveDurationAdjusted = distance > 0 ? (config?.MoveDuration ?? 0.5f) * (distance / 3f) : (config?.MoveDuration ?? 0.5f);
-        float totalAnimationDuration = rotationDuration + moveDurationAdjusted + (config?.MeleeAttackDuration ?? 0.3f);
-
-        // Суммарное время ожидания: полная анимация + эффект оружия (с учётом задержки) + попадание + смерть
-        float animationDuration = totalAnimationDuration +
-                                 (config?.MeleeWeaponEffectPrefab != null ? Mathf.Min(config.MeleeWeaponEffectDelay, totalAnimationDuration) : 0f) +
-                                 (config?.HitDuration ?? 0.2f) +
-                                 (config?.DeathDuration ?? 0.5f);
+        float moveDuration = config?.MoveDuration ?? 0.5f;
+        float meleeAttackDuration = config?.MeleeAttackDuration ?? 0.3f;
+        float hitDuration = config?.HitDuration ?? 0.2f;
+        float deathDuration = config?.DeathDuration ?? 0.5f;
+        float animationDuration = rotationDuration + moveDuration + meleeAttackDuration + hitDuration + deathDuration + 0.1f; // Фиксированная задержка для эффекта
 
         yield return new WaitForSeconds(animationDuration);
         piece.SelectAttack(secondTarget, isRangedAttack);

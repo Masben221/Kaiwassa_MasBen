@@ -214,21 +214,37 @@ public class PieceAnimator : MonoBehaviour
         transform.rotation = targetRotation;
 
         elapsedTime = 0f;
+        float moveDuration = config?.MoveDuration ?? 0.5f;
+        float peakPause = config?.JumpPeakPauseDuration ?? 0f;
         if (Vector3.Distance(startPos, endPos) > 0.1f)
         {
-            while (elapsedTime < (config?.MoveDuration ?? 0.5f))
+            while (elapsedTime < moveDuration)
             {
                 elapsedTime += Time.deltaTime;
-                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / (config?.MoveDuration ?? 0.5f));
-                float height = jumpHeight * Mathf.Sin(t * Mathf.PI);
-                transform.position = Vector3.Lerp(startPos, endPos, t) + new Vector3(0, height, 0);
+                float t = Mathf.Clamp01(elapsedTime / moveDuration);
+                float adjustedT = t;
+
+                // Пауза в пике прыжка (t = 0.5)
+                if (peakPause > 0f && t >= 0.5f && elapsedTime < (moveDuration * 0.5f + peakPause))
+                {
+                    adjustedT = 0.5f; // Замораживаем интерполяцию на пике
+                }
+                else if (peakPause > 0f && t > 0.5f)
+                {
+                    // Смещаем t после паузы
+                    float timeAfterPause = elapsedTime - (moveDuration * 0.5f + peakPause);
+                    adjustedT = Mathf.Clamp01(0.5f + timeAfterPause / (moveDuration * 0.5f));
+                }
+
+                float height = jumpHeight * Mathf.Sin(adjustedT * Mathf.PI);
+                transform.position = Vector3.Lerp(startPos, endPos, adjustedT) + new Vector3(0, height, 0);
                 yield return null;
             }
             transform.position = endPos;
         }
         else
         {
-            yield return new WaitForSeconds(config?.MoveDuration ?? 0.5f);
+            yield return new WaitForSeconds(moveDuration + peakPause);
         }
 
         elapsedTime = 0f;
@@ -250,9 +266,9 @@ public class PieceAnimator : MonoBehaviour
 
     /// <summary>
     /// Корутина для анимации ближней атаки.
-    /// Поворачивает фигуру к цели, выполняет движение к цели с длительностью, пропорциональной расстоянию,
-    /// выполняет рывок атаки, эффект попадания, эффект оружия (если задан) с заданной задержкой от начала анимации,
-    /// анимацию попадания для целевой фигуры, затем возвращает исходную ротацию.
+    /// Поворачивает фигуру к цели, выполняет движение к цели с фиксированной длительностью,
+    /// с паузой в пике прыжка, создаёт эффект оружия с заданной процентной задержкой от длительности движения,
+    /// выполняет рывок атаки, эффект попадания, анимацию попадания для целевой фигуры, затем возвращает исходную ротацию.
     /// </summary>
     private IEnumerator AnimateMeleeAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
     {
@@ -264,18 +280,15 @@ public class PieceAnimator : MonoBehaviour
             Quaternion startRotation = transform.rotation;
             Quaternion initialRotation = piece.InitialRotation;
 
-            // Рассчитываем расстояние для пропорционального движения (максимум 3 клетки)
-            float distance = Vector3.Distance(startPos, endPos);
-            float moveDurationAdjusted = distance > 0 ? (config?.MoveDuration ?? 0.5f) * (distance / 3f) : (config?.MoveDuration ?? 0.5f);
+            // Рассчитываем фиксированную длительность движения
+            float moveDurationAdjusted = config?.MoveDuration ?? 0.5f;
+            float peakPause = config?.JumpPeakPauseDuration ?? 0f;
 
-            // Полная длительность анимации атаки
-            float totalAnimationDuration = rotationDuration + moveDurationAdjusted + (config?.MeleeAttackDuration ?? 0.3f);
-
-            // Запуск корутины для создания эффекта оружия с задержкой от начала анимации
+            // Запуск корутины для создания эффекта оружия с процентной задержкой от длительности движения
             if (config?.MeleeWeaponEffectPrefab != null)
             {
-                float cappedDelay = Mathf.Min(config.MeleeWeaponEffectDelay, totalAnimationDuration);
-                StartCoroutine(CreateWeaponEffectWithDelay(piece, cappedDelay));
+                float effectDelay = moveDurationAdjusted * Mathf.Clamp01(config.MeleeWeaponEffectTiming);
+                StartCoroutine(CreateWeaponEffectWithDelay(piece, effectDelay));
             }
 
             // Поворот к цели
@@ -292,23 +305,37 @@ public class PieceAnimator : MonoBehaviour
             }
             transform.rotation = targetRotation;
 
-            // Движение к цели
+            // Движение к цели с паузой в пике
             elapsedTime = 0f;
             if (Vector3.Distance(startPos, endPos) > 0.1f)
             {
                 while (elapsedTime < moveDurationAdjusted)
                 {
                     elapsedTime += Time.deltaTime;
-                    float t = Mathf.SmoothStep(0f, 1f, elapsedTime / moveDurationAdjusted);
-                    float height = jumpHeight * Mathf.Sin(t * Mathf.PI);
-                    transform.position = Vector3.Lerp(startPos, endPos, t) + new Vector3(0, height, 0);
+                    float t = Mathf.Clamp01(elapsedTime / moveDurationAdjusted);
+                    float adjustedT = t;
+
+                    // Пауза в пике прыжка (t = 0.5)
+                    if (peakPause > 0f && t >= 0.5f && elapsedTime < (moveDurationAdjusted * 0.5f + peakPause))
+                    {
+                        adjustedT = 0.5f; // Замораживаем интерполяцию на пике
+                    }
+                    else if (peakPause > 0f && t > 0.5f)
+                    {
+                        // Смещаем t после паузы
+                        float timeAfterPause = elapsedTime - (moveDurationAdjusted * 0.5f + peakPause);
+                        adjustedT = Mathf.Clamp01(0.5f + timeAfterPause / (moveDurationAdjusted * 0.5f));
+                    }
+
+                    float height = jumpHeight * Mathf.Sin(adjustedT * Mathf.PI);
+                    transform.position = Vector3.Lerp(startPos, endPos, adjustedT) + new Vector3(0, height, 0);
                     yield return null;
                 }
                 transform.position = endPos;
             }
             else
             {
-                yield return new WaitForSeconds(moveDurationAdjusted);
+                yield return new WaitForSeconds(moveDurationAdjusted + peakPause);
             }
 
             // Анимация атаки и эффекты
@@ -370,7 +397,7 @@ public class PieceAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// Корутина для создания эффекта оружия с заданной задержкой от начала анимации.
+    /// Корутина для создания эффекта оружия с заданной задержкой от начала движения.
     /// </summary>
     private IEnumerator CreateWeaponEffectWithDelay(Piece piece, float delay)
     {

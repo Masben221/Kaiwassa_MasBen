@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: DragonConfig
   m_EditorClassIdentifier: 
   moveDuration: 1
+  jumpPeakPauseDuration: 0.5
   meleeAttackDuration: 0.3
   meleePunchDistance: 0.2
   hitEffectPrefab: {fileID: 2073245521221404567, guid: 8d725d28a12984d488c3696ca07b3693, type: 3}
-  meleeWeaponEffectPrefab: {fileID: 2073245521221404567, guid: ca74bd1deb57f4342a99c2df4677d61a, type: 3}
-  meleeWeaponEffectDelay: 0.5
+  meleeWeaponEffectPrefab: {fileID: 3975253253071911153, guid: 1d14e48c9e388d141a85df266cdfad95, type: 3}
+  meleeWeaponEffectTiming: 0.5
   rangedAttackDuration: 0.5
   recoilDistance: 0.1
   recoilDuration: 0.2

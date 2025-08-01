@@ -10,6 +10,8 @@ public class PieceAnimationConfig : ScriptableObject
     [Header("Movement Animation Settings")]
     [SerializeField, Tooltip("Длительность анимации движения фигуры (в секундах)")]
     private float moveDuration = 0.5f;
+    [SerializeField, Tooltip("Длительность паузы в пике прыжка при движении (в секундах, 0 = без паузы)")]
+    private float jumpPeakPauseDuration = 0f; // НОВОЕ ПОЛЕ: Пауза в пике прыжка
 
     [Header("Melee Attack Settings")]
     [SerializeField, Tooltip("Длительность анимации ближней атаки (рывок вперёд и назад)")]
@@ -20,8 +22,8 @@ public class PieceAnimationConfig : ScriptableObject
     private GameObject hitEffectPrefab;
     [SerializeField, Tooltip("Префаб объекта для эффекта оружия при ближней атаке (например, огонь дракона)")]
     private GameObject meleeWeaponEffectPrefab;
-    [SerializeField, Tooltip("Задержка создания эффекта оружия от начала полной анимации атаки (поворот + движение + рывок, в секундах). Ограничена общей длительностью анимации.")]
-    private float meleeWeaponEffectDelay = 0.1f; // Задержка эффекта оружия
+    [SerializeField, Range(0f, 1f), Tooltip("Момент срабатывания эффекта оружия относительно длительности движения (0 = начало движения, 0.5 = пик прыжка, 1 = конец движения)")]
+    private float meleeWeaponEffectTiming = 0.5f; // НОВОЕ ПОЛЕ: Процентная задержка эффекта
 
     [Header("Ranged Attack Settings")]
     [SerializeField, Tooltip("Длительность анимации дальней атаки (полёт снаряда)")]
@@ -47,12 +49,12 @@ public class PieceAnimationConfig : ScriptableObject
     /// Длительность анимации движения.
     /// </summary>
     public float MoveDuration => moveDuration;
-
+    public float JumpPeakPauseDuration => jumpPeakPauseDuration; // НОВОЕ СВОЙСТВО: Пауза в пике
     public float MeleeAttackDuration => meleeAttackDuration;
     public float MeleePunchDistance => meleePunchDistance;
     public GameObject HitEffectPrefab => hitEffectPrefab;
     public GameObject MeleeWeaponEffectPrefab => meleeWeaponEffectPrefab;
-    public float MeleeWeaponEffectDelay => meleeWeaponEffectDelay;
+    public float MeleeWeaponEffectTiming => meleeWeaponEffectTiming; // НОВОЕ СВОЙСТВО: Процентная задержка
     public float RangedAttackDuration => rangedAttackDuration;
     public float RecoilDistance => recoilDistance;
     public float RecoilDuration => recoilDuration;
