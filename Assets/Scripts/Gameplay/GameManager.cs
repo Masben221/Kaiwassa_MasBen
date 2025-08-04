@@ -1,6 +1,7 @@
 using UnityEngine;
-using Zenject;
 using System;
+using System.Collections.Generic;
+using Zenject;
 
 public interface IRangedAttackable
 {
@@ -120,24 +121,14 @@ public class GameManager : MonoBehaviour, IGameManager
 
         if (cameraController != null)
         {
-            cameraController.PrepareToFollowPiece(piece, target, isMove, isRangedAttack, () =>
-            {
-                piece.PerformAction(target, isMove, isRangedAttack, () =>
-                {
-                    SwitchTurn();
-                    CheckWinCondition();
-                });
-            });
+            // Убрано, так как камера теперь управляется через события
         }
-        else
+
+        piece.PerformAction(target, isMove, isRangedAttack, () =>
         {
-            Debug.LogError("GameManager: CameraController missing!");
-            piece.PerformAction(target, isMove, isRangedAttack, () =>
-            {
-                SwitchTurn();
-                CheckWinCondition();
-            });
-        }
+            SwitchTurn();
+            CheckWinCondition();
+        });
     }
 
     private bool IsRangedAttack(Piece piece)

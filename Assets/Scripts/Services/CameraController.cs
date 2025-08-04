@@ -51,7 +51,7 @@ public class CameraController : MonoBehaviour
 
     /// <summary>
     /// Инициализирует компонент камеры и проверяет его наличие.
-    /// Устанавливает камеру в ортографический режим.
+    /// Устанавливает камеру в ортографический режим и подписывается на события анимации.
     /// </summary>
     private void Awake()
     {
@@ -71,15 +71,19 @@ public class CameraController : MonoBehaviour
     {
         SetupDefaultCamera(instant: true); // Устанавливаем дефолтное положение мгновенно
         gameManager.OnTurnChanged += HandleTurnChanged; // Подписываемся на событие смены хода
+        PieceAnimator.OnAnimationStarted += HandleAnimationStarted;
+        PieceAnimator.OnAnimationCompleted += HandleAnimationCompleted;
     }
 
     /// <summary>
-    /// Отписывается от события смены хода при уничтожении объекта.
+    /// Отписывается от событий при уничтожении объекта.
     /// </summary>
     private void OnDestroy()
     {
         if (gameManager != null)
             gameManager.OnTurnChanged -= HandleTurnChanged;
+        PieceAnimator.OnAnimationStarted -= HandleAnimationStarted;
+        PieceAnimator.OnAnimationCompleted -= HandleAnimationCompleted;
     }
 
     /// <summary>
@@ -131,43 +135,56 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Подготавливает камеру к следованию за фигурой во время движения или атаки.
-    /// Запускает корутину для анимации камеры в зависимости от типа действия (движение, ближняя или дальняя атака).
+    /// Обрабатывает событие начала анимации, запуская подготовку камеры к следованию.
     /// </summary>
-    /// <param name="piece">Фигура, за которой следует камера.</param>
-    /// <param name="target">Целевая клетка (для движения или атаки).</param>
-    /// <param name="isMove">Если true, выполняется движение; иначе — атака.</param>
-    /// <param name="isRangedAttack">Если true, выполняется дальняя атака; иначе — ближняя.</param>
-    /// <param name="onAnimationComplete">Действие, вызываемое после завершения анимации.</param>
-    public void PrepareToFollowPiece(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack, Action onAnimationComplete)
+    private void HandleAnimationStarted(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack)
     {
         if (piece.Type == PieceType.Mountain)
         {
             Debug.Log("CameraController: Ignoring animation for Mountain");
-            onAnimationComplete?.Invoke(); // Горы не анимируются, сразу вызываем завершение
             return;
         }
 
-        isFollowingPiece = true; // Устанавливаем флаг следования
+        isFollowingPiece = true;
 
         if (currentTransition != null)
         {
-            StopCoroutine(currentTransition); // Останавливаем текущий переход
+            StopCoroutine(currentTransition);
             currentTransition = null;
         }
 
-        // Запускаем корутину для следования за фигурой
-        currentTransition = StartCoroutine(PrepareAndFollowPiece(piece, target, isMove, isRangedAttack, onAnimationComplete));
+        currentTransition = StartCoroutine(PrepareAndFollowPiece(piece, target, isMove, isRangedAttack, null));
+    }
+
+    /// <summary>
+    /// Обрабатывает событие завершения анимации, возвращая камеру в дефолтное положение с плавным переходом.
+    /// </summary>
+    private void HandleAnimationCompleted(Piece piece)
+    {
+        if (!isFollowingPiece)
+            return; // Избегаем повторного вызова, если уже не следим
+
+        isFollowingPiece = false;
+
+        if (currentTransition != null)
+        {
+            StopCoroutine(currentTransition); // Останавливаем текущую корутину
+            currentTransition = null;
+        }
+
+        // Запускаем плавный переход в дефолтное положение
+        currentTransition = StartCoroutine(SmoothTransition(
+            defaultPosition,
+            Quaternion.Euler(defaultRotation),
+            defaultOrthographicSize,
+            defaultTransitionDuration
+        ));
     }
 
     /// <summary>
     /// Выполняет плавный переход камеры к целевой позиции, ротации и размеру.
     /// Используется для всех переходов камеры (дефолтное положение, следование за фигурой, полёт снаряда).
     /// </summary>
-    /// <param name="targetPosition">Целевая позиция камеры.</param>
-    /// <param name="targetRotation">Целевая ротация камеры.</param>
-    /// <param name="targetSize">Целевой размер ортографической камеры.</param>
-    /// <param name="duration">Длительность перехода.</param>
     private IEnumerator SmoothTransition(Vector3 targetPosition, Quaternion targetRotation, float targetSize, float duration)
     {
         Vector3 startPosition = transform.position;
@@ -189,6 +206,7 @@ public class CameraController : MonoBehaviour
         transform.position = targetPosition;
         transform.rotation = targetRotation;
         mainCamera.orthographicSize = targetSize;
+        currentTransition = null; // Сбрасываем ссылку на корутину после завершения
     }
 
     /// <summary>
@@ -202,7 +220,6 @@ public class CameraController : MonoBehaviour
         {
             Debug.LogError($"CameraController: No PieceAnimator on {piece.Type}");
             isFollowingPiece = false;
-            onAnimationComplete?.Invoke();
             yield break;
         }
 
@@ -211,7 +228,6 @@ public class CameraController : MonoBehaviour
         {
             Debug.LogError($"CameraController: No PieceAnimationConfig for {piece.Type}");
             isFollowingPiece = false;
-            onAnimationComplete?.Invoke();
             yield break;
         }
 
@@ -295,10 +311,5 @@ public class CameraController : MonoBehaviour
                 yield return null;
             }
         }
-
-        // Плавный возврат в дефолтное положение
-        isFollowingPiece = false;
-        SetupDefaultCamera(instant: false);
-        currentTransition = null;
     }
 }

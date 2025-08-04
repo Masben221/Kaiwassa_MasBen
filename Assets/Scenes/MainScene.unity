@@ -3190,8 +3190,8 @@ MonoBehaviour:
   followRotationPlayer1: {x: 45, y: 0, z: 0}
   followRotationPlayer2: {x: 45, y: 180, z: 0}
   followOrthographicSize: 2.5
-  preFollowTransitionDuration: 1
-  followSpeed: 20
+  preFollowTransitionDuration: 0.3
+  followSpeed: 100
 --- !u!1001 &972237570
 PrefabInstance:
   m_ObjectHideFlags: 0
