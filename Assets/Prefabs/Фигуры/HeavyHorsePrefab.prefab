@@ -71,10 +71,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 917c6d329a55a3a489d4434104f7d3ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveDuration: 1
-  jumpHeight: 2
-  rotationDuration: 0.3
-  animationConfig: {fileID: 11400000, guid: 8cf1ad291c728074ebb81479393d4b62, type: 2}
+  animationConfig: {fileID: 11400000, guid: 898fb0be8cacd8449b19e2b08aeb0c04, type: 2}
 --- !u!65 &2393685384707432591
 BoxCollider:
   m_ObjectHideFlags: 0

@@ -248,7 +248,7 @@ public class PieceAnimator : MonoBehaviour
     /// <summary>
     /// Корутина для анимации ближней атаки.
     /// Поворачивает фигуру к цели, выполняет движение к цели с фиксированной длительностью,
-    /// с паузой в пике прыжка, создаёт эффект оружия с заданной процентной задержкой от длительности движения,
+    /// с паузой в пике прыжка, создаёт эффект оружия с заданной процентной задержкой от общей длительности движения,
     /// выполняет рывок атаки, эффект попадания, анимацию попадания для целевой фигуры, затем возвращает исходную ротацию.
     /// </summary>
     private IEnumerator AnimateMeleeAttackCoroutine(Piece piece, Vector3Int targetPos, Action onComplete)
@@ -265,11 +265,12 @@ public class PieceAnimator : MonoBehaviour
             float moveDurationAdjusted = config?.MoveDuration ?? 0.5f;
             float peakPause = config?.JumpPeakPauseDuration ?? 0f;
             float jumpHeight = config?.JumpHeight ?? 1f;
+            float totalDuration = moveDurationAdjusted + peakPause; // Общая длительность с учётом паузы
 
-            // Запуск корутины для создания эффекта оружия с процентной задержкой от длительности движения
+            // Запуск корутины для создания эффекта оружия с процентной задержкой от общей длительности
             if (config?.MeleeWeaponEffectPrefab != null)
             {
-                float effectDelay = moveDurationAdjusted * Mathf.Clamp01(config.MeleeWeaponEffectTiming);
+                float effectDelay = totalDuration * Mathf.Clamp01(config.MeleeWeaponEffectTiming);
                 StartCoroutine(CreateWeaponEffectWithDelay(piece, effectDelay));
             }
 
@@ -292,33 +293,32 @@ public class PieceAnimator : MonoBehaviour
             elapsedTime = 0f;
             if (Vector3.Distance(startPos, endPos) > 0.1f)
             {
-                while (elapsedTime < moveDurationAdjusted)
+                while (elapsedTime < totalDuration)
                 {
                     elapsedTime += Time.deltaTime;
-                    float t = Mathf.Clamp01(elapsedTime / moveDurationAdjusted);
+                    float t = elapsedTime / totalDuration; // Общая длительность с учётом паузы
                     float adjustedT = t;
 
-                    // Пауза в пике прыжка (t = 0.5)
                     if (peakPause > 0f && t >= 0.5f && elapsedTime < (moveDurationAdjusted * 0.5f + peakPause))
                     {
-                        adjustedT = 0.5f; // Замораживаем интерполяцию на пике
+                        adjustedT = 0.5f; // Замораживаем на пике во время паузы
                     }
-                    else if (peakPause > 0f && t > 0.5f)
+                    else if (peakPause > 0f && elapsedTime >= (moveDurationAdjusted * 0.5f + peakPause))
                     {
-                        // Смещаем t после паузы
+                        // Плавное продолжение после паузы
                         float timeAfterPause = elapsedTime - (moveDurationAdjusted * 0.5f + peakPause);
-                        adjustedT = Mathf.Clamp01(0.5f + timeAfterPause / (moveDurationAdjusted * 0.5f));
+                        adjustedT = 0.5f + (timeAfterPause / (moveDurationAdjusted * 0.5f)); // Продолжаем от 0.5 до 1
                     }
 
                     float height = jumpHeight * Mathf.Sin(adjustedT * Mathf.PI);
-                    transform.position = Vector3.Lerp(startPos, endPos, adjustedT) + new Vector3(0, height, 0);
+                    transform.position = Vector3.Lerp(startPos, endPos, Mathf.Clamp01(adjustedT)) + new Vector3(0, height, 0);
                     yield return null;
                 }
-                transform.position = endPos;
+                transform.position = endPos; // Убеждаемся, что достигаем целевой позиции
             }
             else
             {
-                yield return new WaitForSeconds(moveDurationAdjusted + peakPause);
+                yield return new WaitForSeconds(totalDuration);
             }
 
             // Анимация атаки и эффекты

@@ -3182,13 +3182,16 @@ MonoBehaviour:
   defaultPosition: {x: 7, y: 2.8, z: 4.5}
   defaultRotation: {x: 45, y: -90, z: 0}
   defaultOrthographicSize: 3.8
-  nearClippingPlane: -3
+  nearClippingPlane: -15
   defaultTransitionDuration: 1
-  followOffset: {x: 0, y: 0, z: 0}
+  followHeightOffset: 2.5
+  followZOffsetPlayer1: -2.5
+  followZOffsetPlayer2: 2.5
   followRotationPlayer1: {x: 45, y: 0, z: 0}
   followRotationPlayer2: {x: 45, y: 180, z: 0}
   followOrthographicSize: 2.5
-  preFollowTransitionDuration: 0.5
+  preFollowTransitionDuration: 1
+  followSpeed: 20
 --- !u!1001 &972237570
 PrefabInstance:
   m_ObjectHideFlags: 0

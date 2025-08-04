@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a7bcc533881cd6544b59004ba0a9eaff, type: 3}
-  m_Name: CatapultConfig
+  m_Name: ElephantConfig
   m_EditorClassIdentifier: 
   rotationDuration: 0.3
-  moveDuration: 0.5
+  moveDuration: 1
   jumpHeight: 0
   meleeAttackDuration: 0.3
   meleePunchDistance: 0.2
@@ -21,10 +21,10 @@ MonoBehaviour:
   meleeWeaponEffectPrefab: {fileID: 0}
   meleeWeaponEffectTiming: 0.5
   jumpPeakPauseDuration: 0
-  rangedAttackDuration: 2
+  rangedAttackDuration: 1
   recoilDistance: 0.1
   recoilDuration: 0.2
-  projectileModelPrefab: {fileID: 5310337442897017640, guid: 5ae1e7b27f20d6e45938917cfe24dfc7, type: 3}
+  projectileModelPrefab: {fileID: 7007984530500675039, guid: 3cf6e6c4d90f0924ca3724ad955a9c43, type: 3}
   projectileArcHeight: 1
   hitDuration: 0.2
   hitPunchDistance: 0.15
