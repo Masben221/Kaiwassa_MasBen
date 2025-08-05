@@ -30,6 +30,7 @@ public abstract class Piece : MonoBehaviour
     private Quaternion initialRotation;
     [SerializeField] private PieceType type;
     [SerializeField] private Sprite iconSprite;
+    private CameraController cameraController;
 
     public Vector3Int Position => position;
     public bool IsPlayer1 => isPlayer1;
@@ -42,6 +43,8 @@ public abstract class Piece : MonoBehaviour
     {
         initialRotation = transform.rotation;
         SetupStrategies();
+        // Получаем контроллер камеры
+        cameraController = Camera.main.GetComponent<CameraController>();
     }
 
     protected abstract void SetupStrategies();
@@ -113,6 +116,10 @@ public abstract class Piece : MonoBehaviour
             {
                 boardManager.MovePiece(this, position, target);
                 onComplete?.Invoke();
+                if (cameraController != null)
+                {
+                    cameraController.HandleAnimationCompleted(); // запускаем возврат камеры если не первый ход у слона
+                }
             });
         }
         else
@@ -141,6 +148,10 @@ public abstract class Piece : MonoBehaviour
             animator.AnimateRangedAttack(target, () =>
             {
                 boardManager.RemovePiece(target);
+                if (cameraController != null)
+                {
+                    cameraController.HandleAnimationCompleted(); // запускаем возврат камеры если не первый ход у слона
+                }
             });
         }
         else
@@ -149,6 +160,11 @@ public abstract class Piece : MonoBehaviour
             {
                 boardManager.RemovePiece(target);
                 boardManager.MovePiece(this, position, target);
+
+                if (cameraController != null)
+                {
+                    cameraController.HandleAnimationCompleted(); // запускаем возврат камеры если не первый ход у слона
+                }
             });
         }
     }

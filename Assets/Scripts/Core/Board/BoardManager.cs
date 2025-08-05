@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Zenject;
 
 /// <summary>
 /// Интерфейс для управления игровой доской.
@@ -24,6 +25,7 @@ public interface IBoardManager
 /// </summary>
 public class BoardManager : MonoBehaviour, IBoardManager
 {
+    [Inject] private IGameManager gameManager;
     [SerializeField] private GameObject tilePrefab;
     [SerializeField] private Material jadeMaterial;
     [SerializeField] private Material carnelianMaterial;
@@ -129,12 +131,13 @@ public class BoardManager : MonoBehaviour, IBoardManager
             {
                 // ИСПРАВЛЕНИЕ: Вызываем только анимацию смерти
                 PieceAnimator animator = piece.GetComponent<PieceAnimator>();
+                
                 if (animator != null)
                 {
                     animator.AnimateDeath(() => // НОВЫЙ метод
                     {
                         Destroy(piece.gameObject);
-                        Debug.Log($"BoardManager: Removed piece {piece.GetType().Name} at {position} after death animation");
+                        Debug.Log($"BoardManager: Removed piece {piece.GetType().Name} at {position} after death animation");  
                     });
                 }
                 else
@@ -152,6 +155,8 @@ public class BoardManager : MonoBehaviour, IBoardManager
         {
             Debug.LogWarning($"No piece found at {position} to remove.");
         }
+
+        gameManager.CheckWinCondition();
     }
 
     public bool IsWithinBounds(Vector3Int position)

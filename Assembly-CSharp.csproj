@@ -99,6 +99,7 @@
     <Compile Include="Assets\Scripts\Core\Pieces\ElephantPiece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\Piece.cs" />
     <Compile Include="Assets\Scripts\Core\Pieces\PieceFactory.cs" />
+    <Compile Include="Assets\Scripts\Animation\AnimationManager.cs" />
     <Compile Include="Assets\Scripts\UI\UISettingsPanel.cs" />
     <Compile Include="Assets\UnityTechnologies\ParticlePack\Shared\Scripts\ProximityActivate.cs" />
     <Compile Include="Assets\Scripts\Services\CameraController.cs" />

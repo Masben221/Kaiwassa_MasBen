@@ -198,6 +198,9 @@ public class ElephantAttackStrategy : IAttackable
             }
         }
 
+        // Получаем контроллер камеры
+        CameraController cameraController = Camera.main.GetComponent<CameraController>();       
+
         // Обрабатываем цели
         if (targets.Count == 1)
         {
@@ -206,9 +209,13 @@ public class ElephantAttackStrategy : IAttackable
         }
         else if (targets.Count == 2)
         {
+            if (cameraController != null)
+            {
+                cameraController.IncrementPendingAnimations(); // Увеличиваем счетчик для начала атаки
+            }
             // Если две цели, атакуем первую с перемещением, затем вторую после паузы
             piece.SelectAttack(targets[0], isRangedAttack);
-            piece.StartCoroutine(WaitForAnimation(piece, targets[1], isRangedAttack, boardManager));
+            piece.StartCoroutine(WaitForAnimation(piece, targets[1], isRangedAttack, boardManager, cameraController));
         }
     }
 
@@ -216,7 +223,7 @@ public class ElephantAttackStrategy : IAttackable
     /// Корутина для ожидания завершения анимации атаки первой фигуры перед атакой второй.
     /// Пересчитывает направление атаки от текущей позиции Слона.
     /// </summary>
-    private IEnumerator WaitForAnimation(Piece piece, Vector3Int secondTarget, bool isRangedAttack, IBoardManager boardManager)
+    private IEnumerator WaitForAnimation(Piece piece, Vector3Int secondTarget, bool isRangedAttack, IBoardManager boardManager, CameraController cameraController)
     {
         // Получаем конфигурацию анимации
         PieceAnimator animator = piece.GetComponent<PieceAnimator>();
@@ -231,6 +238,7 @@ public class ElephantAttackStrategy : IAttackable
         float animationDuration = rotationDuration + moveDuration + meleeAttackDuration + hitDuration + deathDuration + 0.1f; // Фиксированная задержка для эффекта
 
         yield return new WaitForSeconds(animationDuration);
+        
         piece.SelectAttack(secondTarget, isRangedAttack);
     }
 }

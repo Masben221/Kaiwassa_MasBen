@@ -45,6 +45,7 @@ public class CameraController : MonoBehaviour
     private bool isPlayer1Turn = true; // Флаг текущего хода (true для игрока 1, false для игрока 2)
     private bool isFollowingPiece; // Флаг, указывающий, что камера следует за фигурой
     private Coroutine currentTransition; // Текущая корутина перехода камеры
+    private int pendingAnimations; // Счетчик активных анимаций
 
     [Inject] private IGameManager gameManager; // Зависимость: менеджер игры для получения событий смены хода
     [Inject] private IBoardManager boardManager; // Зависимость: менеджер доски для доступа к состоянию игры
@@ -71,8 +72,7 @@ public class CameraController : MonoBehaviour
     {
         SetupDefaultCamera(instant: true); // Устанавливаем дефолтное положение мгновенно
         gameManager.OnTurnChanged += HandleTurnChanged; // Подписываемся на событие смены хода
-        PieceAnimator.OnAnimationStarted += HandleAnimationStarted;
-        PieceAnimator.OnAnimationCompleted += HandleAnimationCompleted;
+        gameManager.OnMoveInitiated += HandleMoveInitiated; // Подписка на новое событие        
     }
 
     /// <summary>
@@ -81,9 +81,10 @@ public class CameraController : MonoBehaviour
     private void OnDestroy()
     {
         if (gameManager != null)
+        {
             gameManager.OnTurnChanged -= HandleTurnChanged;
-        PieceAnimator.OnAnimationStarted -= HandleAnimationStarted;
-        PieceAnimator.OnAnimationCompleted -= HandleAnimationCompleted;
+            gameManager.OnMoveInitiated -= HandleMoveInitiated;
+        }        
     }
 
     /// <summary>
@@ -135,9 +136,9 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Обрабатывает событие начала анимации, запуская подготовку камеры к следованию.
+    /// Обрабатывает событие начала хода, запуская подплывание камеры к фигуре.
     /// </summary>
-    private void HandleAnimationStarted(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack)
+    private void HandleMoveInitiated(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack)
     {
         if (piece.Type == PieceType.Mountain)
         {
@@ -145,6 +146,7 @@ public class CameraController : MonoBehaviour
             return;
         }
 
+        pendingAnimations++;
         isFollowingPiece = true;
 
         if (currentTransition != null)
@@ -157,28 +159,26 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Обрабатывает событие завершения анимации, возвращая камеру в дефолтное положение с плавным переходом.
+    /// Увеличивает счетчик активных анимаций.
     /// </summary>
-    private void HandleAnimationCompleted(Piece piece)
+    public void IncrementPendingAnimations()
     {
-        if (!isFollowingPiece)
-            return; // Избегаем повторного вызова, если уже не следим
+        pendingAnimations++;
+    }
 
-        isFollowingPiece = false;
-
-        if (currentTransition != null)
+    /// <summary>
+    /// Обрабатывает событие завершения анимации, уменьшая счетчик активных анимаций.
+    /// Возвращает камеру в дефолтное положение, когда все анимации завершены.
+    /// </summary>
+    public void HandleAnimationCompleted()
+    {
+        pendingAnimations--;
+        if (pendingAnimations == 0)
         {
-            StopCoroutine(currentTransition); // Останавливаем текущую корутину
+            isFollowingPiece = false;
+            SetupDefaultCamera(instant: false);
             currentTransition = null;
         }
-
-        // Запускаем плавный переход в дефолтное положение
-        currentTransition = StartCoroutine(SmoothTransition(
-            defaultPosition,
-            Quaternion.Euler(defaultRotation),
-            defaultOrthographicSize,
-            defaultTransitionDuration
-        ));
     }
 
     /// <summary>
@@ -206,7 +206,6 @@ public class CameraController : MonoBehaviour
         transform.position = targetPosition;
         transform.rotation = targetRotation;
         mainCamera.orthographicSize = targetSize;
-        currentTransition = null; // Сбрасываем ссылку на корутину после завершения
     }
 
     /// <summary>
@@ -220,6 +219,7 @@ public class CameraController : MonoBehaviour
         {
             Debug.LogError($"CameraController: No PieceAnimator on {piece.Type}");
             isFollowingPiece = false;
+            pendingAnimations--;
             yield break;
         }
 
@@ -228,6 +228,7 @@ public class CameraController : MonoBehaviour
         {
             Debug.LogError($"CameraController: No PieceAnimationConfig for {piece.Type}");
             isFollowingPiece = false;
+            pendingAnimations--;
             yield break;
         }
 

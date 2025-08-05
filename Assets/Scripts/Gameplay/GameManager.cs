@@ -12,10 +12,12 @@ public interface IGameManager
 {
     void StartGame(int mountainsPerSide, bool isRandomPlacement);
     void MakeMove(Piece piece, Vector3Int target);
+    void CheckWinCondition();
     bool IsPlayer1Turn { get; }
     bool IsInPlacementPhase { get; set; }
     event Action<bool> OnTurnChanged;
     event Action<bool> OnGameEnded;
+    event Action<Piece, Vector3Int, bool, bool> OnMoveInitiated;
 }
 
 public class GameManager : MonoBehaviour, IGameManager
@@ -37,13 +39,14 @@ public class GameManager : MonoBehaviour, IGameManager
     }
     public event Action<bool> OnTurnChanged;
     public event Action<bool> OnGameEnded;
+    public event Action<Piece, Vector3Int, bool, bool> OnMoveInitiated;
 
     private void Awake()
     {
-        cameraController = FindObjectOfType<CameraController>();
+        cameraController = Camera.main.GetComponent<CameraController>();
         if (cameraController == null)
         {
-            Debug.LogError("GameManager: CameraController not found!");
+            Debug.LogError("GameManager: CameraController not found on Main Camera!");
         }
     }
 
@@ -106,7 +109,6 @@ public class GameManager : MonoBehaviour, IGameManager
                 return;
             }
 
-            // ИСПРАВЛЕНИЕ: Убираем анимацию Hit перед атакой
             PerformMove(piece, target, isMove, isRangedAttack);
         }
         else
@@ -118,12 +120,7 @@ public class GameManager : MonoBehaviour, IGameManager
     private void PerformMove(Piece piece, Vector3Int target, bool isMove, bool isRangedAttack)
     {
         Debug.Log($"GameManager: Processing {(isMove ? "move" : isRangedAttack ? "ranged attack" : "melee attack")} to {target} by {piece.Type}");
-
-        if (cameraController != null)
-        {
-            // Убрано, так как камера теперь управляется через события
-        }
-
+        OnMoveInitiated?.Invoke(piece, target, isMove, isRangedAttack);
         piece.PerformAction(target, isMove, isRangedAttack, () =>
         {
             SwitchTurn();
@@ -162,7 +159,7 @@ public class GameManager : MonoBehaviour, IGameManager
         OnTurnChanged?.Invoke(isPlayer1Turn);
     }
 
-    private void CheckWinCondition()
+    public void CheckWinCondition()
     {
         bool player1KingAlive = false;
         bool player2KingAlive = false;
